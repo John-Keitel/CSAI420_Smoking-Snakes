@@ -1,0 +1,15 @@
+meta {
+  name: GetUsers
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/users
+  body: none
+  auth: inherit
+}
+
+script:post-response {
+  console.log('aa', res.body.length ? res.body[0] : null)
+}

@@ -1,0 +1,32 @@
+name: Week 1 Integration Tests
+on:
+  - push
+  - repository_dispatch
+  - workflow_dispatch
+permissions:
+  checks: write
+  actions: read
+  contents: read
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    env:
+      API_URL: "https://dev.stedi.me"
+    if: github.actor != 'github-classroom[bot]'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Run Week 1 Integration tests
+        id: run-week-1-integration-tests
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Run Week 1 Integration tests
+          setup-command: npm install
+          command: npm run test:integration
+          timeout: 10
+      - name: Autograding Reporter
+        uses: classroom-resources/autograding-grading-reporter@v1
+        env:
+          RUN-WEEK-1-INTEGRATION-TESTS_RESULTS: "${{steps.run-week-1-integration-tests.outputs.result}}"
+        with:
+          runners: run-week-1-integration-tests

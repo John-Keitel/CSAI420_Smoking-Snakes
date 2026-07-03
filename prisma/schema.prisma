@@ -1,0 +1,127 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+    provider      = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+enum UserType {
+    developer
+    provider
+    standard
+}
+
+model User {
+    id   String   @id @default(cuid())
+    type UserType @default(standard)
+
+    // Auth
+    email         String    @unique @db.VarChar(128)
+    phone         String    @db.VarChar(32)
+    emailVerified DateTime? @map("email_verified")
+    password      String    @db.VarChar(64)
+
+    // Profile
+    firstName   String   @map("first_name") @db.VarChar(64)
+    lastName    String   @map("last_name") @db.VarChar(64)
+    displayName String?  @map("display_name") @db.VarChar(128)
+    dateOfBirth DateTime @map("date_of_birth") @db.Date
+    image       String?  @db.Text
+    timezone    String?  @db.VarChar(32)
+    locale      String?  @db.VarChar(16)
+
+    // Terms & Conditions
+    termsAccepted        DateTime? @map("terms_accepted")
+    privacyAccepted      DateTime? @map("privacy_accepted")
+    cookiesAccepted      DateTime? @map("cookies_accepted")
+    textMessagesAccepted DateTime? @map("text_messages_accepted")
+
+    // Audit
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    // Relations
+    sessions    Session[]
+    assessments Assessment[]
+    Step        Step[]
+
+    @@map("users")
+}
+
+model Session {
+    id     String @id @default(cuid())
+    userId String @map("user_id") @db.VarChar(32)
+
+    // Audit
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    // Relations
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("sessions")
+}
+
+model Device {
+    id    String @id @default(cuid())
+    name  String @db.VarChar(64)
+    token String @unique @db.VarChar(64)
+
+    // Audit
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    // Relations
+    assessments Assessment[]
+    steps       Step[]
+
+    @@map("devices")
+}
+
+model Assessment {
+    id       String    @id @default(cuid())
+    userId   String    @map("user_id") @db.VarChar(32)
+    deviceId String    @map("device_id") @db.VarChar(32)
+    started  DateTime? @default(now())
+    ended    DateTime?
+
+    // Audit
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    // Relations
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+    steps  Step[]
+
+    @@map("assessments")
+}
+
+model Step {
+    id           String  @id @default(cuid())
+    deviceId     String  @map("device_id") @db.VarChar(32)
+    assessmentId String? @map("assessment_id") @db.VarChar(32)
+    userId       String? @map("user_id") @db.VarChar(32)
+
+    points Json
+
+    // Audit
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    // Relations
+    device     Device?     @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+    assessment Assessment? @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+    user       User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("steps")
+}

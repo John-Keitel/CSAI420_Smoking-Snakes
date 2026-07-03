@@ -1,0 +1,9 @@
+{
+    "name": "bruno-collection",
+    "version": "1.0.0",
+    "private": true,
+    "devDependencies": {
+        "@faker-js/faker": "^9.2.0",
+        "dotenv": "^16.4.5"
+    }
+}

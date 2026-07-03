@@ -1,0 +1,23 @@
+meta {
+  name: SignIn [developer]
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/auth/signin
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "developer@stedi.com",
+    "password": "@123Change"
+  }
+}
+
+vars:post-response {
+  token: res.body.token
+  userId: res.body.userId
+}

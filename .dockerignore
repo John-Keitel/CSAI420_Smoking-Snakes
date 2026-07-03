@@ -1,0 +1,10 @@
+# files we dont want to go
+node_modules
+npm-debug.log
+workspace
+.next
+.vscode
+docker
+test
+scripts
+docs

@@ -1,0 +1,25 @@
+meta {
+  name: Create
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/steps
+  body: none
+  auth: inherit
+}
+
+script:pre-request {
+  const { faker } = require('@faker-js/faker/locale/en');
+  
+  function createStep() {
+      return {
+        deviceId: faker.database.mongodbObjectId(),
+        stepPoints: [100],
+      }
+  }
+  
+  req.setBody(createStep())
+  
+}

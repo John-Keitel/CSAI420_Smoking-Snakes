@@ -1,0 +1,62 @@
+meta {
+  name: SignUp
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/auth/signup
+  body: none
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{email}}",
+    "password": "{{password}}",
+    "firstName": "{{firstName}}",
+    "lastName": "{{lastName}}",
+    "dateOfBirth": "{{dateOfBirth}}"
+  }
+}
+
+vars:pre-request {
+  password: req.body.password
+}
+
+vars:post-response {
+  userId: res.body.id
+  email: res.body.email
+}
+
+script:pre-request {
+  const { faker } = require('@faker-js/faker/locale/en');
+  
+  function createUser(sex) {
+      const firstName = faker.person.firstName(sex);
+      const lastName = faker.person.lastName();
+  
+      const email = faker.internet.email({ firstName, lastName, provider: 'email.com' }).toLowerCase();
+  
+      return {
+          firstName,
+          lastName,
+          email: email,
+          phone: faker.phone.number({ style: 'international' }),
+          password: '@123Change',
+          dateOfBirth: faker.date
+              .past({
+                  years: 20,
+              })
+              .toISOString()
+              .substring(0, 10),
+        termsAccepted: true,
+        privacyAccepted: true,
+        cookiesAccepted: true,
+        textMessagesAccepted: true,
+      };
+  }
+  
+  req.setBody(createUser(faker.person.sex()))
+  
+}

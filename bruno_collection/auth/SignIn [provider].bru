@@ -1,0 +1,23 @@
+meta {
+  name: SignIn [provider]
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/auth/signin
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "user@provider.com",
+    "password": "@123Change"
+  }
+}
+
+vars:post-response {
+  token: res.body.token
+  userId: res.body.userId
+}

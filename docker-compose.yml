@@ -1,0 +1,45 @@
+services:
+    postgres:
+        image: postgres:alpine
+        container_name: stedi-postgres
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        ports:
+            - '${POSTGRES_PORT:-5432}:5432'
+        environment:
+            - POSTGRES_USER=${POSTGRES_USER:-stedi}
+            - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-stedipassword}
+        networks:
+            - app-network
+
+    minio:
+        image: minio/minio:latest
+        container_name: stedi-minio
+        environment:
+            MINIO_ROOT_USER: stedi
+            MINIO_ROOT_PASSWORD: stedipassword
+        volumes:
+            - minio_data:/data
+        ports:
+            - "${MINIO_API_PORT:-9000}:9000"
+            - "${MINIO_WEBUI_PORT:-9001}:9001"
+        networks:
+            - app-network
+        command: server /data --console-address ":9001"
+
+    mailpit:
+        image: axllent/mailpit:latest
+        container_name: stedi-mailpit
+        ports:
+            - "${MAILPIT_SMTP_PORT:-1025}:1025"
+            - "${MAILPIT_WEBUI_PORT:-8025}:8025"
+        networks:
+            - app-network
+
+volumes:
+    postgres_data:
+    minio_data:
+
+networks:
+    app-network:
+        driver: bridge

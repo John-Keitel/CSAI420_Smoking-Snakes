@@ -1,0 +1,24 @@
+meta {
+  name: UpdateUser
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{baseUrl}}/users/{{userId}}
+  body: none
+  auth: inherit
+}
+
+script:pre-request {
+  const {allLocales} = require('@faker-js/faker');
+  const { faker } = require('@faker-js/faker/locale/en');
+  
+  
+  req.setBody({
+    lastName: faker.person.lastName(),
+    timezone: faker.date.timeZone(),
+    locale: faker.helpers.arrayElement(Object.keys(allLocales)),
+  })
+  
+}

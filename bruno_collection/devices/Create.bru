@@ -1,0 +1,29 @@
+meta {
+  name: Create
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/devices
+  body: none
+  auth: inherit
+}
+
+vars:post-response {
+  deviceId: res.body.id
+}
+
+script:pre-request {
+  const { faker } = require('@faker-js/faker/locale/en');
+
+  function createDevice() {
+      return {
+        name: `${faker.word.adjective()} ${faker.word.noun()}`,
+        token: faker.string.uuid(),
+      };
+  }
+
+  req.setBody(createDevice())
+
+}
