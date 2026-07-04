@@ -30,7 +30,17 @@ const eslintConfig = [
         },
     },
     {
-        ignores: ['node_modules/**', '.next/**', 'out/**', 'build/**', 'next-env.d.ts', 'prisma/**', 'bruno_collection/**'],
+        ignores: [
+            'node_modules/**',
+            '.next/**',
+            '.agents/**',
+            '.specs/**',
+            'out/**',
+            'build/**',
+            'next-env.d.ts',
+            'prisma/**',
+            'bruno_collection/**',
+        ],
     },
 ];
 

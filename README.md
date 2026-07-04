@@ -81,9 +81,10 @@ MailPit WebUI: http://localhost:8025
 ## Auth
 
 ```bash
-npm install bcrypt
-npm install @types/bcrypt --save-dev
+npm run db:seed
 ```
+
+The JWT implementation now uses versioned `jose` HS256 tokens. Tokens issued by the previous Auth.js encryption implementation are intentionally invalidated by this upgrade; users must sign in again.
 
 ## API Routes
 
@@ -111,11 +112,13 @@ The legacy migration endpoints use `STEDI_API_BASE_URL`, which defaults to `http
 
 ### Deployed IVR integration tests
 
+The assignment integration suite targets this project, which then passes requests through to the legacy API:
+
 ```bash
 API_URL=https://your-project.vercel.app npm run test:integration
 ```
 
-`API_URL` must point to this project rather than directly to the legacy API.
+`API_URL` must not point directly to `stedi.me` or `dev.stedi.me`.
 
 ### End-to-end API tests
 

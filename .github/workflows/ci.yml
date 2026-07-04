@@ -1,0 +1,101 @@
+name: CI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+    workflow_dispatch:
+
+env:
+    APP_ENV: local
+    APP_LOG_LEVEL: info
+    STEDI_API_BASE_URL: https://dev.stedi.me
+    DATABASE_URL: postgresql://stedi:stedipassword@localhost:5432/postgres?schema=public
+    DATABASE_DIRECT_URL: postgresql://stedi:stedipassword@localhost:5432/postgres?schema=public
+    DATABASE_DEBUG: false
+    AUTH_SECRET: ci-only-auth-secret-that-is-long-enough-for-tests
+    NEXTAUTH_URL: http://127.0.0.1:3001
+    AUTH_DEBUG: false
+    AUTH_TRUST_HOST: true
+    MAILER_FROM_EMAIL: team@stedi.com
+    MAILER_SMTP_HOST: localhost
+    MAILER_SMTP_PORT: 1025
+    MAILER_SMTP_USERNAME: user
+    MAILER_SMTP_PASSWORD: secret
+    MAILER_SMTP_ENCRYPTION: tls
+
+jobs:
+    quality:
+        name: Quality Gates
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version-file: '.nvmrc'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Check formatting
+              run: npm run format
+
+            - name: Lint
+              run: npm run lint
+
+            - name: Typecheck
+              run: npm run typecheck
+
+            - name: Build
+              run: npm run build
+
+            - name: Audit dependencies
+              run: npm audit --audit-level=high
+
+    e2e:
+        name: E2E Tests
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version-file: '.nvmrc'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Start local infrastructure
+              run: docker compose up -d --wait --wait-timeout 60
+
+            - name: Deploy database migrations
+              run: npx prisma migrate deploy
+
+            - name: Seed database
+              run: npx prisma db seed
+
+            - name: Run Playwright E2E tests
+              run: npm run test:e2e
+
+            - name: Upload Playwright diagnostics
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: playwright-diagnostics
+                  path: |
+                      playwright-report/
+                      test-results/
+                  if-no-files-found: ignore
+                  retention-days: 7
+
+            - name: Stop local infrastructure
+              if: always()
+              run: docker compose down

@@ -1,4 +1,4 @@
-.PHONY: help install build lint lint-fix test test-integration test-e2e-ui up down dev db-generate db-push db-migrate db-seed
+.PHONY: help install build format format-fix lint lint-fix typecheck test test-integration test-e2e-ui up down dev db-generate db-push db-migrate db-seed
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -9,11 +9,20 @@ install: ## Install dependencies and generate Prisma client
 build: ## Build the Next.js application
 	npm run build
 
+format: ## Check formatting
+	npm run format
+
+format-fix: ## Format project files
+	npm run format:fix
+
 lint: ## Run ESLint
 	npm run lint
 
 lint-fix: ## Run ESLint with auto-fix
 	npm run lint:fix
+
+typecheck: ## Run Next.js type generation and TypeScript checks
+	npm run typecheck
 
 test: ## Run the Playwright E2E test suite
 	npm test
