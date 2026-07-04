@@ -73,6 +73,8 @@ npm install zod
 docker compose up -d
 ```
 
+PostgreSQL 18 uses a version-specific data layout. Back up and migrate data from older `postgres_data` volumes before removing them; Compose uses a separate `postgres_18_data` volume to avoid overwriting an older cluster.
+
 MinIO WebUI: http://localhost:9000
 MailPit WebUI: http://localhost:8025
 
