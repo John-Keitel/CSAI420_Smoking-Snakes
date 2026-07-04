@@ -1,8 +1,7 @@
-// Based one: https://authjs.dev/getting-started/providers/credentials
-import { decode, encode, JWT } from '@auth/core/jwt';
-import { Session, User } from '@prisma/client';
+import type { Session, User } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { createHash } from 'crypto';
+import { jwtVerify, SignJWT } from 'jose';
 import { headers } from 'next/headers';
 
 import { prisma } from '@/lib/db';
@@ -21,35 +20,22 @@ const sessionTimeToLiveInSeconds = 60 * 60 * 24 * 30; // 30 days in seconds
 export async function createJwtToken(session: Session & { user: User }): Promise<Token> {
     logger.debug('Creating JWT token for session %s', session.id);
 
-    // Get the user from the session
     const user = session.user;
-
-    // Create a token payload similar to what Auth.js would create
-    const tokenPayload: JWT = {
-        // Standard JWT claims
-        iat: Math.floor(Date.now() / 1000),
-        sub: user.id, // Subject (user ID)
-        exp: Math.floor(Date.now() / 1000) + sessionTimeToLiveInSeconds, // Expiration time
-        jti: session.id, // Unique identifier for the token
-        iss: ENV_VARS.NEXTAUTH_URL, // Issuer (your app URL)
-
-        // User data
+    const token = await new SignJWT({
+        version: 1,
+        sub: user.id,
         name: `${user.firstName} ${user.lastName}`,
         email: user.email,
         picture: user.image,
-
-        // Additional Auth.js specific fields if needed
         id: user.id,
         sessionId: session.id,
         type: user.type,
-    };
-
-    // Encode the token using next-auth/jwt
-    const token = await encode({
-        token: tokenPayload,
-        secret: ENV_VARS.AUTH_SECRET,
-        salt: 'nextauth',
-    });
+    })
+        .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
+        .setIssuedAt()
+        .setIssuer(ENV_VARS.NEXTAUTH_URL)
+        .setExpirationTime(`${sessionTimeToLiveInSeconds}s`)
+        .sign(new TextEncoder().encode(ENV_VARS.AUTH_SECRET));
 
     return {
         token,
@@ -65,23 +51,25 @@ export async function getSession(): Promise<Session & { user: User }> {
             throw new HttpException(401, 'Unauthenticated');
         }
 
-        const parts = authorization.split(' ');
-        const token = parts[1];
+        const [scheme, token] = authorization.split(' ');
+        if (scheme !== 'Bearer' || !token) {
+            throw new HttpException(401, 'Invalid authorization header');
+        }
 
-        const jwt = await decode({
-            token,
-            secret: ENV_VARS.AUTH_SECRET,
-            salt: 'nextauth',
+        const { payload } = await jwtVerify(token, new TextEncoder().encode(ENV_VARS.AUTH_SECRET), {
+            issuer: ENV_VARS.NEXTAUTH_URL,
+            algorithms: ['HS256'],
         });
 
-        if (!jwt) {
+        const sessionId = payload.sessionId;
+        if (payload.version !== 1 || typeof sessionId !== 'string') {
             throw new HttpException(401, 'Invalid token');
         }
 
-        logger.debug('looking for session %s', jwt.sessionId);
+        logger.debug('looking for session %s', sessionId);
         const session = await prisma.session.findUnique({
             where: {
-                id: jwt.sessionId as string,
+                id: sessionId,
             },
             include: {
                 user: true,

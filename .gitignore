@@ -47,6 +47,9 @@ migration_lock.toml
 # idea
 .idea/
 
+# local planning documents
+/docs/
+
 # Playwright
 node_modules/
 /test-results/
