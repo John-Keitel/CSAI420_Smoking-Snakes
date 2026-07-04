@@ -1,0 +1,10 @@
+.next/
+.opencode/
+node_modules/
+src/generated/
+bruno_collection/
+coverage/
+playwright-report/
+test-results/
+package-lock.json
+ASSIGNMENT.md
