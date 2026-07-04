@@ -9,7 +9,7 @@ metadata:
 
 # Tech Lead's Club - Spec-Driven Development
 
-> **PracticeFront repo override (NON-NEGOTIABLE):** In THIS repository this skill STOPS after the
+> **Repo override (NON-NEGOTIABLE):** In THIS repository this skill STOPS after the
 > **Tasks** phase. Do NOT run the **Execute/implement** phase or the execution **Verifier** here —
 > execution is a separate session owned by `sdd-execute-jira`, run only after the human approves the spec
 > and `/sdd-tasks-jira` publishes the task issues. Planning and execution are two separate sessions;

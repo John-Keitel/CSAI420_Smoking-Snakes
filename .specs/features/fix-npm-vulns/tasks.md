@@ -6,7 +6,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **If the skill cannot be activated, STOP and tell the user — do not proceed without it.**
 
-> **PracticeFront repo override:** Execution is owned by the `sdd-execute-gh` session, NOT this planning session. This `tasks.md` is the handoff contract for that session. Do not run Execute here.
+> **Repo override:** Execution is owned by the `sdd-execute-gh` session, NOT this planning session. This `tasks.md` is the handoff contract for that session. Do not run Execute here.
 
 ---
 
