@@ -1,6 +1,6 @@
 ---
 name: sdd-pr-review
-description: PracticeFront SDD pull request reviewer that posts GitHub inline comments and a PR review summary. Use when explicitly asked to review a pull request with phrases like "sdd review PR #123", "review PR #123", "review this PR", "code review this pull request", or "run SDD PR review". Do NOT use during feature implementation, branch pre-review without a PR, generic code questions, or non-SDD planning.
+description: SDD pull request reviewer that posts GitHub inline comments and a PR review summary. Use when explicitly asked to review a pull request with phrases like "sdd review PR #123", "review PR #123", "review this PR", "code review this pull request", or "run SDD PR review". Do NOT use during feature implementation, branch pre-review without a PR, generic code questions, or non-SDD planning.
 license: CC-BY-4.0
 metadata:
   author: Daniel Teleginski Camargo
@@ -9,7 +9,7 @@ metadata:
 
 # SDD PR Review
 
-Review a PracticeFront GitHub pull request against both code quality and the spec-driven delivery contract. The workflow posts review comments and records per-track model/token usage; it never approves, requests changes, modifies files, or pushes commits.
+Review a GitHub pull request against both code quality and the spec-driven delivery contract. The workflow posts review comments and records per-track model/token usage; it never approves, requests changes, modifies files, or pushes commits.
 
 ## Non-Negotiables
 
@@ -18,7 +18,7 @@ Review a PracticeFront GitHub pull request against both code quality and the spe
 3. Post inline comments only on added diff lines. Never comment on context lines, deleted lines, or files outside the PR diff.
 4. Do not duplicate existing review comments. Skip a new finding when an existing comment within three lines already covers it.
 5. Only report findings with high confidence and clear evidence from the diff or SDD artifacts.
-6. Never include PHI, secrets, tokens, connection strings, or real patient data in review comments.
+6. Never include secrets, tokens, connection strings, or other sensitive data in review comments.
 7. Never approve, request changes, edit source files, commit, push, or change issue state. The only allowed issue write is appending this skill's model/token usage block to the resolved slice issue body.
 
 ## Workflow
@@ -49,7 +49,7 @@ Always load:
 - `docs/ai-dev-flow.md`
 - `docs/work-tracking.md` when it exists
 - `.specs/codebase/CONVENTIONS.md` when the PR touches source code
-- `.specs/codebase/INTEGRATIONS.md` and `.specs/codebase/CONCERNS.md` when the PR touches data movement, integrations, auth, webhooks, logs, or PHI-sensitive flows
+- `.specs/codebase/INTEGRATIONS.md` and `.specs/codebase/CONCERNS.md` when the PR touches data movement, integrations, auth, webhooks, logs, or sensitive-data flows
 
 Load these when referenced or discoverable:
 
@@ -82,23 +82,23 @@ Each reviewer returns:
 
 Use these severities exactly:
 
-- `Security` for security, HIPAA, privacy, tenant isolation, auth, or secret exposure
+- `Security` for security, privacy, tenant isolation, auth, or secret exposure
 - `Critical` for defects likely to break behavior, data integrity, validation, or delivery gates
 - `Performance` for clear performance regressions visible in the diff
 - `Warning` for maintainability, architecture, reliability, or test risks
 - `Suggestion` for optional improvements with low risk
 
-### Track 1: Security and HIPAA
+### Track 1: Security
 
 Marker: `<!-- sdd-pr-review:security -->`
 
-Apply the PHI/HIPAA baseline and PracticeFront integration boundaries. Review for missing PHI audit paths, tenant isolation bypasses, PHI or PII in logs/errors/telemetry, committed secrets or connection strings, raw query concatenation, missing auth/authorization, missing webhook signature validation, overly broad CORS, sensitive response payloads, broadened partner credentials, and weakened encryption or least privilege.
+Apply the project's security baseline and integration boundaries. Review for missing audit paths on sensitive data, tenant isolation bypasses, PII in logs/errors/telemetry, committed secrets or connection strings, raw query concatenation, missing auth/authorization, missing webhook signature validation, overly broad CORS, sensitive response payloads, broadened partner credentials, and weakened encryption or least privilege.
 
-For every file that reads, writes, displays, exports, logs, transmits, or transforms patient data, explicitly check:
+For every file that reads, writes, displays, exports, logs, transmits, or transforms sensitive data, explicitly check:
 
-- Who, what, when, and where audit coverage exists for PHI read/write paths
-- Tenant/practice scoping is enforced through RLS context or an equivalent authenticated tenant constraint
-- Logs, errors, analytics, telemetry, traces, and comments do not contain PHI or secrets
+- Who, what, when, and where audit coverage exists for sensitive-data read/write paths
+- Tenant scoping is enforced through RLS context or an equivalent authenticated tenant constraint
+- Logs, errors, analytics, telemetry, traces, and comments do not contain sensitive data or secrets
 - External partner data movement is allowed by documented integration boundaries
 
 Comment format:
@@ -182,7 +182,7 @@ Check:
 
 - Tests are included with the task that changes behavior; tests are not deferred to a separate task
 - Tests derive from acceptance criteria and assert user-visible or contract-visible outcomes
-- New routes, server actions, workflows, integrations, and PHI-affecting paths have appropriate unit, integration, or e2e coverage
+- New routes, server actions, workflows, integrations, and sensitive-data-affecting paths have appropriate unit, integration, or e2e coverage
 - Gate commands from `tasks.md` or task issues are represented in PR evidence
 - `.specs/features/[slice]/validation.md` exists after the final task and contains Verifier PASS/FAIL evidence
 - Validation includes per-acceptance-criterion evidence and does not rely on self-assessment
@@ -194,7 +194,7 @@ Load `.agents/skills/create-e2e-tests/SKILL.md` only when the PR adds or changes
 
 Marker: `<!-- sdd-pr-review:architecture -->`
 
-Review architectural fit against PracticeFront's documented boundaries and loaded SDD design constraints.
+Review architectural fit against this project's documented boundaries and loaded SDD design constraints.
 
 Load when relevant:
 
@@ -234,7 +234,7 @@ Before posting any inline comment, verify:
 2. The target line is an added line in the diff.
 3. No existing comment within three lines already covers the issue.
 4. The comment body starts with the track marker.
-5. The comment does not contain PHI, secrets, or sensitive values.
+5. The comment does not contain secrets or sensitive values.
 
 Use the available GitHub comment mechanism for inline comments. If the environment cannot safely post an inline comment for a valid finding, include it in the consolidated PR review body under "Findings Without Inline Location".
 
@@ -302,7 +302,7 @@ When Step 2 resolves a slice issue, also append the per-track usage table to the
 ### Review Run 2026-07-03 - PR #45
 | Track | Model | Token usage |
 | ----- | ----- | ----------- |
-| Security and HIPAA | Sonnet 4.6 | 30% (60k/200k) |
+| Security | Sonnet 4.6 | 30% (60k/200k) |
 | SDD Traceability | Composer 2.5 | 15% (30k/200k) |
 | Requirements and Definition of Done | Sonnet 4.6 | 28% (56k/200k) |
 | Tests and Validation Evidence | Sonnet 4.6 | 24% (48k/200k) |
@@ -336,9 +336,9 @@ Result: The PR review explains that the code could be reviewed, but the SDD deli
 
 User says: "sdd review PR #88"
 
-Actions: detect changed webhook and patient-data paths, load integration and concern docs, run the security track against PHI audit, tenant isolation, webhook signature validation, and no-PHI-logs requirements.
+Actions: detect changed webhook and sensitive-data paths, load integration and concern docs, run the security track against audit coverage, tenant isolation, webhook signature validation, and no-sensitive-data-in-logs requirements.
 
-Result: Security findings are posted only where the diff provides evidence, with PHI-safe recommendations.
+Result: Security findings are posted only where the diff provides evidence, with safe recommendations.
 
 ## Troubleshooting
 

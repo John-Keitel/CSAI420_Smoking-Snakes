@@ -1,6 +1,6 @@
 ---
 name: sdd-e2e-test-authoring
-description: PracticeFront-specific Playwright e2e test authoring for committed specs under e2e. Use when the user says "write e2e tests", "add a Playwright spec", "add e2e coverage for this feature", or an sdd-execute-jira task requires end-to-end tests. Do NOT use for screenshots, visual poking, temporary browser automation, or selector exploration; use playwright-skill for those. Do NOT use for unit, integration, or component tests.
+description: Project-specific Playwright e2e test authoring for committed specs under e2e. Use when the user says "write e2e tests", "add a Playwright spec", "add e2e coverage for this feature", or an sdd-execute-jira task requires end-to-end tests. Do NOT use for screenshots, visual poking, temporary browser automation, or selector exploration; use playwright-skill for those. Do NOT use for unit, integration, or component tests.
 license: CC-BY-4.0
 metadata:
   author: Daniel Teleginski Camargo
@@ -9,7 +9,7 @@ metadata:
 
 # SDD E2E Test Authoring
 
-Write PracticeFront Playwright end-to-end tests that are committed to the repository. This skill is project-specific: mirror the conventions in `e2e/`, protect HIPAA boundaries, and keep tests stable enough for the SDD execution gate.
+Write Playwright end-to-end tests that are committed to the repository. This skill is project-specific: mirror the conventions in `e2e/`, protect sensitive-data boundaries, and keep tests stable enough for the SDD execution gate.
 
 ## Instructions
 
@@ -37,11 +37,11 @@ Prefer adding to an existing nearby spec when the new case extends the same flow
 
 Expected output: a small, discoverable spec file that future agents can scan quickly.
 
-### Step 4: Use PracticeFront-Safe Test Data
+### Step 4: Use Safe Test Data
 
-Never use real patient data, real practice data, real credentials, PHI, or anything that looks like production data. Generate synthetic users with `testEmail()` from `e2e/helpers/auth.ts`, which uses the `practicefront.test` email domain. Use obviously fake names and practice details such as "Test User", "Test Org", "Test Practice", and "123 Main St".
+Never use real user data, real credentials, or anything that looks like production data. Generate synthetic users with `testEmail()` from `e2e/helpers/auth.ts`. Use obviously fake names and details such as "Test User", "Test Org", and "123 Main St".
 
-Do not put PHI in logs, test titles, screenshots, fixtures, or assertions. Test names should describe behavior, not real entities.
+Do not put sensitive data in logs, test titles, screenshots, fixtures, or assertions. Test names should describe behavior, not real entities.
 
 Expected output: deterministic-looking test intent with fully synthetic data.
 
@@ -71,7 +71,7 @@ Do not create exhaustive UI click scripts. One strong happy path plus the riskie
 
 Expected output: the spec protects the feature contract without becoming a maintenance burden.
 
-### Step 8: Use Known PracticeFront Techniques Carefully
+### Step 8: Use Known Project Techniques Carefully
 
 To exercise server-side validation when browser-native constraints would block submission, remove the native attribute in the test with a narrow locator, such as `await page.locator("#password").evaluate((el) => el.removeAttribute("minlength"))`. Add a short comment explaining why the bypass exists.
 

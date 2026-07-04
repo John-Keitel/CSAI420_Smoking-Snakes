@@ -1,6 +1,6 @@
 ---
 name: sdd-apply-pr-comments
-description: PracticeFront SDD PR comment remediation skill that applies human-endorsed unresolved PR review threads. Use when the user says "apply the PR review comments", "address review comments on PR #123", "implement the review feedback", "fix the PR comments", or "apply thumbs-up PR comments". Only acts on unresolved review threads with a thumbs-up reaction. Do NOT use to run a PR review (use sdd-pr-review), execute a slice from scratch (use sdd-execute-jira), or plan new feature work.
+description: SDD PR comment remediation skill that applies human-endorsed unresolved PR review threads. Use when the user says "apply the PR review comments", "address review comments on PR #123", "implement the review feedback", "fix the PR comments", or "apply thumbs-up PR comments". Only acts on unresolved review threads with a thumbs-up reaction. Do NOT use to run a PR review (use sdd-pr-review), execute a slice from scratch (use sdd-execute-jira), or plan new feature work.
 license: CC-BY-4.0
 metadata:
   author: Daniel Teleginski Camargo
@@ -17,7 +17,7 @@ Apply human-endorsed unresolved PR review comments on an existing open slice PR.
 2. Use GitHub CLI for PR, issue, project, thread, reaction, reply, and resolution operations.
 3. Act only on unresolved review threads that have a `THUMBS_UP` reaction. Never modify or reply to threads without thumbs-up endorsement unless reporting that they were skipped.
 4. Never approve, close, merge, or force-push the PR. Push only normal commits to the PR head branch after gates pass.
-5. Never include PHI, secrets, tokens, connection strings, real patient data, or sensitive payloads in code, commits, comments, thread replies, logs, or issue bodies.
+5. Never include secrets, tokens, connection strings, or sensitive payloads in code, commits, comments, thread replies, logs, or issue bodies.
 6. Preserve SDD traceability: commits use `Refs:` and `Parent:` footers, gates derive from the slice/task plan, and usage trails are written only inside this skill's markers.
 7. Do not weaken, skip, delete, or rewrite tests to satisfy review feedback. If a gate cannot pass, stop and report the failing command and evidence.
 8. If a thumbs-up finding is a real scope gap larger than a small PR-fix commit, create or update a task issue under the slice instead of patching it inline.
@@ -53,7 +53,7 @@ Always load:
 - `docs/ai-dev-flow.md`
 - `docs/work-tracking.md` when issue or board changes may be needed
 - `.specs/codebase/CONVENTIONS.md` when the PR touches source code
-- `.specs/codebase/INTEGRATIONS.md` and `.specs/codebase/CONCERNS.md` when comments involve data movement, integrations, auth, webhooks, logs, or PHI-sensitive flows
+- `.specs/codebase/INTEGRATIONS.md` and `.specs/codebase/CONCERNS.md` when comments involve data movement, integrations, auth, webhooks, logs, or sensitive-data flows
 
 Resolve the slice issue and feature folder by preferring, in order:
 
@@ -141,7 +141,7 @@ For every fix group:
 
 1. Make the smallest code/test change that satisfies the review comment and the slice spec.
 2. Run the gate from the related task issue or `tasks.md`. If no explicit gate exists, use the fallback: logic change to build plus relevant unit/integration tests; UI workflow change to build plus relevant component/e2e test if present; docs-only change to no gate, with reason reported.
-3. Re-read changed files for PHI/logging/tenant isolation risks when the fix touches sensitive paths.
+3. Re-read changed files for logging/tenant isolation risks when the fix touches sensitive paths.
 4. Commit atomically using Conventional Commits and traceability footers:
 
 ```text
@@ -191,7 +191,7 @@ After creating the follow-up issue, the original PR thread can be resolved becau
 
 ### Step 7: Re-Verify When Behavior Changes
 
-If any inline fix changes acceptance-criteria behavior, validation logic, tests, data movement, PHI-sensitive paths, or user-visible flows, dispatch a fresh Verifier using the `tlc-spec-driven` verifier role from `sdd-execute-jira` Step 6.
+If any inline fix changes acceptance-criteria behavior, validation logic, tests, data movement, sensitive-data paths, or user-visible flows, dispatch a fresh Verifier using the `tlc-spec-driven` verifier role from `sdd-execute-jira` Step 6.
 
 Provide the Verifier:
 
@@ -207,7 +207,7 @@ Commit an updated `.specs/features/[slice]/validation.md` when the Verifier writ
 After every inline fix and planning-route task is committed and gates are green:
 
 1. Push the PR branch normally: `git push origin "$HEAD_REF"`.
-2. Reply to each fixed thread with a PHI-safe summary and commit SHA:
+2. Reply to each fixed thread with a safe summary and commit SHA:
 
 ```markdown
 <!-- sdd-apply-pr-comments:reply -->
@@ -288,7 +288,7 @@ Report:
 
 User says: "Apply thumbs-up PR comments on PR #45"
 
-Actions: resolve PR #45, fetch unresolved threads, keep the security thread with a thumbs-up reaction, load the slice spec and PHI rules, patch the missing audit path, run the task gate, commit with `Refs: #41` and `Parent: #40`, push, reply with the commit SHA, resolve the thread, and append the remediation usage trail to slice #40.
+Actions: resolve PR #45, fetch unresolved threads, keep the security thread with a thumbs-up reaction, load the slice spec and security rules, patch the missing audit path, run the task gate, commit with `Refs: #41` and `Parent: #40`, push, reply with the commit SHA, resolve the thread, and append the remediation usage trail to slice #40.
 
 Result: the endorsed thread is resolved on GitHub, the PR branch contains one traceable fix commit, and slice #40 records the cost of the remediation run.
 
