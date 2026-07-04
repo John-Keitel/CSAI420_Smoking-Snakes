@@ -48,7 +48,6 @@ Always load:
 
 - `docs/ai-dev-flow.md`
 - `docs/work-tracking.md` when it exists
-- `.cursor/rules/security-hipaa.mdc`
 - `.specs/codebase/CONVENTIONS.md` when the PR touches source code
 - `.specs/codebase/INTEGRATIONS.md` and `.specs/codebase/CONCERNS.md` when the PR touches data movement, integrations, auth, webhooks, logs, or PHI-sensitive flows
 
