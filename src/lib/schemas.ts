@@ -1,17 +1,17 @@
 import { z } from 'zod';
 
 export const SignInSchema = z.object({
-    email: z.string().email('invalid'),
+    email: z.email({ error: 'invalid' }),
     password: z.string().min(1, 'required'),
 });
 
 export const SignUpSchema = z.object({
-    email: z.string().email(),
+    email: z.email(),
     // E.164 format +<country_code><number> (^\+[1-9]\d{1,14}$)
     phone: z.string().regex(/^\+[1-9]\d{1,14}$/, 'invalid E.164 format'),
     firstName: z.string().min(1).max(64),
     lastName: z.string().min(1).max(64),
-    dateOfBirth: z.date({ coerce: true }),
+    dateOfBirth: z.coerce.date(),
     password: z
         .string()
         .min(8)
@@ -20,24 +20,24 @@ export const SignUpSchema = z.object({
         .regex(/[a-z]/, 'must contain at least one lowercase letter')
         .regex(/[0-9]/, 'must contain at least one number')
         .regex(/[^A-Za-z0-9]/, 'must contain at least one special character'),
-    termsAccepted: z.boolean({ coerce: true }).refine((v) => v, 'must accept'),
-    privacyAccepted: z.boolean({ coerce: true }).refine((v) => v, 'must accept'),
-    cookiesAccepted: z.boolean({ coerce: true }).refine((v) => v, 'must accept'),
-    textMessagesAccepted: z.boolean({ coerce: true }).refine((v) => v, 'must accept'),
+    termsAccepted: z.literal(true, { error: 'must accept' }),
+    privacyAccepted: z.literal(true, { error: 'must accept' }),
+    cookiesAccepted: z.literal(true, { error: 'must accept' }),
+    textMessagesAccepted: z.literal(true, { error: 'must accept' }),
 });
 
 export const UpdateUserSchema = z.object({
     firstName: z.string().min(1).max(64).optional(),
     lastName: z.string().min(1).max(64).optional(),
     displayName: z.string().min(1).max(128).optional(),
-    dateOfBirth: z.date({ coerce: true }).optional(),
+    dateOfBirth: z.coerce.date().optional(),
     timezone: z.string().min(1).max(32).optional(),
     locale: z.string().min(1).max(16).optional(),
 });
 
 export const CreateDeviceSchema = z.object({
-    name: z.string({ message: 'required' }).min(1).max(64),
-    token: z.string({ message: 'required' }).min(1).max(64),
+    name: z.string({ error: 'required' }).min(1).max(64),
+    token: z.string({ error: 'required' }).min(1).max(64),
 });
 
 export const UpdateDeviceSchema = z.object({

@@ -8,7 +8,7 @@ loadEnvConfig(process.cwd());
 const AppSchema = z.object({
     APP_ENV: z.enum(['production', 'local']).default('production'),
     APP_LOG_LEVEL: z.enum(['info', 'error', 'warn', 'debug']).default('info'),
-    STEDI_API_BASE_URL: z.string().url().default('https://dev.stedi.me'),
+    STEDI_API_BASE_URL: z.url().default('https://dev.stedi.me'),
 });
 
 const DatabaseSchema = z.object({
@@ -43,16 +43,16 @@ const MailerSchema = z.object({
     MAILER_SMTP_USERNAME: z.string(),
     MAILER_SMTP_PASSWORD: z.string(),
     MAILER_SMTP_ENCRYPTION: z.enum(['tls', 'ssl']).default('tls'),
-    MAILER_FROM_EMAIL: z.string().email(),
+    MAILER_FROM_EMAIL: z.email(),
 });
 
 // https://zod.dev/?id=inferring-the-inferred-type
-function validateEnvWithSchema<TSchema extends z.ZodTypeAny>(schema: TSchema, schemaName: string): z.infer<TSchema> {
+function validateEnvWithSchema<TSchema extends z.ZodType>(schema: TSchema, schemaName: string): z.infer<TSchema> {
     const result = schema.safeParse(process.env);
 
     if (!result.success) {
         console.error(`(${schemaName}) There is an error with the environment variables\n`);
-        console.error(result.error.format());
+        console.error(z.prettifyError(result.error));
         process.exit(1);
     }
 
