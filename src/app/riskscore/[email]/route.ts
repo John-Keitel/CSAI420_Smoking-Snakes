@@ -11,7 +11,7 @@ type RouteContext = {
 export async function GET(request: NextRequest, { params }: RouteContext) {
     const { email } = await params;
 
-    return proxyToStedi(request, `/riskscore/${email}`, {
+    return proxyToStedi(request, `/riskscore/${encodeURIComponent(email)}`, {
         forwardSessionToken: true,
     });
 }

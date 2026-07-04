@@ -26,7 +26,13 @@ export async function proxyToStedi(request: NextRequest, path: string, options: 
     }
 
     try {
-        const upstreamUrl = new URL(path, `${ENV_VARS.STEDI_API_BASE_URL}/`);
+        const baseUrl = new URL(`${ENV_VARS.STEDI_API_BASE_URL}/`);
+        const upstreamUrl = new URL(path, baseUrl);
+
+        if (!path.startsWith('/') || path.startsWith('//') || upstreamUrl.origin !== baseUrl.origin) {
+            throw new Error('Invalid STEDI proxy path');
+        }
+
         const response = await fetch(upstreamUrl, {
             method: request.method,
             headers,
