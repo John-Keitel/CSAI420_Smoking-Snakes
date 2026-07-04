@@ -51,7 +51,6 @@ Load only the documents needed for this PR.
 Always load:
 
 - `docs/ai-dev-flow.md`
-- `.cursor/rules/security-hipaa.mdc`
 - `docs/work-tracking.md` when issue or board changes may be needed
 - `.specs/codebase/CONVENTIONS.md` when the PR touches source code
 - `.specs/codebase/INTEGRATIONS.md` and `.specs/codebase/CONCERNS.md` when comments involve data movement, integrations, auth, webhooks, logs, or PHI-sensitive flows
