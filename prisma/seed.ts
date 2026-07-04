@@ -1,10 +1,12 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 
+import { PrismaClient } from '../src/generated/prisma/client';
 import { ENV_VARS } from '@/lib/env-vars';
 
 import { seedUsers } from './seeders/user.seeder';
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({ connectionString: ENV_VARS.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
 
 (async () => {
     try {
@@ -12,7 +14,7 @@ const prisma = new PrismaClient();
             // local stuff only
         }
 
-        await seedUsers();
+        await seedUsers(prisma);
     } catch (e) {
         console.error(e);
         process.exit(1);

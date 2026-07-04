@@ -2,6 +2,7 @@
   "name": "cs420-api",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "postinstall": "prisma generate",
     "dev": "next dev",
@@ -16,7 +17,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push --skip-generate",
+    "db:push": "prisma db push",
     "db:sync": "prisma migrate deploy",
     "db:seed": "prisma db seed"
   },
@@ -26,11 +27,13 @@
   },
   "packageManager": "npm@11.13.0",
   "dependencies": {
-    "@prisma/client": "^6.5.0",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
     "bcrypt": "^6.0.0",
     "jose": "^6.2.3",
     "next": "^16.2.10",
     "nodemailer": "^9.0.3",
+    "pg": "^8.22.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "winston": "^3.17.0",
@@ -49,15 +52,15 @@
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-simple-import-sort": "^13.0.0",
     "prettier": "^3.9.4",
-    "prisma": "^6.5.0",
+    "prisma": "^7.8.0",
     "tsx": "^4.19.3",
     "typescript": "^5",
     "vitest": "^4.1.9"
   },
   "overrides": {
+    "@prisma/dev": {
+      "@hono/node-server": "1.19.13"
+    },
     "postcss": "8.5.16"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
   }
 }

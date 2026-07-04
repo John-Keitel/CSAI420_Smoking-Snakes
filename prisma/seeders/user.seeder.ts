@@ -1,10 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../../src/generated/prisma/client';
 
-import { hashPassword } from '@/lib/auth';
+import { hashPassword } from '@/lib/auth/password';
 
-const prisma = new PrismaClient();
-
-export async function seedUsers(): Promise<void> {
+export async function seedUsers(prisma: PrismaClient): Promise<void> {
     console.log('Seeding users...');
     // Add the developer (super admin) user
     await prisma.user.upsert({

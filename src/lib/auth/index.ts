@@ -1,13 +1,14 @@
-import type { Session, User } from '@prisma/client';
-import bcrypt from 'bcrypt';
 import { createHash } from 'crypto';
 import { jwtVerify, SignJWT } from 'jose';
 import { headers } from 'next/headers';
 
+import type { Session, User } from '@/generated/prisma/client';
 import { prisma } from '@/lib/db';
 import { ENV_VARS } from '@/lib/env-vars';
 import { HttpException } from '@/lib/http';
 import { getAppLogger } from '@/lib/logger';
+
+export { hashPassword, verifyPassword } from '@/lib/auth/password';
 
 const logger = getAppLogger('lib:auth');
 
@@ -16,6 +17,10 @@ export type Token = {
 };
 
 const sessionTimeToLiveInSeconds = 60 * 60 * 24 * 30; // 30 days in seconds
+
+function getJwtSecret(): Uint8Array {
+    return new TextEncoder().encode(ENV_VARS.AUTH_SECRET);
+}
 
 export async function createJwtToken(session: Session & { user: User }): Promise<Token> {
     logger.debug('Creating JWT token for session %s', session.id);
@@ -35,7 +40,7 @@ export async function createJwtToken(session: Session & { user: User }): Promise
         .setIssuedAt()
         .setIssuer(ENV_VARS.NEXTAUTH_URL)
         .setExpirationTime(`${sessionTimeToLiveInSeconds}s`)
-        .sign(new TextEncoder().encode(ENV_VARS.AUTH_SECRET));
+        .sign(getJwtSecret());
 
     return {
         token,
@@ -56,7 +61,7 @@ export async function getSession(): Promise<Session & { user: User }> {
             throw new HttpException(401, 'Invalid authorization header');
         }
 
-        const { payload } = await jwtVerify(token, new TextEncoder().encode(ENV_VARS.AUTH_SECRET), {
+        const { payload } = await jwtVerify(token, getJwtSecret(), {
             issuer: ENV_VARS.NEXTAUTH_URL,
             algorithms: ['HS256'],
         });
@@ -100,16 +105,6 @@ export async function getSession(): Promise<Session & { user: User }> {
     }
 }
 
-const SALT_ROUNDS = 12;
-
 export function hashEmail(input: string): string {
     return createHash('md5').update(input).digest('hex');
-}
-
-export async function hashPassword(password: string): Promise<string> {
-    return bcrypt.hash(password, SALT_ROUNDS);
-}
-
-export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-    return bcrypt.compare(password, hashedPassword);
 }

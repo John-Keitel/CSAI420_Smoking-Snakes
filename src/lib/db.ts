@@ -1,5 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 
+import { PrismaClient } from '@/generated/prisma/client';
 import { ENV_VARS } from '@/lib/env-vars';
 
 declare global {
@@ -17,7 +18,9 @@ if (!BigInt.prototype.toJSON) {
 }
 
 const getPrismaClient = () => {
+    const adapter = new PrismaPg({ connectionString: ENV_VARS.DATABASE_URL });
     return new PrismaClient({
+        adapter,
         log: ENV_VARS.DATABASE_DEBUG ? ['query', 'info', 'warn'] : [],
     });
 };
