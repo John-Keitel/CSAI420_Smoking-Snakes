@@ -24,7 +24,7 @@ opencode mcp auth atlassian
 export CONTEXT7_API_KEY="secret"
 ```
 
-Based one:
+Based on:
 https://nextjs.org/blog/building-apis-with-nextjs#11-create-a-nextjs-app
 
 First, run the development server:
@@ -70,7 +70,7 @@ npm install zod
 ## Docker
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 MinIO WebUI: http://localhost:9000
@@ -83,19 +83,53 @@ npm install bcrypt
 npm install @types/bcrypt --save-dev
 ```
 
-## Integration Tests
+## API Routes
 
-Integration tests are designed to test your deployed API. Before running them:
+The application exposes a single Next.js App Router tree under `src/app/`:
 
-1. Deploy your API to Vercel
-2. Get your Vercel domain (should look like: `https://your-project-name.vercel.app`)
-3. Create a `.env` file in the root directory and add:
-   ```
-   API_URL=https://your-vercel-domain.vercel.app
-   ```
-4. Run the integration tests:
-   ```bash
-   npm run test:integration
-   ```
+- `POST /user` — pass through legacy user creation
+- `POST /login` — pass through legacy authentication
+- `POST /customer` — pass through legacy customer creation
+- `POST /rapidsteptest` — pass through legacy IoT step data
+- `GET /riskscore/[email]` — pass through legacy risk-score requests
+- `POST /auth/signin` — authenticate and receive a JWT
+- `POST /auth/signup` — create a new user account
+- `DELETE /auth/signout` — invalidate the current session
+- `GET /users` — list users (authorization-aware)
+- `GET|PATCH|DELETE /users/[userId]` — user management
+- `GET /devices` — list devices
+- `GET|PATCH|DELETE /devices/[deviceId]` — device management
+- `GET /assessments` — list assessments
+- `GET|PATCH|DELETE /assessments/[assessmentId]` — assessment management
+- `POST /steps` — receive step data from a device
 
-**Important:** Integration tests must run against your own deployed API, not the production stedi.me domains. The tests will check this and fail if they detect production domains.
+The legacy migration endpoints use `STEDI_API_BASE_URL`, which defaults to `https://dev.stedi.me`.
+
+## Tests
+
+### Deployed IVR integration tests
+
+```bash
+API_URL=https://your-project.vercel.app npm run test:integration
+```
+
+`API_URL` must point to this project rather than directly to the legacy API.
+
+### End-to-end API tests
+
+E2E tests run against a local instance of the application and require Docker services (PostgreSQL, Mailpit) to be running.
+
+```bash
+# Start dependencies
+docker compose up -d
+
+# Run migrations and seed
+docker compose exec -it postgres psql -U stedi -c "CREATE DATABASE stedi;" || true
+npx prisma migrate deploy
+npx prisma db seed
+
+# Run Playwright API tests
+npm run test:e2e
+```
+
+The Playwright suite tests the database-backed routes against the local application.

@@ -6,6 +6,7 @@ loadEnvConfig(process.cwd());
 const AppSchema = z.object({
     APP_ENV: z.enum(['production', 'local']).default('production'),
     APP_LOG_LEVEL: z.enum(['info', 'error', 'warn', 'debug']).default('info'),
+    STEDI_API_BASE_URL: z.string().url().default('https://dev.stedi.me'),
 });
 
 const DatabaseSchema = z.object({
