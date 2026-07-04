@@ -1,0 +1,43 @@
+# markdownlint-cli2 config
+# Prettier owns whitespace/line-length — disable overlapping rules.
+config:
+    # Line length — prettier handles wrapping; set high to avoid false positives
+    MD013:
+        line_length: 200
+        heading_line_length: 200
+        code_block_line_length: 200
+        tables: false
+        code_blocks: false
+
+    # List indentation — prettier handles this with tabWidth
+    MD007: false
+
+    # Trailing spaces — prettier removes these
+    MD009: false
+
+    # Inline HTML — allowed (we use <!-- confirm --> markers and HTML comments)
+    MD033: false
+
+    # First line must be top-level heading — off for templates, skill files, ADRs with frontmatter
+    MD041: false
+
+    # Ordered list item prefix — use "ordered" (1. 2. 3.) not "one" (1. 1. 1.)
+    MD029:
+        style: "ordered"
+
+    # Allow bare URLs in angle brackets
+    MD034: false
+
+    # Duplicate headings — allowed when under different parent headings
+    MD024:
+        siblings_only: true
+
+globs:
+    - "**/*.md"
+
+ignores:
+    - "node_modules/**"
+    - "docs/templates/**"
+    - ".next/**"
+    - ".agents/**"
+    - ".specs/features/**"

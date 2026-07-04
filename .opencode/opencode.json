@@ -1,0 +1,21 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    "instructions": [
+        ".opencode/rules/spec-driven-flow.md",
+        ".opencode/rules/react-ui-on-demand.md"
+    ],
+    "mcp": {
+        "atlassian": {
+            "type": "remote",
+            "url": "https://mcp.atlassian.com/v1/mcp/authv2",
+            "enabled": true
+        },
+        "context7": {
+            "type": "remote",
+            "url": "https://mcp.context7.com/mcp",
+            "headers": {
+                "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}"
+            }
+        }
+    }
+}

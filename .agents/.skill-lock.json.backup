@@ -1,0 +1,101 @@
+{
+  "version": 2,
+  "skills": {
+    "figma": {
+      "name": "figma",
+      "source": "local",
+      "contentHash": "5da2000639e7aee302556408a161168b8955758da0da3305842e14a93a40a7b7",
+      "installedAt": "2026-06-19T22:24:26.949Z",
+      "updatedAt": "2026-06-19T22:24:26.949Z",
+      "agents": [
+        "cursor"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "playwright-skill": {
+      "name": "playwright-skill",
+      "source": "local",
+      "contentHash": "9c45020d33af9ac2d44c89721f154c94bd73b9d8590117597b9a26920ff9cecc",
+      "installedAt": "2026-06-19T22:24:34.090Z",
+      "updatedAt": "2026-06-19T22:24:34.090Z",
+      "agents": [
+        "cursor"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "react-best-practices": {
+      "name": "react-best-practices",
+      "source": "local",
+      "contentHash": "e96f99e13dc2acc75efc1793aee08fe244802a97a4e190af38bd5a871a5c9636",
+      "installedAt": "2026-06-19T22:25:33.299Z",
+      "updatedAt": "2026-06-19T22:25:33.299Z",
+      "agents": [
+        "cursor"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "react-composition-patterns": {
+      "name": "react-composition-patterns",
+      "source": "local",
+      "contentHash": "171c6a35a0a74a6b37facf2a6e3883a02f53e3f2d429e6aa5834412c65d38dc7",
+      "installedAt": "2026-06-19T22:26:21.324Z",
+      "updatedAt": "2026-06-19T22:26:21.324Z",
+      "agents": [
+        "cursor"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "aws-advisor": {
+      "name": "aws-advisor",
+      "source": "local",
+      "contentHash": "959d64baef88617c3cd3273250de4eef5e0954d627a2c01708b23fd0f6e0f050",
+      "installedAt": "2026-06-19T23:57:15.631Z",
+      "updatedAt": "2026-06-19T23:57:15.631Z",
+      "agents": [
+        "cursor"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "modular-design-principles": {
+      "name": "modular-design-principles",
+      "source": "local",
+      "contentHash": "d53fdca7ae18205376956c39a3a1729edfae843f63e5f2a6c5dd2c64ccd8a576",
+      "installedAt": "2026-06-20T00:01:51.806Z",
+      "updatedAt": "2026-06-20T00:01:51.806Z",
+      "agents": [
+        "cursor"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "frontend-design": {
+      "name": "frontend-design",
+      "source": "local",
+      "contentHash": "b20162c8d6bcdd9137c4afceaeb4f9dce2c1ba3ccb57a96a3228b8cb33104ec4",
+      "installedAt": "2026-06-20T18:41:17.471Z",
+      "updatedAt": "2026-06-20T18:41:17.471Z",
+      "agents": [
+        "cursor"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "web-design-guidelines": {
+      "name": "web-design-guidelines",
+      "source": "local",
+      "contentHash": "213a23fff251b12ddfec648bda148bf10704ef6617e162eb9329cc83963dd138",
+      "installedAt": "2026-06-20T18:41:25.443Z",
+      "updatedAt": "2026-06-20T18:41:25.443Z",
+      "agents": [
+        "cursor"
+      ],
+      "method": "copy",
+      "global": false
+    }
+  }
+}

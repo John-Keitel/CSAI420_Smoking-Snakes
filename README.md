@@ -1,4 +1,28 @@
-## Getting Started
+# Getting Started
+
+## Opencode Setup
+
+```bash
+npm i -g opencode-ai
+```
+
+### Model Economics
+
+Planning: GLM-5.2
+Implementation: Kimi K2.7 Code
+Quick fixes: DeepSeek V4 Flash
+
+### Jira/Confluence
+
+```bash
+opencode mcp auth atlassian
+```
+
+### Context7
+
+```bash
+export CONTEXT7_API_KEY="secret"
+```
 
 Based one:
 https://nextjs.org/blog/building-apis-with-nextjs#11-create-a-nextjs-app
