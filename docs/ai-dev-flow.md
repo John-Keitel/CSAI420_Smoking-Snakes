@@ -295,7 +295,7 @@ commits, or changes issue state.
 
 The review checks these tracks:
 
-- Security and HIPAA
+- Security
 - SDD traceability
 - Requirements and Definition of Done
 - Tests and validation evidence
