@@ -1,4 +1,4 @@
-import { APIRequestContext } from 'playwright-core';
+import type { APIRequestContext } from '@playwright/test';
 
 export async function asDeveloper(request: APIRequestContext) {
     return getAuthHeaders(request, 'developer@stedi.com', '@123Change');
