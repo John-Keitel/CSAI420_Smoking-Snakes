@@ -1,10 +1,17 @@
-import react from '@vitejs/plugin-react';
-import tsconfigPaths from 'vite-tsconfig-paths';
+import { fileURLToPath } from 'node:url';
+
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-    plugins: [tsconfigPaths(), react()],
+    resolve: {
+        alias: {
+            '@': fileURLToPath(new URL('./src', import.meta.url)),
+        },
+    },
     test: {
-        environment: 'jsdom',
+        environment: 'node',
+        include: ['__test__/integration_tests/**/*.test.ts', '__test__/unit/**/*.test.ts'],
+        hookTimeout: 30_000,
+        testTimeout: 30_000,
     },
 });

@@ -8,7 +8,7 @@ type ValidationError = {
 export function formatZodErrors(zodError: ZodError): ValidationError {
     return {
         message: 'validation error',
-        errors: zodError.errors.reduce(
+        errors: zodError.issues.reduce(
             (acc, error) => {
                 const field = error.path.join('.'); // Join path segments for nested fields
                 if (!acc[field]) {

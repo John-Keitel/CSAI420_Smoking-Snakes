@@ -1,0 +1,13 @@
+.next/
+.agents/
+.opencode/
+.specs/
+node_modules/
+src/generated/
+bruno_collection/
+coverage/
+playwright-report/
+test-results/
+package-lock.json
+.markdownlint-cli2.yaml
+ASSIGNMENT.md

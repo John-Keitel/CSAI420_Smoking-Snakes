@@ -24,7 +24,7 @@ opencode mcp auth atlassian
 export CONTEXT7_API_KEY="secret"
 ```
 
-Based one:
+Based on:
 https://nextjs.org/blog/building-apis-with-nextjs#11-create-a-nextjs-app
 
 First, run the development server:
@@ -69,33 +69,118 @@ npm install zod
 
 ## Docker
 
+### Local infrastructure
+
 ```bash
-docker-compose up -d
+docker compose up -d --wait postgres minio mailpit
 ```
 
-MinIO WebUI: http://localhost:9000
+PostgreSQL 18 uses a version-specific data layout. Back up and migrate data from older `postgres_data` volumes before removing them; Compose uses a separate `postgres_18_data` volume to avoid overwriting an older cluster.
+
+MinIO API: http://localhost:9000
+MinIO WebUI: http://localhost:9001
 MailPit WebUI: http://localhost:8025
+
+### Full application stack
+
+Copy the environment template and replace `AUTH_SECRET` before starting the API container:
+
+```bash
+cp .env.example .env
+openssl rand -base64 32
+# Put the generated value in AUTH_SECRET inside .env
+
+docker compose up -d --build --wait
+curl http://127.0.0.1:3000/health
+```
+
+Compose builds the Next.js standalone image, waits for PostgreSQL, applies Prisma migrations once, and then starts the API as a non-root user. PostgreSQL, MinIO, Mailpit, and the API bind to loopback by default.
+
+### Server deployment
+
+After this branch is merged:
+
+```bash
+git clone https://github.com/John-Keitel/CSAI420_Smoking-Snakes.git
+cd CSAI420_Smoking-Snakes
+cp .env.example .env
+```
+
+Update these values in `.env`:
+
+- `APP_ENV=production`
+- `AUTH_SECRET` with a new `openssl rand -base64 32` value
+- `NEXTAUTH_URL=https://api.your-domain.example`
+- PostgreSQL credentials and both `DOCKER_DATABASE_*` URLs if the defaults are changed
+
+Then deploy and verify:
+
+```bash
+docker compose up -d --build --wait
+docker compose ps
+curl http://127.0.0.1:3000/health
+docker compose logs --tail=100 app migrate
+```
+
+Terminate TLS with a host reverse proxy such as Caddy or Nginx and forward the public domain to `127.0.0.1:3000`. Do not commit `.env`.
 
 ## Auth
 
 ```bash
-npm install bcrypt
-npm install @types/bcrypt --save-dev
+npm run db:seed
 ```
 
-## Integration Tests
+The JWT implementation now uses versioned `jose` HS256 tokens. Tokens issued by the previous Auth.js encryption implementation are intentionally invalidated by this upgrade; users must sign in again.
 
-Integration tests are designed to test your deployed API. Before running them:
+## API Routes
 
-1. Deploy your API to Vercel
-2. Get your Vercel domain (should look like: `https://your-project-name.vercel.app`)
-3. Create a `.env` file in the root directory and add:
-   ```
-   API_URL=https://your-vercel-domain.vercel.app
-   ```
-4. Run the integration tests:
-   ```bash
-   npm run test:integration
-   ```
+The application exposes a single Next.js App Router tree under `src/app/`:
 
-**Important:** Integration tests must run against your own deployed API, not the production stedi.me domains. The tests will check this and fail if they detect production domains.
+- `GET /health` — process health check
+- `POST /user` — pass through legacy user creation
+- `POST /login` — pass through legacy authentication
+- `POST /customer` — pass through legacy customer creation
+- `POST /rapidsteptest` — pass through legacy IoT step data
+- `GET /riskscore/[email]` — pass through legacy risk-score requests
+- `POST /auth/signin` — authenticate and receive a JWT
+- `POST /auth/signup` — create a new user account
+- `DELETE /auth/signout` — invalidate the current session
+- `GET /users` — list users (authorization-aware)
+- `GET|PATCH|DELETE /users/[userId]` — user management
+- `GET /devices` — list devices
+- `GET|PATCH|DELETE /devices/[deviceId]` — device management
+- `GET /assessments` — list assessments
+- `GET|PATCH|DELETE /assessments/[assessmentId]` — assessment management
+- `POST /steps` — receive step data from a device
+
+The legacy migration endpoints use `STEDI_API_BASE_URL`, which defaults to `https://dev.stedi.me`.
+
+## Tests
+
+### Deployed IVR integration tests
+
+The assignment integration suite targets this project, which then passes requests through to the legacy API:
+
+```bash
+API_URL=https://your-project.vercel.app npm run test:integration
+```
+
+`API_URL` must not point directly to `stedi.me` or `dev.stedi.me`.
+
+### End-to-end API tests
+
+E2E tests run against a local instance of the application and require Docker services (PostgreSQL, Mailpit) to be running.
+
+```bash
+# Start dependencies
+docker compose up -d --wait postgres minio mailpit
+
+# Run migrations and seed
+npx prisma migrate deploy
+npx prisma db seed
+
+# Run Playwright API tests
+npm run test:e2e
+```
+
+The Playwright suite tests the database-backed routes against the local application.

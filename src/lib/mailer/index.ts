@@ -17,7 +17,6 @@ function createTransport() {
             pass: ENV_VARS.MAILER_SMTP_PASSWORD,
         },
         tls: {
-            ciphers: 'SSLv3',
             rejectUnauthorized: ENV_VARS.APP_ENV !== 'local',
         },
     });

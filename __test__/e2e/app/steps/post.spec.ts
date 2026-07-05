@@ -12,7 +12,5 @@ test('it should work', async ({ request }) => {
     });
 
     expect(response.status()).toBe(202);
-
-    const users = await response.json();
-    expect(users).toBeDefined();
+    expect(await response.body()).toHaveLength(0);
 });

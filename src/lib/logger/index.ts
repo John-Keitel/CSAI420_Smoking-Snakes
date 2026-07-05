@@ -13,7 +13,7 @@ const myFormat = printf(({ level, message, timestamp, module }) => {
     return isProduction ? `[${level}](${module}): ${message}` : `${timestamp} [${level}](${module}): ${message}`;
 });
 
-export function getAppLogger(module: String): Logger {
+export function getAppLogger(module: string): Logger {
     const timestamp = winston.format.timestamp({
         format: 'YYYY-MM-DD HH:mm:ss.SSS',
     });

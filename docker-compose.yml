@@ -1,19 +1,72 @@
 services:
+    migrate:
+        build:
+            context: .
+            target: migrate
+        environment:
+            DATABASE_URL: ${DOCKER_DATABASE_URL:-postgresql://stedi:stedipassword@postgres:5432/postgres?schema=public}
+        depends_on:
+            postgres:
+                condition: service_healthy
+        networks:
+            - app-network
+        restart: 'no'
+
+    app:
+        build:
+            context: .
+            target: runner
+        container_name: stedi-app
+        init: true
+        ports:
+            - '${APP_BIND_ADDRESS:-127.0.0.1}:${APP_PORT:-3000}:3000'
+        environment:
+            APP_ENV: ${APP_ENV:-production}
+            APP_LOG_LEVEL: ${APP_LOG_LEVEL:-info}
+            STEDI_API_BASE_URL: ${STEDI_API_BASE_URL:-https://dev.stedi.me}
+            DATABASE_URL: ${DOCKER_DATABASE_URL:-postgresql://stedi:stedipassword@postgres:5432/postgres?schema=public}
+            DATABASE_DIRECT_URL: ${DOCKER_DATABASE_DIRECT_URL:-postgresql://stedi:stedipassword@postgres:5432/postgres?schema=public}
+            DATABASE_DEBUG: ${DATABASE_DEBUG:-false}
+            AUTH_SECRET: ${AUTH_SECRET:-}
+            NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+            AUTH_DEBUG: ${AUTH_DEBUG:-false}
+            AUTH_TRUST_HOST: ${AUTH_TRUST_HOST:-true}
+            MAILER_FROM_EMAIL: ${MAILER_FROM_EMAIL:-team@stedi.com}
+            MAILER_SMTP_HOST: ${DOCKER_MAILER_SMTP_HOST:-mailpit}
+            MAILER_SMTP_PORT: ${DOCKER_MAILER_SMTP_PORT:-1025}
+            MAILER_SMTP_USERNAME: ${MAILER_SMTP_USERNAME:-unused}
+            MAILER_SMTP_PASSWORD: ${MAILER_SMTP_PASSWORD:-unused}
+            MAILER_SMTP_ENCRYPTION: ${MAILER_SMTP_ENCRYPTION:-tls}
+        depends_on:
+            migrate:
+                condition: service_completed_successfully
+            mailpit:
+                condition: service_healthy
+        networks:
+            - app-network
+        restart: unless-stopped
+
     postgres:
-        image: postgres:alpine
+        image: postgres:18.4-alpine
         container_name: stedi-postgres
         volumes:
-            - postgres_data:/var/lib/postgresql/data
+            - postgres_18_data:/var/lib/postgresql
         ports:
-            - '${POSTGRES_PORT:-5432}:5432'
+            - '${SERVICE_BIND_ADDRESS:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432'
         environment:
             - POSTGRES_USER=${POSTGRES_USER:-stedi}
             - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-stedipassword}
+            - POSTGRES_DB=${POSTGRES_DB:-postgres}
         networks:
             - app-network
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+            interval: 5s
+            timeout: 5s
+            retries: 5
 
     minio:
-        image: minio/minio:latest
+        image: minio/minio:RELEASE.2025-09-07T16-13-09Z
         container_name: stedi-minio
         environment:
             MINIO_ROOT_USER: stedi
@@ -21,23 +74,33 @@ services:
         volumes:
             - minio_data:/data
         ports:
-            - "${MINIO_API_PORT:-9000}:9000"
-            - "${MINIO_WEBUI_PORT:-9001}:9001"
+            - '${SERVICE_BIND_ADDRESS:-127.0.0.1}:${MINIO_API_PORT:-9000}:9000'
+            - '${SERVICE_BIND_ADDRESS:-127.0.0.1}:${MINIO_WEBUI_PORT:-9001}:9001'
         networks:
             - app-network
-        command: server /data --console-address ":9001"
+        command: server /data --console-address ':9001'
+        healthcheck:
+            test: ['CMD', 'mc', 'ready', 'local']
+            interval: 5s
+            timeout: 5s
+            retries: 5
 
     mailpit:
-        image: axllent/mailpit:latest
+        image: axllent/mailpit:v1.29.7
         container_name: stedi-mailpit
         ports:
-            - "${MAILPIT_SMTP_PORT:-1025}:1025"
-            - "${MAILPIT_WEBUI_PORT:-8025}:8025"
+            - '${SERVICE_BIND_ADDRESS:-127.0.0.1}:${MAILPIT_SMTP_PORT:-1025}:1025'
+            - '${SERVICE_BIND_ADDRESS:-127.0.0.1}:${MAILPIT_WEBUI_PORT:-8025}:8025'
         networks:
             - app-network
+        healthcheck:
+            test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:8025/livez']
+            interval: 5s
+            timeout: 5s
+            retries: 5
 
 volumes:
-    postgres_data:
+    postgres_18_data:
     minio_data:
 
 networks:
