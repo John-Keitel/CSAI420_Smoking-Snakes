@@ -4,5 +4,13 @@
     "semi": true,
     "singleQuote": true,
     "endOfLine": "lf",
-    "printWidth": 144
+    "printWidth": 144,
+    "overrides": [
+        {
+            "files": "package.json",
+            "options": {
+                "tabWidth": 2
+            }
+        }
+    ]
 }
