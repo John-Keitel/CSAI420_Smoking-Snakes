@@ -1,4 +1,4 @@
-.PHONY: help install build format format-fix lint lint-fix typecheck test test-integration test-e2e-ui up down dev db-generate db-push db-migrate db-seed
+.PHONY: help install build format format-fix lint lint-fix typecheck test test-integration test-e2e-ui up deploy logs down dev db-generate db-push db-migrate db-seed
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -34,7 +34,13 @@ test-e2e-ui: ## Open the Playwright UI mode
 	npm run test:e2e:ui
 
 up: ## Start local infrastructure (Postgres, MinIO, Mailpit)
-	docker compose up -d
+	docker compose up -d --wait postgres minio mailpit
+
+deploy: ## Build and start the complete Docker application stack
+	docker compose up -d --build --wait
+
+logs: ## Follow application and migration logs
+	docker compose logs --follow app migrate
 
 down: ## Stop local infrastructure
 	docker compose down

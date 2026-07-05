@@ -77,7 +77,7 @@ jobs:
               run: npm ci
 
             - name: Start local infrastructure
-              run: docker compose up -d --wait --wait-timeout 60
+              run: docker compose up -d --wait --wait-timeout 60 postgres minio mailpit
 
             - name: Deploy database migrations
               run: npx prisma migrate deploy
