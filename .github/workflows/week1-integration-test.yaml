@@ -34,8 +34,8 @@ jobs:
               uses: classroom-resources/autograding-command-grader@v1
               with:
                   test-name: Run Week 1 Integration Tests
-                  setup-command: npm ci
-                  command: npm run test:integration
+                  setup-command: DATABASE_URL=postgresql://unused:unused@127.0.0.1:5432/unused npm ci
+                  command: API_URL="${{ vars.API_URL }}" npm run test:integration
                   timeout: 10
 
             - name: Publish autograding result
