@@ -124,3 +124,32 @@ model Step {
 
     @@map("steps")
 }
+
+enum ClinicianAccessStatus {
+    PENDING
+    APPROVED
+    REJECTED
+}
+
+model ClinicianAccessRequest {
+    id           String                 @id @default(cuid())
+    clinicianId  String?                @map("clinician_id") @db.VarChar(32)
+    customerEmail String                @map("customer_email") @db.VarChar(128)
+    status       ClinicianAccessStatus  @default(PENDING)
+    accessToken  String?                @map("access_token") @db.VarChar(128)
+    tokenExpiresAt DateTime?            @map("token_expires_at")
+    createdAt    DateTime               @default(now()) @map("created_at")
+    expiresAt    DateTime               @map("expires_at")
+
+    @@map("clinician_access_requests")
+}
+
+model CustomerConsent {
+    id           String   @id @default(cuid())
+    customerEmail String  @unique @map("customer_email") @db.VarChar(128)
+    agreedToTerms Boolean @map("agreed_to_terms")
+    createdAt    DateTime @default(now()) @map("created_at")
+    updatedAt    DateTime @updatedAt @map("updated_at")
+
+    @@map("customer_consents")
+}
