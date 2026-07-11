@@ -55,6 +55,15 @@ Format:
 - **Date**: 2026-07-04
 - **Status**: active
 
+### AD-003
+
+- **Decision**: Epic 3 V1 uses STEDI pass-through only — no Kafka, SNS, SQS, or EventBridge in this repository for real-time sensor data.
+- **Reason**: PRFAQ Step 4 is “transmit to cloud API for analysis”; the IVR TDD defers dedicated queueing to V2 and uses STEDI ingestion plus polling `/devices/updates/recent`. Assignment 1.7 scores via STEDI `/riskscore`.
+- **Trade-off**: No local stream processing or offline buffering in V1; latency and availability depend on STEDI.
+- **Scope**: SCRUM-17 / `.specs/features/realtime-data-path/`, STEDI sensor and score routes.
+- **Date**: 2026-07-11
+- **Status**: active
+
 ## Handoff
 
 <!--
@@ -72,11 +81,11 @@ Format:
 - **Branch**: [git branch name]
 -->
 
-- **Feature**: fix-npm-vulns / .specs/features/fix-npm-vulns/
-- **Phase / Task**: Tasks T2 — RESOLVE RESIDUALS
-- **Completed**: T1, T2
+- **Feature**: realtime-data-path / .specs/features/realtime-data-path/
+- **Phase / Task**: Planning closed — tasks published to SCRUM-18…22
+- **Completed**: spec.md, design.md, tasks.md, epic brief, Jira rewrite
 - **In-progress**: (none)
-- **Next step**: Awaiting Execute-session Verifier; follow-up slice required to bump direct `nodemailer` from `^6.10.0` to `^9.0.3` with email smoke tests.
-- **Blockers**: `nodemailer` direct dep cannot be overridden; `@auth/core` advisory is transitive via nodemailer.
-- **Uncommitted files**: none
-- **Branch**: jira-scrum-45
+- **Next step**: Start a new session with `/sdd-execute-jira` on SCRUM-17 / branch `jira-scrum-17`.
+- **Blockers**: none
+- **Uncommitted files**: planning artifacts committed on slice branch only
+- **Branch**: jira-scrum-17
