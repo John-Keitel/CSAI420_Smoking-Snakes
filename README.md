@@ -155,7 +155,7 @@ The application exposes a single Next.js App Router tree under `src/app/`:
 - `GET|PATCH|DELETE /assessments/[assessmentId]` — assessment management
 - `POST /steps` — receive step data from a device
 
-The STEDI pass-through endpoints use `STEDI_API_BASE_URL`, which defaults to `https://dev.stedi.me`. Epic 3 (Real-Time Data Transmission & Analysis) is V1 pass-through only: this API does not introduce Kafka, SNS, SQS, or EventBridge, and STEDI owns scoring. See `docs/product/epic-3-realtime-data-path.md`.
+The STEDI pass-through endpoints use `STEDI_API_BASE_URL`, which defaults to `https://dev.stedi.me`. Upstream fetches abort after `STEDI_PROXY_TIMEOUT_MS` (default `8000`) and return HTTP `504` on timeout. Epic 3 (Real-Time Data Transmission & Analysis) is V1 pass-through only: this API does not introduce Kafka, SNS, SQS, or EventBridge, and STEDI owns scoring. See `docs/product/epic-3-realtime-data-path.md`.
 
 ## Tests
 

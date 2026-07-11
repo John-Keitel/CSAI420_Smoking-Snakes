@@ -6,6 +6,7 @@ import { proxyToStedi } from '@/lib/stedi-api';
 vi.mock('@/lib/env-vars', () => ({
     ENV_VARS: {
         STEDI_API_BASE_URL: 'https://dev.stedi.me',
+        STEDI_PROXY_TIMEOUT_MS: 8000,
     },
 }));
 
@@ -35,6 +36,29 @@ describe('proxyToStedi', () => {
         expect(response.status).toBe(200);
         expect(fetchMock).toHaveBeenCalledOnce();
         expect(String(fetchMock.mock.calls[0][0])).toBe('https://dev.stedi.me/user');
+
+        const fetchInit = fetchMock.mock.calls[0][1];
+        expect(fetchInit?.signal).toBeInstanceOf(AbortSignal);
+    });
+
+    it('returns 504 when the upstream fetch times out', async () => {
+        const timeoutError = new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+        fetchMock.mockRejectedValueOnce(timeoutError);
+
+        const response = await proxyToStedi(createRequest(), '/devices/updates/recent?seconds=30');
+
+        expect(response.status).toBe(504);
+        await expect(response.json()).resolves.toEqual({ error: 'Upstream request timed out' });
+    });
+
+    it('returns 504 when the upstream fetch is aborted', async () => {
+        const abortError = new DOMException('The operation was aborted', 'AbortError');
+        fetchMock.mockRejectedValueOnce(abortError);
+
+        const response = await proxyToStedi(createRequest(), '/user');
+
+        expect(response.status).toBe(504);
+        await expect(response.json()).resolves.toEqual({ error: 'Upstream request timed out' });
     });
 
     it.each(['https://attacker.example/collect', '//attacker.example/collect', '/\\attacker.example/collect'])(

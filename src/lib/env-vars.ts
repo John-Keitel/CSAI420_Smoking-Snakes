@@ -9,6 +9,7 @@ const AppSchema = z.object({
     APP_ENV: z.enum(['production', 'local']).default('production'),
     APP_LOG_LEVEL: z.enum(['info', 'error', 'warn', 'debug']).default('info'),
     STEDI_API_BASE_URL: z.url().default('https://dev.stedi.me'),
+    STEDI_PROXY_TIMEOUT_MS: z.coerce.number().int().positive().default(8000),
 });
 
 const DatabaseSchema = z.object({
