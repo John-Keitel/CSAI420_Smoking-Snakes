@@ -10,6 +10,14 @@ type ProxyOptions = {
     responseContentType?: string;
 };
 
+function isUpstreamTimeoutError(error: unknown): boolean {
+    if (!(error instanceof Error)) {
+        return false;
+    }
+
+    return error.name === 'TimeoutError' || error.name === 'AbortError';
+}
+
 export async function proxyToStedi(request: NextRequest, path: string, options: ProxyOptions = {}): Promise<NextResponse> {
     const headers = new Headers();
     const contentType = request.headers.get('content-type');
@@ -38,6 +46,7 @@ export async function proxyToStedi(request: NextRequest, path: string, options: 
             headers,
             body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text(),
             cache: 'no-store',
+            signal: AbortSignal.timeout(ENV_VARS.STEDI_PROXY_TIMEOUT_MS),
         });
 
         const responseHeaders = new Headers();
@@ -48,10 +57,9 @@ export async function proxyToStedi(request: NextRequest, path: string, options: 
             headers: responseHeaders,
         });
     } catch (error: unknown) {
-        const errorName = error instanceof Error ? error.name : '';
-        if (errorName === 'AbortError' || errorName === 'TimeoutError') {
+        if (isUpstreamTimeoutError(error)) {
             logger.error('STEDI upstream request timed out for %s: %s', path, error);
-            return NextResponse.json({ error: 'Upstream request timeout' }, { status: 504 });
+            return NextResponse.json({ error: 'Upstream request timed out' }, { status: 504 });
         }
 
         logger.error('STEDI upstream request failed for %s: %s', path, error);
