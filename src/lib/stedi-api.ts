@@ -56,7 +56,7 @@ export async function proxyToStedi(request: NextRequest, path: string, options: 
             status: response.status,
             headers: responseHeaders,
         });
-    } catch (error) {
+    } catch (error: unknown) {
         if (isUpstreamTimeoutError(error)) {
             logger.error('STEDI upstream request timed out for %s: %s', path, error);
             return NextResponse.json({ error: 'Upstream request timed out' }, { status: 504 });

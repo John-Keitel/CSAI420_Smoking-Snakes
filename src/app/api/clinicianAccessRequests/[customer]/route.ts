@@ -10,8 +10,12 @@ export async function GET(request: NextRequest, { params }: { params: { customer
         const customer = decodeURIComponent(params.customer ?? '');
         if (!customer) return NextResponse.json({ error: 'customer param is required' }, { status: 400 });
 
+        const now = new Date();
         const requests = await prisma.clinicianAccessRequest.findMany({
-            where: { customerEmail: customer },
+            where: {
+                customerEmail: customer,
+                OR: [{ status: { not: 'PENDING' } }, { status: 'PENDING', expiresAt: { gte: now } }],
+            },
             orderBy: { createdAt: 'desc' },
         });
 
