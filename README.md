@@ -140,8 +140,10 @@ The application exposes a single Next.js App Router tree under `src/app/`:
 - `POST /user` — pass through legacy user creation
 - `POST /login` — pass through legacy authentication
 - `POST /customer` — pass through legacy customer creation
-- `POST /rapidsteptest` — pass through legacy IoT step data
-- `GET /riskscore/[email]` — pass through legacy risk-score requests
+- `POST /rapidsteptest` — pass through STEDI IoT step data (Epic 3)
+- `POST /sensorUpdates` — pass through STEDI sensor updates (Epic 3)
+- `GET /devices/updates/recent` — pass through recent STEDI device updates (Epic 3)
+- `GET /riskscore/[email]` — pass through STEDI risk/balance score (Epic 3)
 - `POST /auth/signin` — authenticate and receive a JWT
 - `POST /auth/signup` — create a new user account
 - `DELETE /auth/signout` — invalidate the current session
@@ -153,7 +155,7 @@ The application exposes a single Next.js App Router tree under `src/app/`:
 - `GET|PATCH|DELETE /assessments/[assessmentId]` — assessment management
 - `POST /steps` — receive step data from a device
 
-The legacy migration endpoints use `STEDI_API_BASE_URL`, which defaults to `https://dev.stedi.me`.
+The STEDI pass-through endpoints use `STEDI_API_BASE_URL`, which defaults to `https://dev.stedi.me`. Upstream fetches abort after `STEDI_PROXY_TIMEOUT_MS` (default `8000`) and return HTTP `504` on timeout. Epic 3 (Real-Time Data Transmission & Analysis) is V1 pass-through only: this API does not introduce Kafka, SNS, SQS, or EventBridge, and STEDI owns scoring. See `docs/product/epic-3-realtime-data-path.md`.
 
 ## Tests
 
