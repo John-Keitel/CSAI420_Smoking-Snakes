@@ -47,7 +47,13 @@ export async function proxyToStedi(request: NextRequest, path: string, options: 
             status: response.status,
             headers: responseHeaders,
         });
-    } catch (error) {
+    } catch (error: unknown) {
+        const errorName = error instanceof Error ? error.name : '';
+        if (errorName === 'AbortError' || errorName === 'TimeoutError') {
+            logger.error('STEDI upstream request timed out for %s: %s', path, error);
+            return NextResponse.json({ error: 'Upstream request timeout' }, { status: 504 });
+        }
+
         logger.error('STEDI upstream request failed for %s: %s', path, error);
         return NextResponse.json({ error: 'Upstream service unavailable' }, { status: 502 });
     }
