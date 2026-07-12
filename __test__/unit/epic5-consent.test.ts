@@ -37,7 +37,7 @@ describe('Epic 5 consent route handlers', () => {
         });
 
         const response = await getConsentByCustomer(request, {
-            params: { customer: 'customer@example.com' },
+            params: Promise.resolve({ customer: 'customer@example.com' }),
         });
 
         expect(response.status).toBe(401);

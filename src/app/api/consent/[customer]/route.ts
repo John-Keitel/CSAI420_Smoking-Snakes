@@ -2,18 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { validateSureStepsSession } from '@/lib/auth/suresteps';
 
+type RouteContext = {
+    params: Promise<{
+        customer: string;
+    }>;
+};
+
 /**
  * GET /api/consent/[customer]
  * - Returns the current CustomerConsent and any valid clinician access tokens
  * PATCH /api/consent/[customer]
  * - Updates the customer's consent (agreedToTerms)
  */
-export async function GET(request: NextRequest, { params }: { params: { customer: string } }) {
+export async function GET(request: NextRequest, { params }: RouteContext) {
     try {
         const sessionCheck = validateSureStepsSession(request);
         if (!sessionCheck.ok) return NextResponse.json({ error: sessionCheck.reason }, { status: 401 });
 
-        const customer = decodeURIComponent(params.customer ?? '');
+        const { customer: customerParam } = await params;
+        const customer = decodeURIComponent(customerParam ?? '');
         if (!customer) return NextResponse.json({ error: 'customer param is required' }, { status: 400 });
 
         const consent = await prisma.customerConsent.findUnique({ where: { customerEmail: customer } });
@@ -35,12 +42,13 @@ export async function GET(request: NextRequest, { params }: { params: { customer
     }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { customer: string } }) {
+export async function PATCH(request: NextRequest, { params }: RouteContext) {
     try {
         const sessionCheck = validateSureStepsSession(request);
         if (!sessionCheck.ok) return NextResponse.json({ error: sessionCheck.reason }, { status: 401 });
 
-        const customer = decodeURIComponent(params.customer ?? '');
+        const { customer: customerParam } = await params;
+        const customer = decodeURIComponent(customerParam ?? '');
         if (!customer) return NextResponse.json({ error: 'customer param is required' }, { status: 400 });
 
         const body = await request.json();
