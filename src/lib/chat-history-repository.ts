@@ -1,5 +1,50 @@
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'crypto';
+
 import { ChatMessage, ChatMessageSender, Prisma } from '@/generated/prisma/client';
 import { prisma } from '@/lib/db';
+
+const CHAT_ENCRYPTION_ALGORITHM = 'aes-256-cbc';
+
+function getEncryptionSecret(): string {
+    const secret = process.env.CHAT_ENCRYPTION_KEY;
+
+    if (!secret) {
+        throw new Error('CHAT_ENCRYPTION_KEY is not configured');
+    }
+
+    return secret;
+}
+
+function getEncryptionKey(secret: string): Buffer {
+    return createHash('sha256').update(secret).digest();
+}
+
+function encryptText(text: string): string {
+    const secret = getEncryptionSecret();
+    const key = getEncryptionKey(secret);
+    const iv = randomBytes(16);
+    const cipher = createCipheriv(CHAT_ENCRYPTION_ALGORITHM, key, iv);
+    const encrypted = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
+
+    return `${iv.toString('hex')}:${encrypted.toString('hex')}`;
+}
+
+function decryptText(cryptoText: string): string {
+    const secret = getEncryptionSecret();
+    const key = getEncryptionKey(secret);
+    const [ivHex, encryptedHex] = cryptoText.split(':');
+
+    if (!ivHex || !encryptedHex) {
+        throw new Error('Invalid encrypted message format');
+    }
+
+    const iv = Buffer.from(ivHex, 'hex');
+    const encrypted = Buffer.from(encryptedHex, 'hex');
+    const decipher = createDecipheriv(CHAT_ENCRYPTION_ALGORITHM, key, iv);
+    const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+
+    return decrypted.toString('utf8');
+}
 
 export async function findOrCreateSession(customerEmail: string): Promise<string> {
     try {
@@ -39,10 +84,12 @@ export async function findOrCreateSession(customerEmail: string): Promise<string
 
 export async function saveUserMessage(sessionId: string, content: string): Promise<ChatMessage> {
     try {
+        const encryptedContent = encryptText(content);
+
         return await prisma.chatMessage.create({
             data: {
                 sessionId,
-                content,
+                content: encryptedContent,
                 sender: ChatMessageSender.user,
             },
         });
@@ -58,10 +105,12 @@ export async function saveUserMessage(sessionId: string, content: string): Promi
 
 export async function saveAiResponse(sessionId: string, content: string, metadata: any): Promise<ChatMessage> {
     try {
+        const encryptedContent = encryptText(content);
+
         return await prisma.chatMessage.create({
             data: {
                 sessionId,
-                content,
+                content: encryptedContent,
                 sender: ChatMessageSender.ai,
                 metadata: metadata as Prisma.InputJsonValue,
             },
@@ -89,10 +138,15 @@ export async function getLatestSessionMessages(customerEmail: string): Promise<C
             return [];
         }
 
-        return await prisma.chatMessage.findMany({
+        const messages = await prisma.chatMessage.findMany({
             where: { sessionId: latestSession.id },
             orderBy: { createdAt: 'asc' },
         });
+
+        return messages.map((message) => ({
+            ...message,
+            content: decryptText(message.content),
+        }));
     } catch (error) {
         console.error('[chat-history-repository] Failed to get latest session messages', {
             customerEmail,

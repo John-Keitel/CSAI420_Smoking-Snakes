@@ -244,6 +244,65 @@ describe('POST /api/coach/chat integration boundaries', () => {
         expect(loggerErrorMock).toHaveBeenCalledOnce();
         expect(loggerErrorMock).toHaveBeenCalledWith('request failed: %s', expect.any(Error));
     });
+
+    it('Path 200 (Concurrency): deve lidar com requisições de escrita simultâneas na mesma sessão sem perda de dados ou falhas de concorrência', async () => {
+        const coachResult: DummyCoachResponse = {
+            responseText: 'Resposta segura do coach para escrita concorrente.',
+            deepBehavioralLogExportRecommendation: 'allow',
+            medicalSafetyNotice: 'No diagnosis or prescriptions can be provided.',
+            escalate: false,
+        };
+
+        const {
+            POST,
+            findOrCreateSessionMock,
+            saveUserMessageMock,
+            generateCoachAiResponseMock,
+            saveAiResponseMock,
+        } = await loadRoute({
+            sessionCheck: { ok: true },
+            coachResult,
+            sessionId: 'session-concurrency',
+        });
+
+        const payloads = Array.from({ length: 5 }, (_, index) => ({
+            customerEmail: 'patient@example.com',
+            currentBalanceScore: 70 + index,
+            previousBalanceScore: 80,
+            patientContext: `Concurrent prompt ${index + 1}`,
+        }));
+
+        const responses = await Promise.all(payloads.map((payload) => POST(buildRequest(payload))));
+        const responseBodies = await Promise.all(responses.map((response) => response.json()));
+
+        expect(responses.every((response) => response.status === 200)).toBe(true);
+        expect(responseBodies).toEqual(Array.from({ length: 5 }, () => coachResult));
+
+        expect(findOrCreateSessionMock).toHaveBeenCalledTimes(5);
+        expect(saveUserMessageMock).toHaveBeenCalledTimes(5);
+        expect(generateCoachAiResponseMock).toHaveBeenCalledTimes(5);
+        expect(saveAiResponseMock).toHaveBeenCalledTimes(5);
+
+        for (const call of findOrCreateSessionMock.mock.calls) {
+            expect(call[0]).toBe('patient@example.com');
+        }
+
+        for (const call of saveUserMessageMock.mock.calls) {
+            expect(call[0]).toBe('session-concurrency');
+        }
+
+        const savedPrompts = saveUserMessageMock.mock.calls.map((call) => call[1]);
+        expect(savedPrompts).toEqual(expect.arrayContaining(payloads.map((payload) => payload.patientContext)));
+
+        for (const call of saveAiResponseMock.mock.calls) {
+            expect(call[0]).toBe('session-concurrency');
+            expect(call[1]).toBe('Resposta segura do coach para escrita concorrente.');
+            expect(call[2]).toEqual({
+                escalate: false,
+                clinicianTokenActive: true,
+            });
+        }
+    });
 });
 
 describe('GET /api/coach/chat integration boundaries', () => {
