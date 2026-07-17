@@ -52,8 +52,43 @@ model User {
     sessions    Session[]
     assessments Assessment[]
     Step        Step[]
+    chatSessions ChatSession[]
 
     @@map("users")
+}
+
+enum ChatMessageSender {
+    user
+    ai
+    system
+}
+
+model ChatSession {
+    id            String        @id @default(uuid()) @db.Uuid
+    customerEmail String        @map("customer_email") @db.VarChar(128)
+    createdAt     DateTime      @default(now()) @map("created_at")
+
+    // Relations
+    customer User          @relation(fields: [customerEmail], references: [email], onDelete: Cascade)
+    messages ChatMessage[]
+
+    @@index([customerEmail])
+    @@map("chat_sessions")
+}
+
+model ChatMessage {
+    id        String            @id @default(uuid()) @db.Uuid
+    sessionId String            @map("session_id") @db.Uuid
+    sender    ChatMessageSender
+    content   String            @db.Text
+    metadata  Json?
+    createdAt DateTime          @default(now()) @map("created_at")
+
+    // Relations
+    session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+    @@index([sessionId, createdAt])
+    @@map("chat_messages")
 }
 
 model Session {
