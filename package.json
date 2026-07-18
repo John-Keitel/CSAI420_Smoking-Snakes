@@ -36,6 +36,7 @@
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "bcrypt": "^6.0.0",
+    "expo-server-sdk": "^6.1.0",
     "jose": "^6.2.3",
     "next": "^16.2.10",
     "nodemailer": "^9.0.3",
