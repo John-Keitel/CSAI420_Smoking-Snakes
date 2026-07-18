@@ -13,7 +13,7 @@
     "test:unit": "vitest run __test__/unit",
     "test:integration": "vitest run __test__/integration_tests",
     "test:watch": "vitest __test__/integration_tests",
-    "test:e2e": "playwright test",
+    "test:e2e": "npm run build && playwright test",
     "test:e2e:ui": "playwright test --ui",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -26,7 +26,7 @@
     "db:seed": "prisma db seed"
   },
   "engines": {
-    "node": ">=24.0.0",
+    "node": ">=20.0.0",
     "npm": ">=10.0.0"
   },
   "packageManager": "npm@11.13.0",
@@ -61,10 +61,11 @@
     "prettier": "^3.9.5",
     "prisma": "^7.8.0",
     "tsx": "^4.23.0",
-    "typescript": "^7.0.2",
+    "typescript": "5.9.3",
     "vitest": "^4.1.10"
   },
   "overrides": {
+    "typescript": "5.9.3",
     "@prisma/dev": {
       "@hono/node-server": "1.19.13"
     },
