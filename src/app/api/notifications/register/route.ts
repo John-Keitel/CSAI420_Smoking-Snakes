@@ -9,9 +9,21 @@ import { formatZodErrors } from '@/lib/validation';
 
 const logger = getAppLogger('api:notifications:register');
 
+type ValidSession = {
+    ok: true;
+    user: {
+        id: string;
+    };
+};
+
 function validateSession(request: NextRequest) {
     const sessionCheck = validateSureStepsSession(request);
     if (!sessionCheck.ok) throw new HttpException(401, sessionCheck.reason ?? 'Unauthorized');
+
+    const userId = (sessionCheck as { user?: { id?: string } }).user?.id;
+    if (!userId) throw new HttpException(401, 'Unauthorized');
+
+    return sessionCheck as ValidSession;
 }
 
 function errorResponse(error: unknown) {
@@ -26,7 +38,8 @@ function errorResponse(error: unknown) {
 // Register (or refresh) an Expo push token for a user.
 export async function POST(request: NextRequest) {
     try {
-        validateSession(request);
+        const sessionCheck = validateSession(request);
+        const userId = sessionCheck.user.id;
 
         const body = await request.json();
 
@@ -35,7 +48,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(formatZodErrors(result.error), { status: 422 });
         }
 
-        const { token, userId, deviceName, platform } = result.data;
+        const { token, deviceName, platform } = result.data;
 
         const user = await prisma.user.findUnique({ where: { id: userId } });
         if (!user) throw new HttpException(404, 'User not found');

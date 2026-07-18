@@ -62,7 +62,6 @@ export const CreateStepSchema = z.object({
 export const RegisterPushTokenSchema = z.object({
     // Expo push tokens look like `ExponentPushToken[xxxxxxxx]` (or the legacy `ExpoPushToken[...]`).
     token: z.string({ error: 'required' }).max(255).regex(/^Expo(nent)?PushToken\[[^\]]+\]$/, 'invalid Expo push token format'),
-    userId: z.string({ error: 'required' }).min(1),
     deviceName: z.string().min(1).max(64).optional(),
     platform: z.enum(['ios', 'android']).optional(),
 });
