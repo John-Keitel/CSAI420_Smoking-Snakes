@@ -4,6 +4,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 type SessionCheck = {
     ok: boolean;
     reason?: string;
+    user?: {
+        id: string;
+        email?: string;
+        type?: 'patient' | 'standard' | 'provider' | 'developer' | 'clinician';
+    };
 };
 
 type DummyCoachResponse = {
@@ -118,7 +123,6 @@ describe('POST /api/coach/chat integration boundaries', () => {
 
         const response = await POST(
             buildRequest({
-                customerEmail: 'patient@example.com',
                 currentBalanceScore: 75,
                 previousBalanceScore: 80,
                 patientContext: 'Recovering confidence with walking.',
@@ -136,12 +140,11 @@ describe('POST /api/coach/chat integration boundaries', () => {
     it('Path 400: returns bad request when payload is missing currentBalanceScore', async () => {
         const { POST, generateCoachAiResponseMock, findOrCreateSessionMock, saveUserMessageMock, saveAiResponseMock } =
             await loadRoute({
-            sessionCheck: { ok: true },
+            sessionCheck: { ok: true, user: { id: 'user-123', email: 'patient@example.com', type: 'standard' } },
         });
 
         const response = await POST(
             buildRequest({
-                customerEmail: 'patient@example.com',
                 previousBalanceScore: 80,
                 patientContext: 'Needs confidence coaching.',
             })
@@ -169,14 +172,13 @@ describe('POST /api/coach/chat integration boundaries', () => {
             generateCoachAiResponseMock,
             saveAiResponseMock,
         } = await loadRoute({
-            sessionCheck: { ok: true },
+            sessionCheck: { ok: true, user: { id: 'user-123', email: 'patient@example.com', type: 'standard' } },
             coachResult,
             sessionId: 'session-abc',
         });
 
         const response = await POST(
             buildRequest({
-                customerEmail: 'patient@example.com',
                 currentBalanceScore: 73,
                 previousBalanceScore: 78,
                 patientContext: 'Wants short daily reminders.',
@@ -223,13 +225,12 @@ describe('POST /api/coach/chat integration boundaries', () => {
             generateCoachAiResponseMock,
             saveAiResponseMock,
         } = await loadRoute({
-            sessionCheck: { ok: true },
+            sessionCheck: { ok: true, user: { id: 'user-123', email: 'patient@example.com', type: 'standard' } },
             findOrCreateError: new Error('Database connection failed'),
         });
 
         const response = await POST(
             buildRequest({
-                customerEmail: 'patient@example.com',
                 currentBalanceScore: 70,
                 previousBalanceScore: 80,
                 patientContext: 'Recently reported instability.',
@@ -260,13 +261,12 @@ describe('POST /api/coach/chat integration boundaries', () => {
             generateCoachAiResponseMock,
             saveAiResponseMock,
         } = await loadRoute({
-            sessionCheck: { ok: true },
+            sessionCheck: { ok: true, user: { id: 'user-123', email: 'patient@example.com', type: 'standard' } },
             coachResult,
             sessionId: 'session-concurrency',
         });
 
         const payloads = Array.from({ length: 5 }, (_, index) => ({
-            customerEmail: 'patient@example.com',
             currentBalanceScore: 70 + index,
             previousBalanceScore: 80,
             patientContext: `Concurrent prompt ${index + 1}`,
@@ -331,11 +331,11 @@ describe('GET /api/coach/chat integration boundaries', () => {
         ];
 
         const { GET, getLatestSessionMessagesMock } = await loadRoute({
-            sessionCheck: { ok: true },
+            sessionCheck: { ok: true, user: { id: 'user-123', email: 'patient@example.com', type: 'standard' } },
             latestMessages: messages,
         });
 
-        const response = await GET(buildGetRequest('?customerEmail=patient@example.com'));
+        const response = await GET(buildGetRequest(''));
         const expectedResponsePayload = messages.map((message) => ({
             ...message,
             createdAt: message.createdAt.toISOString(),
@@ -347,16 +347,13 @@ describe('GET /api/coach/chat integration boundaries', () => {
         expect(getLatestSessionMessagesMock).toHaveBeenCalledWith('patient@example.com');
     });
 
-    it('Path 400 (GET): should return bad request when customerEmail query parameter is missing or invalid', async () => {
+    it('Path 401 (GET): should return unauthorized when session user email is missing', async () => {
         const { GET, getLatestSessionMessagesMock } = await loadRoute({
-            sessionCheck: { ok: true },
+            sessionCheck: { ok: true, user: { id: 'provider-1', type: 'provider' } },
         });
 
-        const missingParamResponse = await GET(buildGetRequest(''));
-        expect(missingParamResponse.status).toBe(400);
-
-        const invalidParamResponse = await GET(buildGetRequest('?customerEmail=invalid-email'));
-        expect(invalidParamResponse.status).toBe(400);
+        const response = await GET(buildGetRequest(''));
+        expect(response.status).toBe(401);
 
         expect(getLatestSessionMessagesMock).not.toHaveBeenCalled();
     });

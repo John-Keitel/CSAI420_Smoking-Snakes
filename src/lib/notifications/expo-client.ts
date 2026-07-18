@@ -102,6 +102,7 @@ export async function sendPushNotifications(messages: ExpoPushMessage[]): Promis
                             if (deactivated) {
                                 summary.deactivated++;
                             }
+                        }
                     }
                 }
             } catch (error) {
