@@ -49,6 +49,10 @@ model User {
     updatedAt DateTime @updatedAt @map("updated_at")
 
     // Relations
+    sessions       Session[]
+    assessments    Assessment[]
+    Step           Step[]
+    expoPushTokens ExpoPushToken[]
     sessions    Session[]
     assessments Assessment[]
     Step        Step[]
@@ -187,4 +191,26 @@ model CustomerConsent {
     updatedAt    DateTime @updatedAt @map("updated_at")
 
     @@map("customer_consents")
+}
+
+model ExpoPushToken {
+    id     String @id @default(cuid())
+    userId String @map("user_id") @db.VarChar(32)
+
+    // Token
+    token      String    @unique @db.VarChar(255)
+    deviceName String?   @map("device_name") @db.VarChar(64)
+    platform   String?   @db.VarChar(16)
+    isActive   Boolean   @default(true) @map("is_active")
+    lastUsedAt DateTime? @map("last_used_at")
+
+    // Audit
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    // Relations
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
+    @@map("expo_push_tokens")
 }
