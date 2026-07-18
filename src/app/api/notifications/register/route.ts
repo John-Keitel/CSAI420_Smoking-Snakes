@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
             update: { userId, deviceName, platform, isActive: true, lastUsedAt },
         });
 
-        logger.info('registered expo push token %s for user %s', pushToken.id, userId);
+        logger.info('registered expo push token id %s for user %s', pushToken.id, userId);
 
         return NextResponse.json(
             {
