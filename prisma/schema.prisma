@@ -169,7 +169,7 @@ enum ClinicianAccessStatus {
 
 model ClinicianAccessRequest {
     id           String                 @id @default(cuid())
-    clinicianId  String?                @map("clinician_id") @db.VarChar(32)
+    clinicianId  String?                @map("clinician_id") @db.VarChar(128)
     customerEmail String                @map("customer_email") @db.VarChar(128)
     status       ClinicianAccessStatus  @default(PENDING)
     accessToken  String?                @map("access_token") @db.VarChar(128)
