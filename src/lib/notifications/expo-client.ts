@@ -25,15 +25,22 @@ function tokenOf(message: ExpoPushMessage): string | undefined {
     return typeof token === 'string' ? token : undefined;
 }
 
-async function deactivateToken(token: string): Promise<void> {
+async function deactivateToken(token: string): Promise<boolean> {
     try {
-        await prisma.expoPushToken.updateMany({
+        const result = await prisma.expoPushToken.updateMany({
             where: { token },
             data: { isActive: false },
         });
-        logger.info('deactivated unregistered push token %s', token);
+
+        if (result.count > 0) {
+            logger.info('deactivated unregistered push token');
+            return true;
+        }
+
+        return false;
     } catch (error) {
-        logger.error('failed to deactivate push token %s: %s', token, error);
+        logger.error('failed to deactivate push token: %s', error);
+        return false;
     }
 }
 
