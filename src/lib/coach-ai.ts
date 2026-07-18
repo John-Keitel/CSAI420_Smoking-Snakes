@@ -8,10 +8,7 @@ import { ENV_VARS } from '@/lib/env-vars';
 const SEVERE_MOBILITY_DROP_THRESHOLD = 20;
 
 const coachResponseSchema = z.object({
-    responseText: z
-        .string()
-        .min(1)
-        .describe('Warm, high-contrast plain-language coaching text optimized for elderly screen readers.'),
+    responseText: z.string().min(1).describe('Warm, high-contrast plain-language coaching text optimized for elderly screen readers.'),
     deepBehavioralLogExportRecommendation: z
         .enum(['allow', 'deny'])
         .describe('Allow deep behavioral log exports only when clinician token access is active and approved.'),
@@ -19,9 +16,7 @@ const coachResponseSchema = z.object({
         .string()
         .min(1)
         .describe('Explicitly reject diagnosis or prescription-like guidance and remind users this is not medical advice.'),
-    escalate: z
-        .boolean()
-        .describe('Set true when severe mobility impairment is detected by score drop logic.'),
+    escalate: z.boolean().describe('Set true when severe mobility impairment is detected by score drop logic.'),
 });
 
 export type CoachAiInput = {
@@ -157,9 +152,7 @@ export async function generateCoachAiResponse(input: CoachAiInput): Promise<Coac
 
     return {
         ...aiResponse,
-        deepBehavioralLogExportRecommendation: clinicianTokenActive
-            ? aiResponse.deepBehavioralLogExportRecommendation
-            : 'deny',
+        deepBehavioralLogExportRecommendation: clinicianTokenActive ? aiResponse.deepBehavioralLogExportRecommendation : 'deny',
         escalate: severeMobilityImpairment ? true : aiResponse.escalate,
     };
 }
