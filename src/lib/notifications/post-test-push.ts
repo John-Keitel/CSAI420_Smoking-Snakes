@@ -1,7 +1,10 @@
+import { type ExpoPushMessage } from 'expo-server-sdk';
+
 import { prisma } from '@/lib/db';
 import { ENV_VARS } from '@/lib/env-vars';
 import type { PostTestCompletedEvent } from '@/lib/events';
 import { getAppLogger } from '@/lib/logger';
+import { sendPushNotifications } from '@/lib/notifications/expo-client';
 
 const logger = getAppLogger('lib:notifications:post-test-push');
 
@@ -41,13 +44,23 @@ export async function handlePostTestCompleted(event: PostTestCompletedEvent): Pr
             return;
         }
 
-        // d) TODO(SCRUM-56): send the notification through the Expo push API.
-        //    For now we only log what *would* be sent so the trigger can be
-        //    validated end-to-end without the delivery integration.
-        const message = `Your latest balance score is ${score}.`;
-        for (const { token } of tokens) {
-            logger.info('[SCRUM-56 pending] would send push notification -> token=%s score=%s message="%s"', token, score, message);
-        }
+        // d) Build one message per device and push through the Expo SDK.
+        const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+            to: token,
+            title: 'Your balance score is ready',
+            body: `Your latest balance score is ${score}.`,
+            data: { score, type: 'post-test-score' },
+            sound: 'default',
+        }));
+
+        const summary = await sendPushNotifications(messages);
+        logger.info(
+            'post-test push for %s -> sent=%s failed=%s deactivated=%s',
+            customerEmail,
+            summary.sent,
+            summary.failed,
+            summary.deactivated
+        );
     } catch (error) {
         logger.error('post-test push handling failed for %s: %s', customerEmail, error);
     }

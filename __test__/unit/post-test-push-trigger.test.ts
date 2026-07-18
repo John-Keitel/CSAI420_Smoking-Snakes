@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { proxyToStediMock, emitMock, loggerMock, prismaMock } = vi.hoisted(() => ({
+const { proxyToStediMock, emitMock, loggerMock, prismaMock, sendPushMock } = vi.hoisted(() => ({
     proxyToStediMock: vi.fn(),
     emitMock: vi.fn(),
     loggerMock: { error: vi.fn(), info: vi.fn(), debug: vi.fn(), warn: vi.fn() },
@@ -10,6 +10,7 @@ const { proxyToStediMock, emitMock, loggerMock, prismaMock } = vi.hoisted(() => 
             findMany: vi.fn(),
         },
     },
+    sendPushMock: vi.fn(),
 }));
 
 vi.mock('@/lib/stedi-api', () => ({ proxyToStedi: proxyToStediMock }));
@@ -17,6 +18,7 @@ vi.mock('@/lib/events', () => ({ emitPostTestCompleted: emitMock }));
 vi.mock('@/lib/logger', () => ({ getAppLogger: () => loggerMock }));
 vi.mock('@/lib/db', () => ({ prisma: prismaMock }));
 vi.mock('@/lib/env-vars', () => ({ ENV_VARS: { STEDI_API_BASE_URL: 'https://dev.stedi.me' } }));
+vi.mock('@/lib/notifications/expo-client', () => ({ sendPushNotifications: sendPushMock }));
 
 import { POST } from '@/app/rapidsteptest/route';
 import { handlePostTestCompleted } from '@/lib/notifications/post-test-push';
@@ -39,6 +41,7 @@ describe('post-test push trigger', () => {
     beforeEach(() => {
         vi.resetAllMocks();
         proxyToStediMock.mockResolvedValue(new NextResponse('Saved', { status: 200 }));
+        sendPushMock.mockResolvedValue({ sent: 1, failed: 0, deactivated: 0 });
     });
 
     afterEach(() => {
@@ -111,7 +114,28 @@ describe('post-test push trigger', () => {
             });
         });
 
-        it('resolves without throwing when the customer has no active tokens', async () => {
+        it('sends a push notification with the score to each active token', async () => {
+            const fetchMock = vi.fn().mockResolvedValue({
+                ok: true,
+                json: async () => ({ score: 42 }),
+            });
+            vi.stubGlobal('fetch', fetchMock);
+            prismaMock.expoPushToken.findMany.mockResolvedValue([{ token: 'ExponentPushToken[abc]', isActive: true }]);
+
+            await handlePostTestCompleted({ customerEmail: email, sessionToken });
+
+            expect(sendPushMock).toHaveBeenCalledTimes(1);
+            expect(sendPushMock).toHaveBeenCalledWith([
+                expect.objectContaining({
+                    to: 'ExponentPushToken[abc]',
+                    title: 'Your balance score is ready',
+                    body: expect.stringContaining('42'),
+                    data: expect.objectContaining({ score: 42, type: 'post-test-score' }),
+                }),
+            ]);
+        });
+
+        it('does not send a push and resolves without throwing when there are no active tokens', async () => {
             const fetchMock = vi.fn().mockResolvedValue({
                 ok: true,
                 json: async () => ({ score: 10 }),
@@ -123,6 +147,7 @@ describe('post-test push trigger', () => {
             expect(prismaMock.expoPushToken.findMany).toHaveBeenCalledWith({
                 where: { user: { email }, isActive: true },
             });
+            expect(sendPushMock).not.toHaveBeenCalled();
         });
     });
 });
