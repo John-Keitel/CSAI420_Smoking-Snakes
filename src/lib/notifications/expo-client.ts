@@ -98,9 +98,10 @@ export async function sendPushNotifications(messages: ExpoPushMessage[]): Promis
                     if (ticket.details?.error === 'DeviceNotRegistered') {
                         const token = ticket.details.expoPushToken ?? tokenOf(chunk[i]);
                         if (token) {
-                            await deactivateToken(token);
-                            summary.deactivated++;
-                        }
+                            const deactivated = await deactivateToken(token);
+                            if (deactivated) {
+                                summary.deactivated++;
+                            }
                     }
                 }
             } catch (error) {
