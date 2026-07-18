@@ -63,7 +63,7 @@ export async function sendPushNotifications(messages: ExpoPushMessage[]): Promis
             const token = tokenOf(message);
             if (!token || !Expo.isExpoPushToken(token)) {
                 summary.failed++;
-                logger.error('skipping message with invalid Expo push token: %s', token);
+                logger.error('skipping message with invalid Expo push token');
                 return false;
             }
             return true;
