@@ -35,13 +35,13 @@ function buildRequest(body: unknown) {
 describe('POST /api/notifications/register', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        validateSessionMock.mockReturnValue({ ok: true });
+        validateSessionMock.mockReturnValue({ ok: true, user: { id: userId } });
     });
 
     it('returns 401 when the session token is invalid', async () => {
         validateSessionMock.mockReturnValue({ ok: false, reason: 'Missing suresteps.session.token header' });
 
-        const response = await POST(buildRequest({ token: validToken, userId }));
+        const response = await POST(buildRequest({ token: validToken }));
 
         expect(response.status).toBe(401);
         expect(prismaMock.user.findUnique).not.toHaveBeenCalled();
@@ -49,7 +49,7 @@ describe('POST /api/notifications/register', () => {
     });
 
     it('returns 422 when the body fails validation', async () => {
-        const response = await POST(buildRequest({ token: 'not-an-expo-token', userId }));
+        const response = await POST(buildRequest({ token: 'not-an-expo-token' }));
 
         expect(response.status).toBe(422);
         await expect(response.json()).resolves.toMatchObject({
@@ -62,7 +62,7 @@ describe('POST /api/notifications/register', () => {
     it('returns 404 when the user does not exist', async () => {
         prismaMock.user.findUnique.mockResolvedValue(null);
 
-        const response = await POST(buildRequest({ token: validToken, userId }));
+        const response = await POST(buildRequest({ token: validToken }));
 
         expect(response.status).toBe(404);
         expect(prismaMock.user.findUnique).toHaveBeenCalledWith({ where: { id: userId } });
@@ -80,7 +80,7 @@ describe('POST /api/notifications/register', () => {
             isActive: true,
         });
 
-        const response = await POST(buildRequest({ token: validToken, userId, deviceName: 'iPhone 15', platform: 'ios' }));
+        const response = await POST(buildRequest({ token: validToken, deviceName: 'iPhone 15', platform: 'ios' }));
 
         expect(response.status).toBe(201);
         await expect(response.json()).resolves.toEqual({
@@ -120,7 +120,7 @@ describe('POST /api/notifications/register', () => {
             isActive: true,
         });
 
-        const response = await POST(buildRequest({ token: validToken, userId, platform: 'android' }));
+        const response = await POST(buildRequest({ token: validToken, platform: 'android' }));
 
         expect(response.status).toBe(201);
         expect(prismaMock.expoPushToken.upsert).toHaveBeenCalledTimes(1);

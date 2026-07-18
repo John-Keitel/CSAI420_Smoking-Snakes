@@ -47,6 +47,17 @@ const MailerSchema = z.object({
     MAILER_FROM_EMAIL: z.email(),
 });
 
+const AiSchema = z.object({
+    OPENAI_API_KEY: z.preprocess((value) => {
+        if (typeof value !== 'string') {
+            return undefined;
+        }
+
+        const trimmed = value.trim();
+        return trimmed.length > 0 ? trimmed : undefined;
+    }, z.string().min(1).optional()),
+});
+
 // https://zod.dev/?id=inferring-the-inferred-type
 function validateEnvWithSchema<TSchema extends z.ZodType>(schema: TSchema, schemaName: string): z.infer<TSchema> {
     const result = schema.safeParse(process.env);
@@ -66,4 +77,5 @@ export const ENV_VARS = {
     ...validateEnvWithSchema(DatabaseSchema, 'DatabaseSchema'),
     ...validateEnvWithSchema(NodeEnvSchema, 'NodeEnvSchema'),
     ...validateEnvWithSchema(MailerSchema, 'MailerSchema'),
+    ...validateEnvWithSchema(AiSchema, 'AiSchema'),
 };
