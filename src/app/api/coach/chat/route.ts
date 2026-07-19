@@ -10,6 +10,7 @@ import {
 } from '@/lib/chat-history-repository';
 import { generateCoachAiResponse } from '@/lib/coach-ai';
 import { getAppLogger } from '@/lib/logger';
+import { upsertFlaggedSessionOnEscalate } from '@/lib/moderation';
 
 const logger = getAppLogger('api:coach:chat');
 
@@ -105,6 +106,19 @@ export async function POST(request: NextRequest) {
             escalate: response.escalate,
             clinicianTokenActive: response.deepBehavioralLogExportRecommendation === 'allow',
         });
+
+        if (response.escalate) {
+            try {
+                await upsertFlaggedSessionOnEscalate({
+                    sessionId,
+                    customerEmail: customerResolution.customerEmail,
+                    escalate: true,
+                    aiRecommendation: response.responseText,
+                });
+            } catch (flagError) {
+                logger.error('flagged session upsert failed: %s', flagError);
+            }
+        }
 
         return NextResponse.json(response, { status: 200 });
     } catch (error) {

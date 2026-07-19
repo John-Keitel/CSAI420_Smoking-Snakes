@@ -52,6 +52,7 @@ async function loadRoute(options: {
     const saveUserMessageMock = vi.fn().mockResolvedValue({ id: 'msg-user-1' });
     const saveAiResponseMock = vi.fn().mockResolvedValue({ id: 'msg-ai-1' });
     const getLatestSessionMessagesMock = vi.fn().mockResolvedValue(options.latestMessages ?? []);
+    const upsertFlaggedSessionOnEscalateMock = vi.fn().mockResolvedValue({ id: 'flag-1' });
     const loggerErrorMock = vi.fn();
 
     vi.doMock('@/lib/auth/suresteps', () => ({
@@ -67,6 +68,10 @@ async function loadRoute(options: {
         saveUserMessage: saveUserMessageMock,
         saveAiResponse: saveAiResponseMock,
         getLatestSessionMessages: getLatestSessionMessagesMock,
+    }));
+
+    vi.doMock('@/lib/moderation', () => ({
+        upsertFlaggedSessionOnEscalate: upsertFlaggedSessionOnEscalateMock,
     }));
 
     vi.doMock('@/lib/logger', () => ({
@@ -86,6 +91,7 @@ async function loadRoute(options: {
         saveUserMessageMock,
         saveAiResponseMock,
         getLatestSessionMessagesMock,
+        upsertFlaggedSessionOnEscalateMock,
         loggerErrorMock,
     };
 }
@@ -215,6 +221,64 @@ describe('POST /api/coach/chat integration boundaries', () => {
         expect(generateCoachAiResponseMock.mock.invocationCallOrder[0]).toBeLessThan(
             saveAiResponseMock.mock.invocationCallOrder[0]
         );
+    });
+
+    it('Path 200: upserts a flagged session when the coach escalates', async () => {
+        const coachResult: DummyCoachResponse = {
+            responseText: 'Severe drop detected. Escalating for human review.',
+            deepBehavioralLogExportRecommendation: 'deny',
+            medicalSafetyNotice: 'No diagnosis or prescriptions can be provided.',
+            escalate: true,
+        };
+
+        const { POST, upsertFlaggedSessionOnEscalateMock, saveAiResponseMock } = await loadRoute({
+            sessionCheck: { ok: true, user: { id: 'user-123', email: 'patient@example.com', type: 'standard' } },
+            coachResult,
+            sessionId: 'session-escalate',
+        });
+
+        const response = await POST(
+            buildRequest({
+                currentBalanceScore: 40,
+                previousBalanceScore: 80,
+                patientContext: 'Fell yesterday.',
+            })
+        );
+
+        expect(response.status).toBe(200);
+        expect(saveAiResponseMock).toHaveBeenCalledWith(
+            'session-escalate',
+            coachResult.responseText,
+            {
+                escalate: true,
+                clinicianTokenActive: false,
+            }
+        );
+        expect(upsertFlaggedSessionOnEscalateMock).toHaveBeenCalledOnce();
+        expect(upsertFlaggedSessionOnEscalateMock).toHaveBeenCalledWith({
+            sessionId: 'session-escalate',
+            customerEmail: 'patient@example.com',
+            escalate: true,
+            aiRecommendation: coachResult.responseText,
+        });
+    });
+
+    it('Path 200: does not upsert a flagged session when escalate is false', async () => {
+        const { POST, upsertFlaggedSessionOnEscalateMock } = await loadRoute({
+            sessionCheck: { ok: true, user: { id: 'user-123', email: 'patient@example.com', type: 'standard' } },
+            sessionId: 'session-safe',
+        });
+
+        const response = await POST(
+            buildRequest({
+                currentBalanceScore: 75,
+                previousBalanceScore: 78,
+                patientContext: 'Feeling steady.',
+            })
+        );
+
+        expect(response.status).toBe(200);
+        expect(upsertFlaggedSessionOnEscalateMock).not.toHaveBeenCalled();
     });
 
     it('Path 500: returns internal server error when session lookup fails with database connectivity error', async () => {
