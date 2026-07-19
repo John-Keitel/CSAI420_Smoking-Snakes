@@ -1,5 +1,6 @@
 import type { FlaggedSession, ModerationSeverity } from '@/generated/prisma/client';
 import { prisma } from '@/lib/db';
+import { HttpException } from '@/lib/http';
 import { getAppLogger } from '@/lib/logger';
 
 const logger = getAppLogger('lib:moderation:repository');
@@ -71,5 +72,35 @@ export async function listOpenFlaggedSessions(): Promise<FlaggedSession[]> {
     return prisma.flaggedSession.findMany({
         where: { status: { in: ['PENDING', 'IN_REVIEW'] } },
         orderBy: [{ severity: 'desc' }, { flaggedAt: 'desc' }],
+    });
+}
+
+export async function reviewFlaggedSession(args: {
+    sessionId: string;
+    humanOverride: string;
+    reviewerNotes?: string | null;
+    reviewedByUserId: string;
+}): Promise<FlaggedSession> {
+    const existing = await prisma.flaggedSession.findUnique({
+        where: { sessionId: args.sessionId },
+    });
+
+    if (!existing) {
+        throw new HttpException(404, 'Flagged session not found');
+    }
+
+    if (existing.status === 'RESOLVED') {
+        throw new HttpException(409, 'Flagged session already resolved');
+    }
+
+    return prisma.flaggedSession.update({
+        where: { sessionId: args.sessionId },
+        data: {
+            humanOverride: args.humanOverride,
+            reviewerNotes: args.reviewerNotes ?? null,
+            reviewedByUserId: args.reviewedByUserId,
+            reviewedAt: new Date(),
+            status: 'IN_REVIEW',
+        },
     });
 }
