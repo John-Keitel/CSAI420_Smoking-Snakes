@@ -46,6 +46,7 @@ async function activateSensor(sessionToken: string, transport: VoiceTransport, d
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'x-suresteps-session-token': sessionToken,
             'suresteps.session.token': sessionToken,
         },
         body: JSON.stringify(payload),
@@ -76,6 +77,7 @@ async function validateTransmission(sessionToken: string, seconds: number): Prom
     const response = await fetch(url, {
         method: 'GET',
         headers: {
+            'x-suresteps-session-token': sessionToken,
             'suresteps.session.token': sessionToken,
         },
         signal: AbortSignal.timeout(ENV_VARS.STEDI_PROXY_TIMEOUT_MS),

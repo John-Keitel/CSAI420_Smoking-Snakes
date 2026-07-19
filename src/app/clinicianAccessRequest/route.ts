@@ -32,6 +32,8 @@ function parseBody(body: unknown): { clinicianUsername: string; customerEmail: s
 
 export async function POST(request: NextRequest) {
     try {
+        console.log('DEBUG: Chegou POST para criar request, body:', await request.clone().text());
+
         const sessionCheck = validateSureStepsSession(request);
         if (!sessionCheck.ok) {
             return unauthorized(sessionCheck.reason);
@@ -59,7 +61,13 @@ export async function POST(request: NextRequest) {
         });
 
         return textResponse('Access request submitted successfully.', 201);
-    } catch {
+    } catch (err: unknown) {
+        const error = err instanceof Error ? err : new Error(String(err));
+        console.error('POST /clinicianAccessRequest failed', {
+            message: error.message,
+            stack: error.stack,
+            error,
+        });
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

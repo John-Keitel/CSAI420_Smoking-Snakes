@@ -19,17 +19,20 @@ function isUpstreamTimeoutError(error: unknown): boolean {
 }
 
 export async function proxyToStedi(request: NextRequest, path: string, options: ProxyOptions = {}): Promise<NextResponse> {
-    const headers = new Headers();
+    const headers: Record<string, string> = {};
     const contentType = request.headers.get('content-type');
 
     if (contentType) {
-        headers.set('content-type', contentType);
+        headers['content-type'] = contentType;
     }
 
     if (options.forwardSessionToken) {
-        const sessionToken = request.headers.get('suresteps.session.token');
+        const sessionToken =
+            request.headers.get('x-suresteps-session-token') ?? request.headers.get('suresteps.session.token');
         if (sessionToken) {
-            headers.set('suresteps.session.token', sessionToken);
+            // Forward both for backward compatibility while callers migrate.
+            headers['x-suresteps-session-token'] = sessionToken;
+            headers['suresteps.session.token'] = sessionToken;
         }
     }
 
@@ -41,7 +44,11 @@ export async function proxyToStedi(request: NextRequest, path: string, options: 
             throw new Error('Invalid STEDI proxy path');
         }
 
-        const response = await fetch(upstreamUrl, {
+        const targetUrl = String(upstreamUrl);
+        console.log('DEBUG_TOKEN_SENT:', headers['x-suresteps-session-token']);
+        console.log('DEBUG_TARGET_URL:', targetUrl);
+
+        const response = await fetch(targetUrl, {
             method: request.method,
             headers,
             body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text(),

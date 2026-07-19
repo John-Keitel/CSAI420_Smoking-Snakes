@@ -15,7 +15,8 @@ export async function POST(request: NextRequest) {
     // customer email from an untouched clone. The original request is proxied
     // verbatim, so the pass-through keeps behaving exactly as before.
     const eventRequest = request.clone();
-    const sessionToken = request.headers.get('suresteps.session.token');
+    const sessionToken =
+        request.headers.get('x-suresteps-session-token') ?? request.headers.get('suresteps.session.token');
 
     const response = await proxyToStedi(request, '/rapidsteptest', {
         forwardSessionToken: true,

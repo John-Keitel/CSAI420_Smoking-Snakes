@@ -22,7 +22,10 @@ export async function handlePostTestCompleted(event: PostTestCompletedEvent): Pr
         // a) Ask the legacy STEDI API for the freshly-computed risk/balance score.
         const scoreUrl = new URL(`/riskscore/${encodeURIComponent(customerEmail)}`, `${ENV_VARS.STEDI_API_BASE_URL}/`);
         const response = await fetch(scoreUrl, {
-            headers: { 'suresteps.session.token': sessionToken },
+            headers: {
+                'x-suresteps-session-token': sessionToken,
+                'suresteps.session.token': sessionToken,
+            },
             cache: 'no-store',
         });
 

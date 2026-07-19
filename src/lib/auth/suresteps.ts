@@ -56,16 +56,16 @@ function decodeJwtClaims(token: string): Record<string, unknown> {
 }
 
 /**
- * Validate the legacy STEDI session token header `suresteps.session.token`.
+ * Validate the STEDI session token header.
  * For this implementation we simulate the old STEDI session validation by
  * requiring a non-empty header. In a real system this would validate the
  * token against a session store or verification service.
  */
 export function validateSureStepsSession(request: NextRequest): SureStepsSessionCheck {
     try {
-        const token = request.headers.get('suresteps.session.token');
+        const token = request.headers.get('x-suresteps-session-token') ?? request.headers.get('suresteps.session.token');
 
-        if (!token) return { ok: false, reason: 'Missing suresteps.session.token header' };
+        if (!token) return { ok: false, reason: 'Missing session token header (x-suresteps-session-token or suresteps.session.token)' };
 
         // Simulated validation: token must be non-empty. Extend this to check
         // against DB or an external service as required.
