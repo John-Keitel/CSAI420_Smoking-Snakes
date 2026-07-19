@@ -10,6 +10,12 @@ const AppSchema = z.object({
     APP_LOG_LEVEL: z.enum(['info', 'error', 'warn', 'debug']).default('info'),
     STEDI_API_BASE_URL: z.url().default('https://dev.stedi.me'),
     STEDI_PROXY_TIMEOUT_MS: z.coerce.number().int().positive().default(8000),
+    VOICE_LLM_ENABLED: z
+        .enum(['true', 'false'])
+        .default('false')
+        .transform((value) => value === 'true'),
+    OPENAI_API_KEY: z.string().optional(),
+    OPENAI_MODEL: z.string().default('gpt-4o-mini'),
 });
 
 const DatabaseSchema = z.object({

@@ -7,7 +7,7 @@ vi.mock('@/lib/logger', () => ({
     }),
 }));
 
-import { buildScoreAnnouncement, formatScoreForVoice, getPersonalizedFeedback, getScoreBand } from '@/lib/score-announcement';
+import { buildIntelligentScoreAnnouncement, buildScoreAnnouncement, formatScoreForVoice, getPersonalizedFeedback, getScoreBand } from '@/lib/score-announcement';
 
 describe('formatScoreForVoice', () => {
     it('formats a whole number score into a spoken sentence', () => {
@@ -79,5 +79,27 @@ describe('buildScoreAnnouncement', () => {
         const result = buildScoreAnnouncement(150);
 
         expect(result.ok).toBe(false);
+    });
+});
+
+describe('buildIntelligentScoreAnnouncement', () => {
+    it('flags high-risk transcripts for escalation', async () => {
+        const result = await buildIntelligentScoreAnnouncement(20, {
+            callerTranscript: 'I had chest pain after the test.',
+            recentScores: [{ score: 20 }],
+        });
+
+        expect(result.ok).toBe(true);
+        expect(result.triageStatus).toBe('FLAGGED');
+        expect(result.escalationMatches).toContain('chest pain');
+        expect(result.fullMessage).toMatch(/flagged for immediate follow-up/i);
+    });
+
+    it('returns normal triage metadata for invalid score fallback', async () => {
+        const result = await buildIntelligentScoreAnnouncement(undefined);
+
+        expect(result.ok).toBe(false);
+        expect(result.triageStatus).toBe('NORMAL');
+        expect(result.escalationMatches).toHaveLength(0);
     });
 });

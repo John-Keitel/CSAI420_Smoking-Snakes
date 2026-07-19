@@ -1,4 +1,5 @@
 import { getAppLogger } from '@/lib/logger';
+import { generateVoiceFeedback, RecentBalanceScore, VoiceAiRuntimeOptions, VoiceTriageStatus } from '@/lib/voice-ai';
 
 const logger = getAppLogger('lib:score-announcement');
 
@@ -35,6 +36,12 @@ export type ScoreAnnouncement = {
     feedback: string;
     /** spokenScore + feedback combined, ready to hand to the IVR (SCRUM-26). */
     fullMessage: string;
+};
+
+export type IntelligentScoreAnnouncement = ScoreAnnouncement & {
+    triageStatus: VoiceTriageStatus;
+    escalationMatches: string[];
+    usedLlm: boolean;
 };
 
 /**
@@ -107,5 +114,44 @@ export function buildScoreAnnouncement(rawScore: unknown): ScoreAnnouncement {
         spokenScore,
         feedback,
         fullMessage: `${spokenScore} ${feedback}`,
+    };
+}
+
+export async function buildIntelligentScoreAnnouncement(
+    rawScore: unknown,
+    options: {
+        callerTranscript?: string;
+        recentScores?: RecentBalanceScore[];
+        runtimeOptions?: VoiceAiRuntimeOptions;
+    } = {}
+): Promise<IntelligentScoreAnnouncement> {
+    const base = buildScoreAnnouncement(rawScore);
+
+    if (!base.ok || !base.band || base.score === null) {
+        return {
+            ...base,
+            triageStatus: 'NORMAL',
+            escalationMatches: [],
+            usedLlm: false,
+        };
+    }
+
+    const aiFeedback = await generateVoiceFeedback(
+        {
+            score: base.score,
+            scoreBand: base.band,
+            callerTranscript: options.callerTranscript,
+            recentScores: options.recentScores,
+        },
+        options.runtimeOptions
+    );
+
+    return {
+        ...base,
+        feedback: aiFeedback.message,
+        fullMessage: `${base.spokenScore} ${aiFeedback.message}`,
+        triageStatus: aiFeedback.status,
+        escalationMatches: aiFeedback.matchedPatterns,
+        usedLlm: aiFeedback.usedLlm,
     };
 }
