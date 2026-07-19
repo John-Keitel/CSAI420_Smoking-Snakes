@@ -18,6 +18,7 @@ vi.mock('@/lib/logger', () => ({ getAppLogger: () => loggerMock }));
 
 import {
     listOpenFlaggedSessions,
+    resolveFlaggedSession,
     reviewFlaggedSession,
     upsertFlaggedSessionOnEscalate,
 } from '@/lib/moderation/repository';
@@ -180,6 +181,52 @@ describe('reviewFlaggedSession', () => {
                 sessionId,
                 humanOverride: 'Follow up',
                 reviewedByUserId: 'mod-1',
+            })
+        ).rejects.toMatchObject({ statusCode: 409 });
+    });
+});
+
+describe('resolveFlaggedSession', () => {
+    beforeEach(() => {
+        vi.resetAllMocks();
+    });
+
+    it('marks PENDING as RESOLVED', async () => {
+        prismaMock.flaggedSession.findUnique.mockResolvedValue({
+            sessionId,
+            status: 'PENDING',
+            reviewerNotes: null,
+        });
+        prismaMock.flaggedSession.update.mockResolvedValue({
+            sessionId,
+            status: 'RESOLVED',
+        });
+
+        await resolveFlaggedSession({
+            sessionId,
+            resolvedByUserId: 'mod-1',
+        });
+
+        expect(prismaMock.flaggedSession.update).toHaveBeenCalledWith(
+            expect.objectContaining({
+                data: expect.objectContaining({
+                    status: 'RESOLVED',
+                    resolvedByUserId: 'mod-1',
+                }),
+            })
+        );
+    });
+
+    it('throws 409 when already resolved', async () => {
+        prismaMock.flaggedSession.findUnique.mockResolvedValue({
+            sessionId,
+            status: 'RESOLVED',
+        });
+
+        await expect(
+            resolveFlaggedSession({
+                sessionId,
+                resolvedByUserId: 'mod-1',
             })
         ).rejects.toMatchObject({ statusCode: 409 });
     });

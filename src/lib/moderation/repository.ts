@@ -114,3 +114,37 @@ export async function reviewFlaggedSession(args: {
     }
     throw new HttpException(409, 'Flagged session already resolved');
 }
+
+export async function resolveFlaggedSession(args: {
+    sessionId: string;
+    resolvedByUserId: string;
+    resolutionNotes?: string | null;
+}): Promise<FlaggedSession> {
+    const existing = await prisma.flaggedSession.findUnique({
+        where: { sessionId: args.sessionId },
+    });
+
+    if (!existing) {
+        throw new HttpException(404, 'Flagged session not found');
+    }
+
+    if (existing.status === 'RESOLVED') {
+        throw new HttpException(409, 'Flagged session already resolved');
+    }
+
+    return prisma.flaggedSession.update({
+        where: { sessionId: args.sessionId },
+        data: {
+            status: 'RESOLVED',
+            resolvedByUserId: args.resolvedByUserId,
+            resolvedAt: new Date(),
+            ...(args.resolutionNotes
+                ? {
+                      reviewerNotes: existing.reviewerNotes
+                          ? `${existing.reviewerNotes}\n${args.resolutionNotes}`
+                          : args.resolutionNotes,
+                  }
+                : {}),
+        },
+    });
+}
