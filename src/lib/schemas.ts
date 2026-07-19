@@ -67,3 +67,13 @@ export const RegisterPushTokenSchema = z.object({
     deviceName: z.string().min(1).max(64).optional(),
     platform: z.enum(['ios', 'android']).optional(),
 });
+
+export const ModerationReviewSchema = z.object({
+    sessionId: z.uuid(),
+    humanOverride: z.string().min(1).max(10000),
+    reviewerNotes: z.string().max(10000).optional(),
+});
+
+export const ModerationResolveSchema = z.object({
+    resolutionNotes: z.string().max(10000).optional(),
+});

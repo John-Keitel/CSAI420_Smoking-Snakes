@@ -6,6 +6,7 @@ const { prismaMock, loggerMock } = vi.hoisted(() => ({
             findUnique: vi.fn(),
             create: vi.fn(),
             update: vi.fn(),
+            updateMany: vi.fn(),
             findMany: vi.fn(),
         },
     },
@@ -15,9 +16,13 @@ const { prismaMock, loggerMock } = vi.hoisted(() => ({
 vi.mock('@/lib/db', () => ({ prisma: prismaMock }));
 vi.mock('@/lib/logger', () => ({ getAppLogger: () => loggerMock }));
 
-import { listOpenFlaggedSessions, upsertFlaggedSessionOnEscalate } from '@/lib/moderation/repository';
+import {
+    listOpenFlaggedSessions,
+    reviewFlaggedSession,
+    upsertFlaggedSessionOnEscalate,
+} from '@/lib/moderation/repository';
 
-const sessionId = '11111111-1111-1111-1111-111111111111';
+const sessionId = '11111111-1111-4111-8111-111111111111';
 const customerEmail = 'patient@example.com';
 
 describe('upsertFlaggedSessionOnEscalate', () => {
@@ -113,5 +118,69 @@ describe('listOpenFlaggedSessions', () => {
             where: { status: { in: ['PENDING', 'IN_REVIEW'] } },
             orderBy: [{ severity: 'desc' }, { flaggedAt: 'desc' }],
         });
+    });
+});
+
+describe('reviewFlaggedSession', () => {
+    beforeEach(() => {
+        vi.resetAllMocks();
+    });
+
+    it('sets IN_REVIEW and stores override fields', async () => {
+        prismaMock.flaggedSession.updateMany.mockResolvedValue({ count: 1 });
+        prismaMock.flaggedSession.findUnique.mockResolvedValue({
+            sessionId,
+            status: 'IN_REVIEW',
+            humanOverride: 'Follow up',
+        });
+
+        await reviewFlaggedSession({
+            sessionId,
+            humanOverride: 'Follow up',
+            reviewerNotes: 'note',
+            reviewedByUserId: 'mod-1',
+        });
+
+        expect(prismaMock.flaggedSession.updateMany).toHaveBeenCalledWith({
+            where: {
+                sessionId,
+                status: { not: 'RESOLVED' },
+            },
+            data: expect.objectContaining({
+                humanOverride: 'Follow up',
+                reviewerNotes: 'note',
+                reviewedByUserId: 'mod-1',
+                status: 'IN_REVIEW',
+            }),
+        });
+    });
+
+    it('throws 404 when flagged session is missing', async () => {
+        prismaMock.flaggedSession.updateMany.mockResolvedValue({ count: 0 });
+        prismaMock.flaggedSession.findUnique.mockResolvedValue(null);
+
+        await expect(
+            reviewFlaggedSession({
+                sessionId,
+                humanOverride: 'Follow up',
+                reviewedByUserId: 'mod-1',
+            })
+        ).rejects.toMatchObject({ statusCode: 404 });
+    });
+
+    it('throws 409 when already resolved', async () => {
+        prismaMock.flaggedSession.updateMany.mockResolvedValue({ count: 0 });
+        prismaMock.flaggedSession.findUnique.mockResolvedValue({
+            sessionId,
+            status: 'RESOLVED',
+        });
+
+        await expect(
+            reviewFlaggedSession({
+                sessionId,
+                humanOverride: 'Follow up',
+                reviewedByUserId: 'mod-1',
+            })
+        ).rejects.toMatchObject({ statusCode: 409 });
     });
 });
