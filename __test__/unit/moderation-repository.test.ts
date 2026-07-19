@@ -6,6 +6,7 @@ const { prismaMock, loggerMock } = vi.hoisted(() => ({
             findUnique: vi.fn(),
             create: vi.fn(),
             update: vi.fn(),
+            updateMany: vi.fn(),
             findMany: vi.fn(),
         },
     },
@@ -126,11 +127,8 @@ describe('reviewFlaggedSession', () => {
     });
 
     it('sets IN_REVIEW and stores override fields', async () => {
+        prismaMock.flaggedSession.updateMany.mockResolvedValue({ count: 1 });
         prismaMock.flaggedSession.findUnique.mockResolvedValue({
-            sessionId,
-            status: 'PENDING',
-        });
-        prismaMock.flaggedSession.update.mockResolvedValue({
             sessionId,
             status: 'IN_REVIEW',
             humanOverride: 'Follow up',
@@ -143,19 +141,35 @@ describe('reviewFlaggedSession', () => {
             reviewedByUserId: 'mod-1',
         });
 
-        expect(prismaMock.flaggedSession.update).toHaveBeenCalledWith(
-            expect.objectContaining({
-                data: expect.objectContaining({
-                    humanOverride: 'Follow up',
-                    reviewerNotes: 'note',
-                    reviewedByUserId: 'mod-1',
-                    status: 'IN_REVIEW',
-                }),
+        expect(prismaMock.flaggedSession.updateMany).toHaveBeenCalledWith({
+            where: {
+                sessionId,
+                status: { not: 'RESOLVED' },
+            },
+            data: expect.objectContaining({
+                humanOverride: 'Follow up',
+                reviewerNotes: 'note',
+                reviewedByUserId: 'mod-1',
+                status: 'IN_REVIEW',
+            }),
+        });
+    });
+
+    it('throws 404 when flagged session is missing', async () => {
+        prismaMock.flaggedSession.updateMany.mockResolvedValue({ count: 0 });
+        prismaMock.flaggedSession.findUnique.mockResolvedValue(null);
+
+        await expect(
+            reviewFlaggedSession({
+                sessionId,
+                humanOverride: 'Follow up',
+                reviewedByUserId: 'mod-1',
             })
-        );
+        ).rejects.toMatchObject({ statusCode: 404 });
     });
 
     it('throws 409 when already resolved', async () => {
+        prismaMock.flaggedSession.updateMany.mockResolvedValue({ count: 0 });
         prismaMock.flaggedSession.findUnique.mockResolvedValue({
             sessionId,
             status: 'RESOLVED',
