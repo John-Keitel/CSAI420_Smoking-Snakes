@@ -81,20 +81,12 @@ export async function reviewFlaggedSession(args: {
     reviewerNotes?: string | null;
     reviewedByUserId: string;
 }): Promise<FlaggedSession> {
-    const existing = await prisma.flaggedSession.findUnique({
-        where: { sessionId: args.sessionId },
-    });
-
-    if (!existing) {
-        throw new HttpException(404, 'Flagged session not found');
-    }
-
-    if (existing.status === 'RESOLVED') {
-        throw new HttpException(409, 'Flagged session already resolved');
-    }
-
-    return prisma.flaggedSession.update({
-        where: { sessionId: args.sessionId },
+    // Conditional write avoids racing a concurrent resolve/delete between read and update.
+    const write = await prisma.flaggedSession.updateMany({
+        where: {
+            sessionId: args.sessionId,
+            status: { not: 'RESOLVED' },
+        },
         data: {
             humanOverride: args.humanOverride,
             reviewerNotes: args.reviewerNotes ?? null,
@@ -103,4 +95,22 @@ export async function reviewFlaggedSession(args: {
             status: 'IN_REVIEW',
         },
     });
+
+    if (write.count === 1) {
+        const updated = await prisma.flaggedSession.findUnique({
+            where: { sessionId: args.sessionId },
+        });
+        if (!updated) {
+            throw new HttpException(404, 'Flagged session not found');
+        }
+        return updated;
+    }
+
+    const existing = await prisma.flaggedSession.findUnique({
+        where: { sessionId: args.sessionId },
+    });
+    if (!existing) {
+        throw new HttpException(404, 'Flagged session not found');
+    }
+    throw new HttpException(409, 'Flagged session already resolved');
 }
