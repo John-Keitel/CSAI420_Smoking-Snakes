@@ -58,3 +58,12 @@ export const CreateStepSchema = z.object({
     deviceId: z.string().min(1).max(32),
     stepPoints: z.array(z.number()).min(1),
 });
+
+export const RegisterPushTokenSchema = z.object({
+    // Expo push tokens look like `ExponentPushToken[xxxxxxxx]` (or the legacy `ExpoPushToken[...]`).
+    // Security evolution (Sprint 2+): `userId` is intentionally excluded from this body
+    // and derived strictly from the authenticated session to prevent IDOR/session-binding bypass.
+    token: z.string({ error: 'required' }).max(255).regex(/^Expo(nent)?PushToken\[[^\]]+\]$/, 'invalid Expo push token format'),
+    deviceName: z.string().min(1).max(64).optional(),
+    platform: z.enum(['ios', 'android']).optional(),
+});

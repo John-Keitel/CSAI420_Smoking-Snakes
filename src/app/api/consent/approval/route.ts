@@ -14,26 +14,42 @@ export async function POST(request: NextRequest) {
         const sessionCheck = validateSureStepsSession(request);
         if (!sessionCheck.ok) return NextResponse.json({ error: sessionCheck.reason }, { status: 401 });
 
-        const body = await request.json();
-        const { customerEmail, clinicianId, approval } = body;
-        if (!customerEmail || !clinicianId || !approval) {
-            return NextResponse.json({ error: 'customerEmail, clinicianId and approval are required' }, { status: 400 });
+        if (!sessionCheck.user.email) {
+            return NextResponse.json({ error: 'Session user email is required for consent approval' }, { status: 401 });
         }
 
-        const pending = await prisma.clinicianAccessRequest.findFirst({
-            where: { customerEmail, clinicianId, status: 'PENDING' },
-            orderBy: { createdAt: 'desc' },
-        });
+        const isPatientSession =
+            sessionCheck.user.type === undefined ||
+            sessionCheck.user.type === 'patient' ||
+            sessionCheck.user.type === 'standard';
 
-        if (!pending) return NextResponse.json({ error: 'No pending request found' }, { status: 400 });
+        if (!isPatientSession) {
+            return NextResponse.json({ error: 'Only patient sessions can approve or deny consent' }, { status: 403 });
+        }
 
-        if (String(approval).toUpperCase() === 'YES') {
+        const body = await request.json();
+        const { clinicianId, approval } = body;
+        if (!clinicianId || !approval) {
+            return NextResponse.json({ error: 'clinicianId and approval are required' }, { status: 400 });
+        }
+
+        const customerEmail = sessionCheck.user.email;
+        const approvalNormalized = String(approval).toUpperCase();
+        if (approvalNormalized !== 'YES' && approvalNormalized !== 'NO') {
+            return NextResponse.json({ error: 'approval must be YES or NO' }, { status: 400 });
+        }
+
+        if (approvalNormalized === 'YES') {
             const token = randomUUID();
             // Token TTL: 30 days
             const tokenExpiresAt = addDays(new Date(), 30);
 
-            const updated = await prisma.clinicianAccessRequest.update({
-                where: { id: pending.id },
+            const updated = await prisma.clinicianAccessRequest.updateMany({
+                where: {
+                    customerEmail,
+                    clinicianId,
+                    status: 'PENDING',
+                },
                 data: {
                     status: 'APPROVED',
                     accessToken: token,
@@ -41,14 +57,26 @@ export async function POST(request: NextRequest) {
                 },
             });
 
+            if (updated.count === 0) {
+                return NextResponse.json({ error: 'No pending request found' }, { status: 400 });
+            }
+
             return NextResponse.json({ updated }, { status: 200 });
         }
 
         // Any other reply treated as rejection
-        const rejected = await prisma.clinicianAccessRequest.update({
-            where: { id: pending.id },
+        const rejected = await prisma.clinicianAccessRequest.updateMany({
+            where: {
+                customerEmail,
+                clinicianId,
+                status: 'PENDING',
+            },
             data: { status: 'REJECTED' },
         });
+
+        if (rejected.count === 0) {
+            return NextResponse.json({ error: 'No pending request found' }, { status: 400 });
+        }
 
         return NextResponse.json({ rejected }, { status: 200 });
     } catch (err: any) {
