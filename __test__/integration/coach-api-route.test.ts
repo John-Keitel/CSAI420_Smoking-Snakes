@@ -52,7 +52,13 @@ async function loadRoute(options: {
     const saveUserMessageMock = vi.fn().mockResolvedValue({ id: 'msg-user-1' });
     const saveAiResponseMock = vi.fn().mockResolvedValue({ id: 'msg-ai-1' });
     const getLatestSessionMessagesMock = vi.fn().mockResolvedValue(options.latestMessages ?? []);
-    const upsertFlaggedSessionOnEscalateMock = vi.fn().mockResolvedValue({ id: 'flag-1' });
+    const upsertFlaggedSessionOnEscalateMock = vi.fn().mockResolvedValue({
+        id: 'flag-1',
+        sessionId: options.sessionId ?? 'session-123',
+        severity: 'HIGH',
+        alertedAt: null,
+    });
+    const notifyModeratorsHighRiskMock = vi.fn().mockResolvedValue(undefined);
     const loggerErrorMock = vi.fn();
 
     vi.doMock('@/lib/auth/suresteps', () => ({
@@ -72,6 +78,7 @@ async function loadRoute(options: {
 
     vi.doMock('@/lib/moderation', () => ({
         upsertFlaggedSessionOnEscalate: upsertFlaggedSessionOnEscalateMock,
+        notifyModeratorsHighRisk: notifyModeratorsHighRiskMock,
     }));
 
     vi.doMock('@/lib/logger', () => ({
@@ -92,6 +99,7 @@ async function loadRoute(options: {
         saveAiResponseMock,
         getLatestSessionMessagesMock,
         upsertFlaggedSessionOnEscalateMock,
+        notifyModeratorsHighRiskMock,
         loggerErrorMock,
     };
 }
@@ -231,11 +239,15 @@ describe('POST /api/coach/chat integration boundaries', () => {
             escalate: true,
         };
 
-        const { POST, upsertFlaggedSessionOnEscalateMock, saveAiResponseMock } = await loadRoute({
-            sessionCheck: { ok: true, user: { id: 'user-123', email: 'patient@example.com', type: 'standard' } },
-            coachResult,
-            sessionId: 'session-escalate',
-        });
+        const { POST, upsertFlaggedSessionOnEscalateMock, notifyModeratorsHighRiskMock, saveAiResponseMock } =
+            await loadRoute({
+                sessionCheck: {
+                    ok: true,
+                    user: { id: 'user-123', email: 'patient@example.com', type: 'standard' },
+                },
+                coachResult,
+                sessionId: 'session-escalate',
+            });
 
         const response = await POST(
             buildRequest({
@@ -261,10 +273,11 @@ describe('POST /api/coach/chat integration boundaries', () => {
             escalate: true,
             aiRecommendation: coachResult.responseText,
         });
+        expect(notifyModeratorsHighRiskMock).toHaveBeenCalledOnce();
     });
 
     it('Path 200: does not upsert a flagged session when escalate is false', async () => {
-        const { POST, upsertFlaggedSessionOnEscalateMock } = await loadRoute({
+        const { POST, upsertFlaggedSessionOnEscalateMock, notifyModeratorsHighRiskMock } = await loadRoute({
             sessionCheck: { ok: true, user: { id: 'user-123', email: 'patient@example.com', type: 'standard' } },
             sessionId: 'session-safe',
         });
@@ -279,6 +292,7 @@ describe('POST /api/coach/chat integration boundaries', () => {
 
         expect(response.status).toBe(200);
         expect(upsertFlaggedSessionOnEscalateMock).not.toHaveBeenCalled();
+        expect(notifyModeratorsHighRiskMock).not.toHaveBeenCalled();
     });
 
     it('Path 500: returns internal server error when session lookup fails with database connectivity error', async () => {
