@@ -10,7 +10,7 @@ import {
 } from '@/lib/chat-history-repository';
 import { generateCoachAiResponse } from '@/lib/coach-ai';
 import { getAppLogger } from '@/lib/logger';
-import { upsertFlaggedSessionOnEscalate } from '@/lib/moderation';
+import { notifyModeratorsHighRisk, upsertFlaggedSessionOnEscalate } from '@/lib/moderation';
 
 const logger = getAppLogger('api:coach:chat');
 
@@ -109,12 +109,15 @@ export async function POST(request: NextRequest) {
 
         if (response.escalate) {
             try {
-                await upsertFlaggedSessionOnEscalate({
+                const flagged = await upsertFlaggedSessionOnEscalate({
                     sessionId,
                     customerEmail: customerResolution.customerEmail,
                     escalate: true,
                     aiRecommendation: response.responseText,
                 });
+                if (flagged) {
+                    await notifyModeratorsHighRisk(flagged);
+                }
             } catch (flagError) {
                 logger.error('flagged session upsert failed: %s', flagError);
             }
