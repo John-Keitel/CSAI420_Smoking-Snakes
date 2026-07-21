@@ -69,10 +69,7 @@ export async function GET(request: NextRequest) {
                 where: {
                     customerEmail,
                     status: 'PENDING',
-                    OR: [
-                        { expiresAt: { lte: now } },
-                        { createdAt: { lte: ttlCutoff } },
-                    ],
+                    OR: [{ expiresAt: { lte: now } }, { createdAt: { lte: ttlCutoff } }],
                 },
                 data: {
                     status: 'EXPIRED',
