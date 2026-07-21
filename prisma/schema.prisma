@@ -164,6 +164,8 @@ model Step {
 enum ClinicianAccessStatus {
     PENDING
     APPROVED
+    DENIED
+    EXPIRED
     REJECTED
 }
 

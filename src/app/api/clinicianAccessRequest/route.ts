@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { prisma } from '@/lib/db';
+import { getAppLogger } from '@/lib/logger';
+import { notifyClinicianConsentRequested } from '@/lib/notifications/clinician-consent-request-push';
 import { validateSureStepsSession, addDays } from '@/lib/auth/suresteps';
+
+const logger = getAppLogger('api:clinician-access-request');
 
 /**
  * POST /api/clinicianAccessRequest
@@ -32,6 +37,14 @@ export async function POST(request: NextRequest) {
                 status: 'PENDING',
                 expiresAt,
             },
+        });
+
+        // Notification dispatch is best-effort and must never block consent creation.
+        void notifyClinicianConsentRequested({
+            customerEmail,
+            clinicianId,
+        }).catch((error) => {
+            logger.error('failed to send clinician consent push notification: %s', error);
         });
 
         return NextResponse.json(created, { status: 201 });
