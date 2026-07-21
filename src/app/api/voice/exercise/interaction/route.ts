@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
         const state = parsed.data.state as IvrExerciseState;
         const action = parsed.data.action as ExerciseAction;
         const result = applyExerciseAction(action, state, steps);
-        const currentStep = result.state.completed ? null : steps[result.state.currentStepIndex] ?? null;
+        const currentStep = result.state.completed ? null : (steps[result.state.currentStepIndex] ?? null);
 
         return NextResponse.json(
             {

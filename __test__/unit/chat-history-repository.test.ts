@@ -9,10 +9,7 @@ type CreatedMessage = {
     createdAt: Date;
 };
 
-async function loadChatHistoryRepository(options?: {
-    latestSessionId?: string | null;
-    findManyMessages?: CreatedMessage[];
-}) {
+async function loadChatHistoryRepository(options?: { latestSessionId?: string | null; findManyMessages?: CreatedMessage[] }) {
     vi.resetModules();
 
     const createdMessages: CreatedMessage[] = [];
