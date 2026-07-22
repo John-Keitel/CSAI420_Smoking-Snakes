@@ -14,9 +14,9 @@ if [ -f .env.docker ]; then
 fi
 
 # Database details
-DB_NAME="${POSTGRES_DB:-postgres}"
-DB_USER="${POSTGRES_USER:-stedi}"
-DB_PASSWORD="${POSTGRES_PASSWORD:-stedipassword}"
+DB_NAME="${POSTGRES_DB:-stedi}"
+DB_USER="${POSTGRES_USER:-postgres}"
+DB_PASSWORD="${POSTGRES_PASSWORD:-stedi}"
 DB_PORT="${POSTGRES_PORT:-5432}"
 
 # Function to run psql commands
