@@ -29,8 +29,8 @@ async function getCustomer(params: RouteContext['params']) {
     return customerEmail;
 }
 
-function validateSession(request: NextRequest) {
-    const sessionCheck = validateSureStepsSession(request);
+async function validateSession(request: NextRequest) {
+    const sessionCheck = await validateSureStepsSession(request);
     if (!sessionCheck.ok) throw new HttpException(401, sessionCheck.reason ?? 'Unauthorized');
 }
 
@@ -64,7 +64,7 @@ function errorResponse(error: unknown) {
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
     try {
-        validateSession(request);
+        await validateSession(request);
         const customerEmail = await getCustomer(params);
         const grants = await prisma.clinicianAccessRequest.findMany({
             where: {
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
     try {
-        validateSession(request);
+        await validateSession(request);
         const customerEmail = await getCustomer(params);
         const clinicianUsername = (await request.text()).trim();
 

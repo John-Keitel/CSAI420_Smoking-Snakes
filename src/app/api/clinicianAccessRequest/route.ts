@@ -11,7 +11,7 @@ import { validateSureStepsSession, addDays } from '@/lib/auth/suresteps';
 export async function POST(request: NextRequest) {
     try {
         // Validate legacy header
-        const sessionCheck = validateSureStepsSession(request);
+        const sessionCheck = await validateSureStepsSession(request);
         if (!sessionCheck.ok) {
             return NextResponse.json({ error: sessionCheck.reason }, { status: 401 });
         }

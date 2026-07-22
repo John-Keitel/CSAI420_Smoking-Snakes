@@ -5,6 +5,11 @@ export const SignInSchema = z.object({
     password: z.string().min(1, 'required'),
 });
 
+export const StediLoginSchema = z.object({
+    username: z.string().min(1, 'required'),
+    password: z.string().min(1, 'required'),
+});
+
 export const SignUpSchema = z.object({
     email: z.email(),
     // E.164 format +<country_code><number> (^\+[1-9]\d{1,14}$)
@@ -63,7 +68,10 @@ export const RegisterPushTokenSchema = z.object({
     // Expo push tokens look like `ExponentPushToken[xxxxxxxx]` (or the legacy `ExpoPushToken[...]`).
     // Security evolution (Sprint 2+): `userId` is intentionally excluded from this body
     // and derived strictly from the authenticated session to prevent IDOR/session-binding bypass.
-    token: z.string({ error: 'required' }).max(255).regex(/^Expo(nent)?PushToken\[[^\]]+\]$/, 'invalid Expo push token format'),
+    token: z
+        .string({ error: 'required' })
+        .max(255)
+        .regex(/^Expo(nent)?PushToken\[[^\]]+\]$/, 'invalid Expo push token format'),
     deviceName: z.string().min(1).max(64).optional(),
     platform: z.enum(['ios', 'android']).optional(),
 });

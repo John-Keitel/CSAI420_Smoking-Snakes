@@ -3,6 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { proxyToStedi } from '@/lib/stedi-api';
 
+const { resolveSureStepsSessionMock } = vi.hoisted(() => ({
+    resolveSureStepsSessionMock: vi.fn(),
+}));
+
 vi.mock('@/lib/env-vars', () => ({
     ENV_VARS: {
         STEDI_API_BASE_URL: 'https://dev.stedi.me',
@@ -16,6 +20,10 @@ vi.mock('@/lib/logger', () => ({
     }),
 }));
 
+vi.mock('@/lib/auth/suresteps', () => ({
+    resolveSureStepsSession: resolveSureStepsSessionMock,
+}));
+
 describe('proxyToStedi', () => {
     const fetchMock = vi.fn<typeof fetch>();
     const createRequest = () => new NextRequest('http://localhost/user', { method: 'POST', body: '{}' });
@@ -23,6 +31,7 @@ describe('proxyToStedi', () => {
     beforeEach(() => {
         fetchMock.mockResolvedValue(new Response('ok', { status: 200, headers: { 'content-type': 'text/plain' } }));
         vi.stubGlobal('fetch', fetchMock);
+        resolveSureStepsSessionMock.mockResolvedValue({ ok: false, reason: 'Missing suresteps.session.token header' });
     });
 
     afterEach(() => {
@@ -39,6 +48,15 @@ describe('proxyToStedi', () => {
 
         const fetchInit = fetchMock.mock.calls[0][1];
         expect(fetchInit?.signal).toBeInstanceOf(AbortSignal);
+    });
+
+    it('forwards the resolved server-side STEDI token when requested', async () => {
+        resolveSureStepsSessionMock.mockResolvedValue({ ok: true, token: 'server-token', user: { id: 'user-1' } });
+
+        await proxyToStedi(createRequest(), '/user', { forwardSessionToken: true });
+
+        const fetchInit = fetchMock.mock.calls[0][1];
+        expect((fetchInit?.headers as Headers).get('suresteps.session.token')).toBe('server-token');
     });
 
     it('returns 504 when the upstream fetch times out', async () => {

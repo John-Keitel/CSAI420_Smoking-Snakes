@@ -2,12 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { SureStepsSessionSuccess, validateSureStepsSession } from '@/lib/auth/suresteps';
-import {
-    findOrCreateSession,
-    getLatestSessionMessages,
-    saveAiResponse,
-    saveUserMessage,
-} from '@/lib/chat-history-repository';
+import { findOrCreateSession, getLatestSessionMessages, saveAiResponse, saveUserMessage } from '@/lib/chat-history-repository';
 import { generateCoachAiResponse } from '@/lib/coach-ai';
 import { getAppLogger } from '@/lib/logger';
 
@@ -49,7 +44,7 @@ function unauthorized(reason?: string) {
 
 export async function GET(request: NextRequest) {
     try {
-        const sessionCheck = validateSureStepsSession(request);
+        const sessionCheck = await validateSureStepsSession(request);
         if (!sessionCheck.ok) {
             return unauthorized(sessionCheck.reason);
         }
@@ -69,7 +64,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const sessionCheck = validateSureStepsSession(request);
+        const sessionCheck = await validateSureStepsSession(request);
         if (!sessionCheck.ok) {
             return unauthorized(sessionCheck.reason);
         }

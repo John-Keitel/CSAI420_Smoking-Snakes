@@ -10,11 +10,9 @@ test('it should fail 401', async ({ request }) => {
 });
 
 test('it should work 200', async ({ request }) => {
-    const headers = await asDeveloper(request);
+    await asDeveloper(request);
 
-    const response = await request.get(`/users`, {
-        headers,
-    });
+    const response = await request.get(`/users`);
 
     expect(response.status()).toBe(200);
 

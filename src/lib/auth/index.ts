@@ -3,10 +3,13 @@ import { jwtVerify, SignJWT } from 'jose';
 import { headers } from 'next/headers';
 
 import type { Session, User } from '@/generated/prisma/client';
+import { auth } from '@/lib/auth/better-auth';
 import { prisma } from '@/lib/db';
 import { ENV_VARS } from '@/lib/env-vars';
 import { HttpException } from '@/lib/http';
 import { getAppLogger } from '@/lib/logger';
+
+export { auth, getAuthenticatedSession } from './better-auth';
 
 export { hashPassword, verifyPassword } from '@/lib/auth/password';
 
@@ -47,54 +50,73 @@ export async function createJwtToken(session: Session & { user: User }): Promise
     };
 }
 
+async function getBearerSession(headerList: Headers): Promise<Session & { user: User }> {
+    const authorization = headerList.get('authorization');
+    if (!authorization) {
+        throw new HttpException(401, 'Unauthenticated');
+    }
+
+    const [scheme, token] = authorization.split(' ');
+    if (scheme !== 'Bearer' || !token) {
+        throw new HttpException(401, 'Invalid authorization header');
+    }
+
+    const { payload } = await jwtVerify(token, getJwtSecret(), {
+        issuer: ENV_VARS.NEXTAUTH_URL,
+        algorithms: ['HS256'],
+    });
+
+    const sessionId = payload.sessionId;
+    if (payload.version !== 1 || typeof sessionId !== 'string') {
+        throw new HttpException(401, 'Invalid token');
+    }
+
+    logger.debug('looking for session %s', sessionId);
+    const session = await prisma.session.findUnique({
+        where: {
+            id: sessionId,
+        },
+        include: {
+            user: true,
+        },
+    });
+
+    if (!session) {
+        throw new HttpException(401, 'Session not found');
+    }
+
+    const expirationDate = new Date(session.updatedAt.getTime() + sessionTimeToLiveInSeconds * 1000);
+    if (expirationDate < new Date()) {
+        throw new HttpException(401, 'Session expired');
+    }
+
+    logger.debug('session user: %s (%s)', session.user.id, session.user.type);
+    return session;
+}
+
 export async function getSession(): Promise<Session & { user: User }> {
     try {
         const headerList = await headers();
 
-        const authorization = headerList.get('authorization');
-        if (!authorization) {
-            throw new HttpException(401, 'Unauthenticated');
+        try {
+            const betterAuthSession = await auth.api.getSession({ headers: headerList });
+            if (betterAuthSession) {
+                const session = await prisma.session.findUnique({
+                    where: { id: betterAuthSession.session.id },
+                    include: { user: true },
+                });
+
+                if (!session) {
+                    throw new HttpException(401, 'Session not found');
+                }
+
+                return session;
+            }
+        } catch (error) {
+            logger.error('Better Auth session lookup failed: %s', error);
         }
 
-        const [scheme, token] = authorization.split(' ');
-        if (scheme !== 'Bearer' || !token) {
-            throw new HttpException(401, 'Invalid authorization header');
-        }
-
-        const { payload } = await jwtVerify(token, getJwtSecret(), {
-            issuer: ENV_VARS.NEXTAUTH_URL,
-            algorithms: ['HS256'],
-        });
-
-        const sessionId = payload.sessionId;
-        if (payload.version !== 1 || typeof sessionId !== 'string') {
-            throw new HttpException(401, 'Invalid token');
-        }
-
-        logger.debug('looking for session %s', sessionId);
-        const session = await prisma.session.findUnique({
-            where: {
-                id: sessionId,
-            },
-            include: {
-                user: true,
-            },
-        });
-
-        if (!session) {
-            throw new HttpException(401, 'Session not found');
-        }
-
-        // The session expires 30 days after the last update
-        const expirationDate = new Date(session.updatedAt.getTime() + sessionTimeToLiveInSeconds * 1000);
-
-        // Check if the session is expired
-        if (expirationDate < new Date()) {
-            throw new HttpException(401, 'Session expired');
-        }
-
-        logger.debug('session user: %s ($s)', session.user.id, session.user.type);
-        return session;
+        return await getBearerSession(headerList);
     } catch (e) {
         if (e instanceof HttpException) {
             throw e;

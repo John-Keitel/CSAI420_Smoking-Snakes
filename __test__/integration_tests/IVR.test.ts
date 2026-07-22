@@ -21,6 +21,8 @@ const testData = {
     password: 'P@ssword123',
 };
 
+const stediBaseUrl = new URL(process.env.STEDI_API_BASE_URL ?? 'https://dev.stedi.me');
+
 let token: string;
 
 async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
@@ -53,7 +55,7 @@ async function createUser(): Promise<void> {
 }
 
 async function login(): Promise<string> {
-    const response = await apiFetch('/login', {
+    const response = await fetch(new URL('/login', stediBaseUrl), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -63,12 +65,12 @@ async function login(): Promise<string> {
     });
 
     if (!response.ok) {
-        throw new Error(`Failed to authenticate integration-test user: ${response.status} ${await response.text()}`);
+        throw new Error(`Failed to authenticate integration-test user against STEDI: ${response.status} ${await response.text()}`);
     }
 
     const sessionToken = (await response.text()).trim();
     if (!sessionToken) {
-        throw new Error('Legacy API returned an empty session token.');
+        throw new Error('STEDI returned an empty session token.');
     }
 
     return sessionToken;
@@ -123,7 +125,7 @@ beforeAll(async () => {
     await createCustomer();
 });
 
-describe('legacy IVR pass-through API', () => {
+describe('IVR pass-through API', () => {
     it('saves step data from an IoT device', async () => {
         const response = await saveSteps(100, 1);
 

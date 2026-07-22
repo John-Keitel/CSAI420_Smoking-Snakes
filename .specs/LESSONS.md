@@ -8,16 +8,16 @@
 
 Corroborated across multiple features. Safe to apply as guidance.
 
-_none_
+- none
 
 ## Candidates (under observation — do NOT load as guidance yet)
 
 Seen once or not yet corroborated. Tracked, not trusted.
 
-_none_
+- none
 
 ## Quarantined (failed when applied — ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
 
-_none_
+- none

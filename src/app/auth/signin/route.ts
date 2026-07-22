@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { createJwtToken, verifyPassword } from '@/lib/auth';
+import { auth, verifyPassword } from '@/lib/auth';
+import { syncCredentialAccount } from '@/lib/auth/credential-account';
 import { prisma } from '@/lib/db';
 import { HttpException } from '@/lib/http';
 import { getAppLogger } from '@/lib/logger';
@@ -28,7 +29,11 @@ export const POST = async (request: NextRequest) => {
             where: { email },
             select: {
                 id: true,
+                email: true,
                 password: true,
+                firstName: true,
+                lastName: true,
+                emailVerified: true,
             },
         });
 
@@ -42,27 +47,35 @@ export const POST = async (request: NextRequest) => {
             return NextResponse.json({ message: 'Invalid email or password' }, { status: 400 });
         }
 
-        // Let's create the session
-        const session = await prisma.session.create({
-            data: {
-                userId: user.id,
-            },
-            include: {
-                user: true,
-            },
-        });
+        await syncCredentialAccount(user);
 
-        // Create the token
-        const { token } = await createJwtToken(session);
-
-        // Create JWT token
-        return NextResponse.json(
-            {
-                userId: user.id,
-                token,
-            },
-            { status: 200 }
+        const authResponse = await auth.handler(
+            new Request(new URL('/api/auth/sign-in/email', request.url), {
+                method: 'POST',
+                headers: new Headers({
+                    'content-type': 'application/json',
+                    cookie: request.headers.get('cookie') ?? '',
+                    origin: new URL(request.url).origin,
+                }),
+                body: JSON.stringify({
+                    email,
+                    password,
+                }),
+            })
         );
+
+        if (!authResponse.ok) {
+            const message = authResponse.status === 401 ? 'Invalid email or password' : 'Server Error';
+            return NextResponse.json({ message }, { status: authResponse.status === 401 ? 400 : 500 });
+        }
+
+        const responseHeaders = new Headers();
+        const setCookie = authResponse.headers.get('set-cookie');
+        if (setCookie) {
+            responseHeaders.set('set-cookie', setCookie);
+        }
+
+        return NextResponse.json({ userId: user.id }, { status: 200, headers: responseHeaders });
     } catch (e) {
         if (e instanceof HttpException) {
             return NextResponse.json({ error: e.message }, { status: e.statusCode });

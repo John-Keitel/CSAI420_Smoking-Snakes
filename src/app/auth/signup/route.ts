@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { hashEmail, hashPassword } from '@/lib/auth';
+import { syncCredentialAccount } from '@/lib/auth/credential-account';
 import { prisma } from '@/lib/db';
 import { HttpException } from '@/lib/http';
 import { getAppLogger } from '@/lib/logger';
@@ -46,12 +47,23 @@ export const POST = async (request: NextRequest) => {
             data: {
                 email,
                 phone,
+                authName: `${firstName} ${lastName}`.trim(),
+                authEmailVerified: false,
                 firstName,
                 lastName,
                 dateOfBirth,
                 image: `https://www.gravatar.com/avatar/${emailHash}?d=identicon&r=pg`,
                 password: hashedPassword,
             },
+        });
+
+        await syncCredentialAccount({
+            id: user.id,
+            email,
+            password: hashedPassword,
+            firstName,
+            lastName,
+            emailVerified: user.emailVerified,
         });
 
         // Send email

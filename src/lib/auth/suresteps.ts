@@ -1,5 +1,9 @@
 import { NextRequest } from 'next/server';
 
+import { auth } from '@/lib/auth/better-auth';
+import { getStediTokenForSession } from '@/lib/auth/stedi-session-link';
+import { prisma } from '@/lib/db';
+
 type SessionUserType = 'patient' | 'standard' | 'provider' | 'developer' | 'clinician';
 
 export type SureStepsSessionSuccess = {
@@ -17,6 +21,11 @@ export type SureStepsSessionFailure = {
 };
 
 export type SureStepsSessionCheck = SureStepsSessionSuccess | SureStepsSessionFailure;
+
+export type ResolvedSureStepsSessionCheck = SureStepsSessionCheck & {
+    token?: string;
+    source?: 'header' | 'auth-session';
+};
 
 function asString(value: unknown): string | undefined {
     return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
@@ -55,18 +64,8 @@ function decodeJwtClaims(token: string): Record<string, unknown> {
     }
 }
 
-/**
- * Validate the legacy STEDI session token header `suresteps.session.token`.
- * For this implementation we simulate the old STEDI session validation by
- * requiring a non-empty header. In a real system this would validate the
- * token against a session store or verification service.
- */
-export function validateSureStepsSession(request: NextRequest): SureStepsSessionCheck {
+function validateSureStepsToken(request: NextRequest, token: string): SureStepsSessionCheck {
     try {
-        const token = request.headers.get('suresteps.session.token');
-
-        if (!token) return { ok: false, reason: 'Missing suresteps.session.token header' };
-
         // Simulated validation: token must be non-empty. Extend this to check
         // against DB or an external service as required.
         if (token.trim().length === 0) return { ok: false, reason: 'Empty session token' };
@@ -106,9 +105,68 @@ export function validateSureStepsSession(request: NextRequest): SureStepsSession
                 type: userType,
             },
         };
-    } catch (err) {
+    } catch (_err) {
         return { ok: false, reason: 'Validation error' };
     }
+}
+
+export async function resolveSureStepsSession(request: NextRequest): Promise<ResolvedSureStepsSessionCheck> {
+    const headerToken = request.headers.get('suresteps.session.token');
+
+    if (headerToken) {
+        const resolved = validateSureStepsToken(request, headerToken);
+        return resolved.ok ? { ...resolved, token: headerToken.trim(), source: 'header' } : resolved;
+    }
+
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session) {
+        return { ok: false, reason: 'Missing suresteps.session.token header' };
+    }
+
+    const stediToken = await getStediTokenForSession(session.session.id);
+    if (!stediToken) {
+        return { ok: false, reason: 'STEDI session token missing for authenticated session' };
+    }
+
+    const appUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { id: true, email: true, type: true },
+    });
+
+    if (!appUser) {
+        return { ok: false, reason: 'Session user not found' };
+    }
+
+    const forwardedHeaders = new Headers(request.headers);
+    forwardedHeaders.set('suresteps.session.token', stediToken);
+    forwardedHeaders.set('suresteps.user.id', appUser.id);
+    forwardedHeaders.set('suresteps.user.email', appUser.email);
+    forwardedHeaders.set('suresteps.user.type', appUser.type);
+
+    const forwardedRequest = new NextRequest(request.url, {
+        method: request.method,
+        headers: forwardedHeaders,
+    });
+
+    const resolved = validateSureStepsToken(forwardedRequest, stediToken);
+    return resolved.ok ? { ...resolved, token: stediToken, source: 'auth-session' } : resolved;
+}
+
+/**
+ * Validate the legacy STEDI session token header `suresteps.session.token`.
+ * For browser-backed flows, this also resolves a linked STEDI token from the
+ * authenticated app session when the header is absent.
+ */
+export async function validateSureStepsSession(request: NextRequest): Promise<SureStepsSessionCheck> {
+    const resolved = await resolveSureStepsSession(request);
+    if (!resolved.ok) {
+        return resolved;
+    }
+
+    return {
+        ok: true,
+        user: resolved.user,
+    };
 }
 
 /** Helper to compute a Date offset by given days */

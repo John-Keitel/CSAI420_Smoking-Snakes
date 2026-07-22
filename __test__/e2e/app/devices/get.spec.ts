@@ -8,9 +8,9 @@ test('should fail 401 without authentication', async ({ request }) => {
 });
 
 test('should return devices when authenticated', async ({ request }) => {
-    const headers = await asDeveloper(request);
+    await asDeveloper(request);
 
-    const response = await request.get('/devices', { headers });
+    const response = await request.get('/devices');
     expect(response.status()).toBe(200);
 
     const devices = await response.json();

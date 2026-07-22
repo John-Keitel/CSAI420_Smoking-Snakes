@@ -1,0 +1,19 @@
+0 verbose cli /Users/daniel/.nvm/versions/node/v24.18.0/bin/node /Users/daniel/.nvm/versions/node/v24.18.0/lib/node_modules/npm/bin/npm-cli.js
+1 info using npm@11.16.0
+2 info using node@v24.18.0
+3 silly config load:file:/Users/daniel/.nvm/versions/node/v24.18.0/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/daniel/Projects/Ensign/CSAI420/CSAI420_Smoking-Snakes/.npmrc
+5 silly config load:file:/Users/daniel/.npmrc
+6 silly config load:file:/Users/daniel/.nvm/versions/node/v24.18.0/etc/npmrc
+7 verbose title npm exec playwright test __test__/e2e/app/auth/signin.spec.ts --reporter=line
+8 verbose argv "exec" "--" "playwright" "test" "__test__/e2e/app/auth/signin.spec.ts" "--reporter=line"
+9 verbose logfile logs-max:10 dir:/Users/daniel/Projects/Ensign/CSAI420/CSAI420_Smoking-Snakes/.npm-cache/_logs/2026-07-22T01_38_49_426Z-
+10 verbose logfile /Users/daniel/Projects/Ensign/CSAI420/CSAI420_Smoking-Snakes/.npm-cache/_logs/2026-07-22T01_38_49_426Z-debug-0.log
+11 silly logfile start cleaning logs, removing 1 files
+12 silly logfile done cleaning log files
+13 verbose cwd /Users/daniel/Projects/Ensign/CSAI420/CSAI420_Smoking-Snakes
+14 verbose os Darwin 25.5.0
+15 verbose node v24.18.0
+16 verbose npm  v11.16.0
+17 verbose exit 1
+18 verbose code 1

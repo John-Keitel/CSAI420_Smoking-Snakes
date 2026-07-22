@@ -2,90 +2,35 @@
 
 ## Decisions
 
-<!--
-Project-level decisions only (conventions, patterns, constraints, cross-cutting
-tech choices). Append one AD-NNN entry per decision; never delete — supersede.
-Feature-local decisions stay in the slice's design.md, not here.
-
-Format:
-
 ### AD-001
 
-- **Decision**: [what was decided — one sentence]
-- **Reason**: [why this option was chosen]
-- **Trade-off**: [what was given up]
-- **Scope**: [which features / packages / layers this governs]
-- **Date**: YYYY-MM-DD
-- **Status**: active | superseded by AD-NNN
--->
-
-### AD-001
-
-- **Decision**: Accept `nodemailer@^6.10.0` as a residual vulnerability in the fix-npm-vulns slice because it cannot be overridden.
-- **Reason**: `nodemailer` is a direct dependency of `cs420-api` at `^6.10.0`. `npm` rejects overriding a direct dependency with `EOVERRIDE`, so the overrides-only strategy in this slice cannot reach it.
-- **Trade-off**: The high-severity advisories remain active until a follow-up slice bumps the direct dependency; no source code or breaking change is introduced here.
-- **Scope**: `package.json` dependencies, `nodemailer`, `@auth/core` transitive chain.
-- **Package / resolved version**: `nodemailer@6.10.0`
-- **Advisory IDs**:
-  - https://github.com/advisories/GHSA-mm7p-fcc7-pg87
-  - https://github.com/advisories/GHSA-rcmh-qjqh-p98v
-  - https://github.com/advisories/GHSA-c7w3-x93f-qmm8
-  - https://github.com/advisories/GHSA-vvjj-xcjg-gr5g
-  - https://github.com/advisories/GHSA-268h-hp4c-crq3
-  - https://github.com/advisories/GHSA-wqvq-jvpq-h66f
-  - https://github.com/advisories/GHSA-r7g4-qg5f-qqm2
-  - https://github.com/advisories/GHSA-p6gq-j5cr-w38f
-- **Override attempt(s)**: `nodemailer@^9.0.3` — rejected by npm (`EOVERRIDE`) because `nodemailer` is a direct dependency.
-- **Failure mode**: `EOVERRIDE` on direct dependency; overrides cannot pin a package that is also declared in `dependencies`.
-- **Recommended next step**: Open a follow-up slice to bump the direct `nodemailer` dependency from `^6.10.0` to `^9.0.3` and run email smoke tests to validate `@auth/core` integration.
-- **Date**: 2026-07-04
+- **Decision**: Browser-facing authentication will use Better Auth-managed session cookies, while the opaque STEDI session token is stored and resolved server-side.
+- **Reason**: The new login flow must work through App Router server actions without exposing `suresteps.session.token` in browser-managed headers or client state.
+- **Trade-off**: This adds migration work across existing auth helpers, route handlers, tests, and Prisma persistence instead of keeping the current thin `/login` proxy.
+- **Scope**: Auth/session handling, STEDI-backed route access, login/logout UX, test helpers.
+- **Date**: 2026-07-21
 - **Status**: active
 
 ### AD-002
 
-- **Decision**: Treat the `@auth/core` audit finding as resolved-by-proxy when `nodemailer` is bumped; no separate override is applied.
-- **Reason**: `npm audit` flags `@auth/core` only because it depends on the vulnerable `nodemailer@6.10.0`. `@auth/core` itself has no independent advisory in this report. Bumping the direct `nodemailer` dependency to `^9.0.3` in a follow-up slice will remove `@auth/core`'s transitive exposure without altering `@auth/core`'s major version in this slice.
-- **Trade-off**: The moderate-severity finding remains on the audit until the nodemailer follow-up slice lands; an alternative would be to evaluate bumping or downgrading `@auth/core` itself, but that is explicitly out of scope for this overrides-only slice.
-- **Scope**: `package.json` dependencies, `@auth/core`, `nodemailer` transitive chain.
-- **Package / resolved version**: `@auth/core@0.38.0` (depends on `nodemailer@6.10.0`)
-- **Advisory IDs**: Transitive via `nodemailer` — see AD-001 for GHSA list. No independent GHSA for `@auth/core` was reported by `npm audit`.
-- **Override attempt(s)**: No override attempted; the vulnerable path is through `nodemailer`, which is a direct dependency and cannot be overridden (`EOVERRIDE`).
-- **Failure mode**: Cannot override transitive parent without first resolving the direct-dependency block on `nodemailer`.
-- **Recommended next step**: Resolve automatically in the same follow-up slice that bumps direct `nodemailer` to `^9.0.3`; alternatively, evaluate bumping `@auth/core` to a version that natively supports `nodemailer@9.x` if smoke tests reveal incompatibility.
-- **Date**: 2026-07-04
-- **Status**: active
-
-### AD-003
-
-- **Decision**: Epic 3 V1 uses STEDI pass-through only — no Kafka, SNS, SQS, or EventBridge in this repository for real-time sensor data.
-- **Reason**: PRFAQ Step 4 is “transmit to cloud API for analysis”; the IVR TDD defers dedicated queueing to V2 and uses STEDI ingestion plus polling `/devices/updates/recent`. Assignment 1.7 scores via STEDI `/riskscore`.
-- **Trade-off**: No local stream processing or offline buffering in V1; latency and availability depend on STEDI.
-- **Scope**: SCRUM-17 / `.specs/features/realtime-data-path/`, STEDI sensor and score routes.
-- **Date**: 2026-07-11
+- **Decision**: The `/login` browser entry point will become a page-based App Router flow (`page.tsx` + client form + server action), and the legacy `/login` POST pass-through endpoint will be removed.
+- **Reason**: The requested login experience requires server actions, pending/error UI, and cookie-backed auth state rather than a raw token-issuing route.
+- **Trade-off**: Existing tests and any non-browser callers that POST to `/login` must migrate in the same change.
+- **Scope**: `src/app/login`, auth route migration, deployed integration tests, developer docs.
+- **Date**: 2026-07-21
 - **Status**: active
 
 ## Handoff
 
-<!--
-Pause snapshot (~500 tokens, overwritten each pause). Replace this section only;
-never touch ## Decisions above.
-
-Format:
-- **Feature**: [feature name / .specs path]
-- **Phase / Task**: [e.g., Phase 2 / T4 — implement repository layer]
-- **Completed**: [comma-separated task IDs or "none"]
-- **In-progress** (file:line): [e.g., src/billing/subscription.service.ts:88]
-- **Next step**: [one sentence — exactly what to do next]
-- **Blockers**: [none | description]
-- **Uncommitted files**: [list or "none"]
-- **Branch**: [git branch name]
--->
-
-- **Feature**: realtime-data-path / .specs/features/realtime-data-path/
-- **Phase / Task**: Planning closed — tasks published to SCRUM-18…22
-- **Completed**: spec.md, design.md, tasks.md, epic brief, Jira rewrite
-- **In-progress**: (none)
-- **Next step**: Start a new session with `/sdd-execute-jira` on SCRUM-17 / branch `jira-scrum-17`.
-- **Blockers**: none
-- **Uncommitted files**: planning artifacts committed on slice branch only
-- **Branch**: jira-scrum-17
+- **Feature**: `.specs/features/better-auth-stedi-login/`
+- **Phase / Task**: Planning complete — spec/design/tasks drafted for review
+- **Completed**: `spec.md`, `context.md`, `design.md`, `tasks.md`, `STATE.md`
+- **In-progress** (file:line): none
+- **Next step**: Review the saved spec set, then either revise the planning docs or start implementation from `tasks.md` in a separate execution session.
+- **Blockers**: Better Auth adapter table contract should be confirmed from official docs during implementation before generating migrations.
+- **Uncommitted files**: `.specs/STATE.md`, `.specs/LESSONS.md`, `.specs/lessons.json`,
+  `.specs/features/better-auth-stedi-login/spec.md`,
+  `.specs/features/better-auth-stedi-login/context.md`,
+  `.specs/features/better-auth-stedi-login/design.md`,
+  `.specs/features/better-auth-stedi-login/tasks.md`
+- **Branch**: `teacher-contribution-week-4`

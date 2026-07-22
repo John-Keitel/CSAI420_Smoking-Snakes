@@ -16,8 +16,8 @@ type ValidSession = {
     };
 };
 
-function validateSession(request: NextRequest) {
-    const sessionCheck = validateSureStepsSession(request);
+async function validateSession(request: NextRequest) {
+    const sessionCheck = await validateSureStepsSession(request);
     if (!sessionCheck.ok) throw new HttpException(401, sessionCheck.reason ?? 'Unauthorized');
 
     const userId = (sessionCheck as { user?: { id?: string } }).user?.id;
@@ -38,7 +38,7 @@ function errorResponse(error: unknown) {
 // Register (or refresh) an Expo push token for a user.
 export async function POST(request: NextRequest) {
     try {
-        const sessionCheck = validateSession(request);
+        const sessionCheck = await validateSession(request);
         const userId = sessionCheck.user.id;
 
         const body = await request.json();

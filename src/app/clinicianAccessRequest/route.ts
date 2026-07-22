@@ -32,7 +32,7 @@ function parseBody(body: unknown): { clinicianUsername: string; customerEmail: s
 
 export async function POST(request: NextRequest) {
     try {
-        const sessionCheck = validateSureStepsSession(request);
+        const sessionCheck = await validateSureStepsSession(request);
         if (!sessionCheck.ok) {
             return unauthorized(sessionCheck.reason);
         }
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
     try {
-        const sessionCheck = validateSureStepsSession(request);
+        const sessionCheck = await validateSureStepsSession(request);
         if (!sessionCheck.ok) {
             return unauthorized(sessionCheck.reason);
         }

@@ -8,9 +8,9 @@ test('should fail 401 without authentication', async ({ request }) => {
 });
 
 test('should return assessments when authenticated', async ({ request }) => {
-    const headers = await asDeveloper(request);
+    await asDeveloper(request);
 
-    const response = await request.get('/assessments', { headers });
+    const response = await request.get('/assessments');
     expect(response.status()).toBe(200);
 
     const assessments = await response.json();

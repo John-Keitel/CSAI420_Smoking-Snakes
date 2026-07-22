@@ -10,7 +10,7 @@ type RouteContext = {
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
     try {
-        const sessionCheck = validateSureStepsSession(request);
+        const sessionCheck = await validateSureStepsSession(request);
         if (!sessionCheck.ok) return NextResponse.json({ error: sessionCheck.reason }, { status: 401 });
 
         const { customer: customerParam } = await params;

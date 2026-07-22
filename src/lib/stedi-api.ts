@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { resolveSureStepsSession } from '@/lib/auth/suresteps';
 import { ENV_VARS } from '@/lib/env-vars';
 import { getAppLogger } from '@/lib/logger';
 
@@ -27,9 +28,9 @@ export async function proxyToStedi(request: NextRequest, path: string, options: 
     }
 
     if (options.forwardSessionToken) {
-        const sessionToken = request.headers.get('suresteps.session.token');
-        if (sessionToken) {
-            headers.set('suresteps.session.token', sessionToken);
+        const sessionCheck = await resolveSureStepsSession(request);
+        if (sessionCheck.ok && sessionCheck.token) {
+            headers.set('suresteps.session.token', sessionCheck.token);
         }
     }
 

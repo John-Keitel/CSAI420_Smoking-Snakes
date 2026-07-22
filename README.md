@@ -83,12 +83,12 @@ MailPit WebUI: http://localhost:8025
 
 ### Full application stack
 
-Copy the environment template and replace `AUTH_SECRET` before starting the API container:
+Copy the environment template and replace the auth secrets before starting the API container:
 
 ```bash
 cp .env.example .env
 openssl rand -base64 32
-# Put the generated value in AUTH_SECRET inside .env
+# Put the generated value in BETTER_AUTH_SECRET and AUTH_SECRET inside .env
 
 docker compose up -d --build --wait
 curl http://127.0.0.1:3000/health
@@ -109,7 +109,8 @@ cp .env.example .env
 Update these values in `.env`:
 
 - `APP_ENV=production`
-- `AUTH_SECRET` with a new `openssl rand -base64 32` value
+- `BETTER_AUTH_SECRET` and `AUTH_SECRET` with a new `openssl rand -base64 32` value
+- `BETTER_AUTH_URL` and `NEXTAUTH_URL` with your public API origin
 - `NEXTAUTH_URL=https://api.your-domain.example`
 - PostgreSQL credentials and both `DOCKER_DATABASE_*` URLs if the defaults are changed
 
@@ -130,7 +131,9 @@ Terminate TLS with a host reverse proxy such as Caddy or Nginx and forward the p
 npm run db:seed
 ```
 
-The JWT implementation now uses versioned `jose` HS256 tokens. Tokens issued by the previous Auth.js encryption implementation are intentionally invalidated by this upgrade; users must sign in again.
+Browser authentication is migrating to Better Auth-managed session cookies. During the transition, this repo supports both the legacy `AUTH_SECRET` / `NEXTAUTH_URL` names and the Better Auth-native `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` names so the auth layer can switch without forcing an env rename first.
+
+Browser users now sign in through [src/app/login/page.tsx](src/app/login/page.tsx), which authenticates against STEDI server-side, creates a Better Auth session cookie, and stores the opaque STEDI token server-side against that session. Repo-owned machine and raw-token integration helpers should authenticate directly against STEDI instead of POSTing to this app's removed legacy `/login` endpoint.
 
 ## API Routes
 
@@ -138,15 +141,17 @@ The application exposes a single Next.js App Router tree under `src/app/`:
 
 - `GET /health` — process health check
 - `POST /user` — pass through legacy user creation
-- `POST /login` — pass through legacy authentication
+- `GET /login` — browser login page backed by a server action
 - `POST /customer` — pass through legacy customer creation
 - `POST /rapidsteptest` — pass through STEDI IoT step data (Epic 3)
 - `POST /sensorUpdates` — pass through STEDI sensor updates (Epic 3)
 - `GET /devices/updates/recent` — pass through recent STEDI device updates (Epic 3)
 - `GET /riskscore/[email]` — pass through STEDI risk/balance score (Epic 3)
-- `POST /auth/signin` — authenticate and receive a JWT
+- `POST /api/auth/*` — Better Auth route surface for session management
+- `POST /auth/signin` — authenticate a local app user and establish a session cookie
 - `POST /auth/signup` — create a new user account
 - `DELETE /auth/signout` — invalidate the current session
+- `GET /dashboard` — protected post-login landing page
 - `GET /users` — list users (authorization-aware)
 - `GET|PATCH|DELETE /users/[userId]` — user management
 - `GET /devices` — list devices
@@ -161,13 +166,13 @@ The STEDI pass-through endpoints use `STEDI_API_BASE_URL`, which defaults to `ht
 
 ### Deployed IVR integration tests
 
-The assignment integration suite targets this project, which then passes requests through to the legacy API:
+The assignment integration suite targets this project for the pass-through routes, but authenticates directly against STEDI to obtain the raw `suresteps.session.token` needed by the machine-style legacy endpoints:
 
 ```bash
 API_URL=https://your-project.vercel.app npm run test:integration
 ```
 
-`API_URL` must not point directly to `stedi.me` or `dev.stedi.me`.
+`API_URL` must not point directly to `stedi.me` or `dev.stedi.me`. Optionally set `STEDI_API_BASE_URL` if you need to target a non-default STEDI environment for the raw-token bootstrap.
 
 ### End-to-end API tests
 

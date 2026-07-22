@@ -11,7 +11,7 @@ import { randomUUID } from 'crypto';
  */
 export async function POST(request: NextRequest) {
     try {
-        const sessionCheck = validateSureStepsSession(request);
+        const sessionCheck = await validateSureStepsSession(request);
         if (!sessionCheck.ok) return NextResponse.json({ error: sessionCheck.reason }, { status: 401 });
 
         if (!sessionCheck.user.email) {
@@ -19,9 +19,7 @@ export async function POST(request: NextRequest) {
         }
 
         const isPatientSession =
-            sessionCheck.user.type === undefined ||
-            sessionCheck.user.type === 'patient' ||
-            sessionCheck.user.type === 'standard';
+            sessionCheck.user.type === undefined || sessionCheck.user.type === 'patient' || sessionCheck.user.type === 'standard';
 
         if (!isPatientSession) {
             return NextResponse.json({ error: 'Only patient sessions can approve or deny consent' }, { status: 403 });

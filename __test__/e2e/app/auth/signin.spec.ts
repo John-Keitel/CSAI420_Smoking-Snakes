@@ -14,7 +14,9 @@ test('should reject invalid credentials', async ({ request }) => {
 });
 
 test('should authenticate a seeded developer', async ({ request }) => {
-    const headers = await asDeveloper(request);
+    const response = await asDeveloper(request);
 
-    expect(headers.Authorization).toMatch(/^Bearer /);
+    expect(response.status()).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ userId: expect.any(String) });
+    expect(response.headers()['set-cookie']).toContain('session');
 });

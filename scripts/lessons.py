@@ -153,7 +153,7 @@ def _render(root, data):
             out.append(note)
             out.append("")
         if not items:
-            out.append("_none_")
+            out.append("- none")
             out.append("")
             return out
         for l in sorted(items, key=lambda x: x["id"]):

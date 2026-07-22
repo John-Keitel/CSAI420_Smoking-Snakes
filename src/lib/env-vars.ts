@@ -28,21 +28,41 @@ const DatabaseSchema = z.object({
 });
 
 const NodeEnvSchema = z.object({
-    NODE_ENV: z.enum(['production', 'development']).default('production'),
+    NODE_ENV: z.enum(['production', 'development', 'test']).default('production'),
 });
 
-const AuthSchema = z.object({
-    AUTH_SECRET: z.string().min(1),
-    NEXTAUTH_URL: z.string().url(),
-    AUTH_TRUST_HOST: z
-        .enum(['true', 'false'])
-        .default('false')
-        .transform((value) => value === 'true'),
-    AUTH_DEBUG: z
-        .enum(['true', 'false'])
-        .default('false')
-        .transform((value) => value === 'true'),
-});
+const AuthSchema = z
+    .object({
+        AUTH_SECRET: z.string().min(1).optional(),
+        BETTER_AUTH_SECRET: z.string().min(1).optional(),
+        NEXTAUTH_URL: z.string().url().optional(),
+        BETTER_AUTH_URL: z.string().url().optional(),
+        AUTH_TRUST_HOST: z
+            .enum(['true', 'false'])
+            .default('false')
+            .transform((value) => value === 'true'),
+        AUTH_DEBUG: z
+            .enum(['true', 'false'])
+            .default('false')
+            .transform((value) => value === 'true'),
+    })
+    .superRefine((value, ctx) => {
+        if (!value.AUTH_SECRET && !value.BETTER_AUTH_SECRET) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'AUTH_SECRET or BETTER_AUTH_SECRET is required',
+                path: ['AUTH_SECRET'],
+            });
+        }
+
+        if (!value.NEXTAUTH_URL && !value.BETTER_AUTH_URL) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'NEXTAUTH_URL or BETTER_AUTH_URL is required',
+                path: ['NEXTAUTH_URL'],
+            });
+        }
+    });
 
 const MailerSchema = z.object({
     MAILER_SMTP_HOST: z.string(),
@@ -77,9 +97,15 @@ function validateEnvWithSchema<TSchema extends z.ZodType>(schema: TSchema, schem
     return result.data;
 }
 
+const authVars = validateEnvWithSchema(AuthSchema, 'AuthSchema');
+
 export const ENV_VARS = {
     ...validateEnvWithSchema(AppSchema, 'AppSchema'),
-    ...validateEnvWithSchema(AuthSchema, 'AuthSchema'),
+    ...authVars,
+    AUTH_SECRET: authVars.AUTH_SECRET ?? authVars.BETTER_AUTH_SECRET!,
+    BETTER_AUTH_SECRET: authVars.BETTER_AUTH_SECRET ?? authVars.AUTH_SECRET!,
+    NEXTAUTH_URL: authVars.NEXTAUTH_URL ?? authVars.BETTER_AUTH_URL!,
+    BETTER_AUTH_URL: authVars.BETTER_AUTH_URL ?? authVars.NEXTAUTH_URL!,
     ...validateEnvWithSchema(DatabaseSchema, 'DatabaseSchema'),
     ...validateEnvWithSchema(NodeEnvSchema, 'NodeEnvSchema'),
     ...validateEnvWithSchema(MailerSchema, 'MailerSchema'),
