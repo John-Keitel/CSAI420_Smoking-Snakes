@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import { Fraunces, Geist, Geist_Mono, Inter } from 'next/font/google';
 
 import './globals.css';
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
-const inter = Inter({subsets:['latin'],variable:'--font-sans'});
+const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 const geistSans = Geist({
     variable: '--font-geist-sans',
@@ -24,8 +24,8 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-    title: 'PracticeFront — Practice Management for Modern Clinicians',
-    description: 'The all-in-one dashboard that helps your practice run smoother, so you can focus on patient care.',
+    title: 'STEDI',
+    description: 'STEDI',
 };
 
 export const viewport: Viewport = {
@@ -44,7 +44,7 @@ export default function RootLayout({
         <html
             lang="en"
             suppressHydrationWarning
-            className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, fraunces.variable, "font-sans", inter.variable)}
+            className={cn('h-full', 'antialiased', geistSans.variable, geistMono.variable, fraunces.variable, 'font-sans', inter.variable)}
         >
             <body className="flex min-h-full flex-col">{children}</body>
         </html>
