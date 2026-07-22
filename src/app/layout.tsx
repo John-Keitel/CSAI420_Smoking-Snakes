@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Fraunces, Geist, Geist_Mono, Inter } from 'next/font/google';
 
 import './globals.css';
+import { ThemeProvider } from '@/components/theme-provider';
 import { cn } from '@/lib/utils';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
@@ -46,7 +47,11 @@ export default function RootLayout({
             suppressHydrationWarning
             className={cn('h-full', 'antialiased', geistSans.variable, geistMono.variable, fraunces.variable, 'font-sans', inter.variable)}
         >
-            <body className="flex min-h-full flex-col">{children}</body>
+            <body className="flex min-h-full flex-col">
+                <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
+                    {children}
+                </ThemeProvider>
+            </body>
         </html>
     );
 }
