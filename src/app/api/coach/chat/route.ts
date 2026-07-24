@@ -2,12 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { SureStepsSessionSuccess, validateSureStepsSession } from '@/lib/auth/suresteps';
-import {
-    findOrCreateSession,
-    getLatestSessionMessages,
-    saveAiResponse,
-    saveUserMessage,
-} from '@/lib/chat-history-repository';
+import { findOrCreateSession, getLatestSessionMessages, saveAiResponse, saveUserMessage } from '@/lib/chat-history-repository';
 import { generateCoachAiResponse } from '@/lib/coach-ai';
 import { getAppLogger } from '@/lib/logger';
 

@@ -16,11 +16,7 @@ const defaultAiResponse: AiResponse = {
     escalate: false,
 };
 
-async function loadCoachModule(options: {
-    openAiApiKey?: string | undefined;
-    clinicianRecord: MockRecord;
-    aiResponse?: AiResponse;
-}) {
+async function loadCoachModule(options: { openAiApiKey?: string | undefined; clinicianRecord: MockRecord; aiResponse?: AiResponse }) {
     vi.resetModules();
 
     const findFirstMock = vi.fn().mockResolvedValue(options.clinicianRecord);

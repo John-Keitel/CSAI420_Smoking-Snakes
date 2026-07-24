@@ -19,9 +19,7 @@ export async function POST(request: NextRequest) {
         }
 
         const isPatientSession =
-            sessionCheck.user.type === undefined ||
-            sessionCheck.user.type === 'patient' ||
-            sessionCheck.user.type === 'standard';
+            sessionCheck.user.type === undefined || sessionCheck.user.type === 'patient' || sessionCheck.user.type === 'standard';
 
         if (!isPatientSession) {
             return NextResponse.json({ error: 'Only patient sessions can approve or deny consent' }, { status: 403 });

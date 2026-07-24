@@ -116,8 +116,7 @@ describe('POST /api/coach/chat integration boundaries', () => {
     });
 
     it('Path 401: returns unauthorized when session validation fails', async () => {
-        const { POST, generateCoachAiResponseMock, findOrCreateSessionMock, saveUserMessageMock, saveAiResponseMock } =
-            await loadRoute({
+        const { POST, generateCoachAiResponseMock, findOrCreateSessionMock, saveUserMessageMock, saveAiResponseMock } = await loadRoute({
             sessionCheck: { ok: false, reason: 'Session expired' },
         });
 
@@ -138,8 +137,7 @@ describe('POST /api/coach/chat integration boundaries', () => {
     });
 
     it('Path 400: returns bad request when payload is missing currentBalanceScore', async () => {
-        const { POST, generateCoachAiResponseMock, findOrCreateSessionMock, saveUserMessageMock, saveAiResponseMock } =
-            await loadRoute({
+        const { POST, generateCoachAiResponseMock, findOrCreateSessionMock, saveUserMessageMock, saveAiResponseMock } = await loadRoute({
             sessionCheck: { ok: true, user: { id: 'user-123', email: 'patient@example.com', type: 'standard' } },
         });
 
@@ -165,13 +163,7 @@ describe('POST /api/coach/chat integration boundaries', () => {
             escalate: false,
         };
 
-        const {
-            POST,
-            findOrCreateSessionMock,
-            saveUserMessageMock,
-            generateCoachAiResponseMock,
-            saveAiResponseMock,
-        } = await loadRoute({
+        const { POST, findOrCreateSessionMock, saveUserMessageMock, generateCoachAiResponseMock, saveAiResponseMock } = await loadRoute({
             sessionCheck: { ok: true, user: { id: 'user-123', email: 'patient@example.com', type: 'standard' } },
             coachResult,
             sessionId: 'session-abc',
@@ -197,34 +189,18 @@ describe('POST /api/coach/chat integration boundaries', () => {
         expect(generateCoachAiResponseMock).toHaveBeenCalledOnce();
 
         expect(saveAiResponseMock).toHaveBeenCalledOnce();
-        expect(saveAiResponseMock).toHaveBeenCalledWith(
-            'session-abc',
-            'Great progress. Keep your support rail close and move slowly.',
-            {
-                escalate: false,
-                clinicianTokenActive: true,
-            }
-        );
+        expect(saveAiResponseMock).toHaveBeenCalledWith('session-abc', 'Great progress. Keep your support rail close and move slowly.', {
+            escalate: false,
+            clinicianTokenActive: true,
+        });
 
-        expect(findOrCreateSessionMock.mock.invocationCallOrder[0]).toBeLessThan(
-            saveUserMessageMock.mock.invocationCallOrder[0]
-        );
-        expect(saveUserMessageMock.mock.invocationCallOrder[0]).toBeLessThan(
-            generateCoachAiResponseMock.mock.invocationCallOrder[0]
-        );
-        expect(generateCoachAiResponseMock.mock.invocationCallOrder[0]).toBeLessThan(
-            saveAiResponseMock.mock.invocationCallOrder[0]
-        );
+        expect(findOrCreateSessionMock.mock.invocationCallOrder[0]).toBeLessThan(saveUserMessageMock.mock.invocationCallOrder[0]);
+        expect(saveUserMessageMock.mock.invocationCallOrder[0]).toBeLessThan(generateCoachAiResponseMock.mock.invocationCallOrder[0]);
+        expect(generateCoachAiResponseMock.mock.invocationCallOrder[0]).toBeLessThan(saveAiResponseMock.mock.invocationCallOrder[0]);
     });
 
     it('Path 500: returns internal server error when session lookup fails with database connectivity error', async () => {
-        const {
-            POST,
-            loggerErrorMock,
-            saveUserMessageMock,
-            generateCoachAiResponseMock,
-            saveAiResponseMock,
-        } = await loadRoute({
+        const { POST, loggerErrorMock, saveUserMessageMock, generateCoachAiResponseMock, saveAiResponseMock } = await loadRoute({
             sessionCheck: { ok: true, user: { id: 'user-123', email: 'patient@example.com', type: 'standard' } },
             findOrCreateError: new Error('Database connection failed'),
         });
@@ -254,13 +230,7 @@ describe('POST /api/coach/chat integration boundaries', () => {
             escalate: false,
         };
 
-        const {
-            POST,
-            findOrCreateSessionMock,
-            saveUserMessageMock,
-            generateCoachAiResponseMock,
-            saveAiResponseMock,
-        } = await loadRoute({
+        const { POST, findOrCreateSessionMock, saveUserMessageMock, generateCoachAiResponseMock, saveAiResponseMock } = await loadRoute({
             sessionCheck: { ok: true, user: { id: 'user-123', email: 'patient@example.com', type: 'standard' } },
             coachResult,
             sessionId: 'session-concurrency',

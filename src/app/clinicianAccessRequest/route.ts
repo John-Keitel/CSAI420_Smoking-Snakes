@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { addDays, validateSureStepsSession } from '@/lib/auth/suresteps';
 import { prisma } from '@/lib/db';
+import { getAppLogger } from '@/lib/logger';
+import { notifyClinicianConsentRequested } from '@/lib/notifications/clinician-consent-request-push';
+
+const logger = getAppLogger('api:clinician-access-request-legacy');
 
 function textResponse(body: string, status = 200) {
     return new NextResponse(body, {
@@ -56,6 +60,14 @@ export async function POST(request: NextRequest) {
                 status: 'PENDING',
                 expiresAt: addDays(new Date(), 7),
             },
+        });
+
+        // Keep request creation resilient if push dispatch fails.
+        void notifyClinicianConsentRequested({
+            customerEmail: parsed.customerEmail,
+            clinicianId: parsed.clinicianUsername,
+        }).catch((error) => {
+            logger.error('failed to send clinician consent push notification: %s', error);
         });
 
         return textResponse('Access request submitted successfully.', 201);

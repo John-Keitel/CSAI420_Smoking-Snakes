@@ -7,7 +7,13 @@ vi.mock('@/lib/logger', () => ({
     }),
 }));
 
-import { buildIntelligentScoreAnnouncement, buildScoreAnnouncement, formatScoreForVoice, getPersonalizedFeedback, getScoreBand } from '@/lib/score-announcement';
+import {
+    buildIntelligentScoreAnnouncement,
+    buildScoreAnnouncement,
+    formatScoreForVoice,
+    getPersonalizedFeedback,
+    getScoreBand,
+} from '@/lib/score-announcement';
 
 describe('formatScoreForVoice', () => {
     it('formats a whole number score into a spoken sentence', () => {

@@ -133,12 +133,7 @@ export function buildRecentScoresContext(scores: readonly RecentBalanceScore[] =
     const values = recent.map((item) => item.score);
     const first = values[0];
     const last = values[values.length - 1];
-    const trend =
-        last > first
-            ? 'improving'
-            : last < first
-              ? 'declining'
-              : 'stable';
+    const trend = last > first ? 'improving' : last < first ? 'declining' : 'stable';
 
     return `Recent scores: ${values.join(', ')}. Trend appears ${trend}.`;
 }
@@ -166,10 +161,7 @@ function fallbackFeedback(scoreBand: VoiceFeedbackInput['scoreBand']): string {
     return 'Your score is strong today. Keep your routine going and continue regular check-ins.';
 }
 
-export async function generateVoiceFeedback(
-    input: VoiceFeedbackInput,
-    options: VoiceAiRuntimeOptions = {}
-): Promise<VoiceFeedbackResult> {
+export async function generateVoiceFeedback(input: VoiceFeedbackInput, options: VoiceAiRuntimeOptions = {}): Promise<VoiceFeedbackResult> {
     const escalation = detectEscalationRisk(input.callerTranscript ?? '');
 
     if (escalation.status === 'FLAGGED') {

@@ -53,7 +53,9 @@ describe('enforceSystemPromptGuardrails', () => {
     });
 
     it('preserves safe non-clinical phrasing', () => {
-        const safeText = enforceSystemPromptGuardrails('Great consistency this week. Keep your routine and check in with your provider if needed.');
+        const safeText = enforceSystemPromptGuardrails(
+            'Great consistency this week. Keep your routine and check in with your provider if needed.'
+        );
 
         expect(safeText).toContain('Great consistency this week');
     });
