@@ -144,3 +144,10 @@ export async function resolveFlaggedSession(args: {
         },
     });
 }
+
+export async function markFlaggedSessionAlerted(sessionId: string): Promise<FlaggedSession> {
+    return prisma.flaggedSession.update({
+        where: { sessionId },
+        data: { alertedAt: new Date() },
+    });
+}
