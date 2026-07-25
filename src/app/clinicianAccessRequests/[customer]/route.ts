@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import type { ClinicianAccessStatus } from '@/generated/prisma/client';
 import { validateSureStepsSession } from '@/lib/auth/suresteps';
 import { prisma } from '@/lib/db';
 
@@ -13,10 +14,10 @@ function unauthorized(reason?: string) {
     return NextResponse.json({ error: reason ?? 'Unauthorized' }, { status: 401 });
 }
 
-function formatStatus(status: 'PENDING' | 'APPROVED' | 'REJECTED'): 'pending' | 'approved' | 'denied' {
+function formatStatus(status: ClinicianAccessStatus): 'pending' | 'approved' | 'denied' {
     if (status === 'APPROVED') return 'approved';
-    if (status === 'REJECTED') return 'denied';
-    return 'pending';
+    if (status === 'PENDING') return 'pending';
+    return 'denied';
 }
 
 function formatRequestDate(date: Date) {
