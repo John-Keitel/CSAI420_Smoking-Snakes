@@ -16,7 +16,7 @@ export default defineConfig({
     },
     webServer: {
         port,
-        command: `npm run dev -- --port ${port}`,
+        command: `npm run start -- --port ${port}`,
         reuseExistingServer: false,
     },
 });
