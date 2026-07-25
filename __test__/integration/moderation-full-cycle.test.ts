@@ -52,23 +52,15 @@ vi.mock('@/lib/db', () => ({
                 store.rows.set(row.sessionId, row);
                 return { ...row };
             }),
-            update: vi.fn(
-                async ({
-                    where,
-                    data,
-                }: {
-                    where: { sessionId: string };
-                    data: Partial<FlaggedRow>;
-                }) => {
-                    const existing = store.rows.get(where.sessionId);
-                    if (!existing) {
-                        throw new Error('missing flagged session');
-                    }
-                    const next = { ...existing, ...data };
-                    store.rows.set(where.sessionId, next);
-                    return { ...next };
+            update: vi.fn(async ({ where, data }: { where: { sessionId: string }; data: Partial<FlaggedRow> }) => {
+                const existing = store.rows.get(where.sessionId);
+                if (!existing) {
+                    throw new Error('missing flagged session');
                 }
-            ),
+                const next = { ...existing, ...data };
+                store.rows.set(where.sessionId, next);
+                return { ...next };
+            }),
             updateMany: vi.fn(
                 async ({
                     where,
