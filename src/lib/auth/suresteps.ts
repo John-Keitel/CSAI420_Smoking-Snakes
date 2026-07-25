@@ -106,7 +106,7 @@ export function validateSureStepsSession(request: NextRequest): SureStepsSession
                 type: userType,
             },
         };
-    } catch (err) {
+    } catch {
         return { ok: false, reason: 'Validation error' };
     }
 }

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { addDays, validateSureStepsSession } from '@/lib/auth/suresteps';
 import { prisma } from '@/lib/db';
 import { getAppLogger } from '@/lib/logger';
 import { notifyClinicianConsentRequested } from '@/lib/notifications/clinician-consent-request-push';
-import { validateSureStepsSession, addDays } from '@/lib/auth/suresteps';
 
 const logger = getAppLogger('api:clinician-access-request');
 
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
         });
 
         return NextResponse.json(created, { status: 201 });
-    } catch (err: any) {
+    } catch (err) {
         console.error('POST /api/clinicianAccessRequest error', err);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }

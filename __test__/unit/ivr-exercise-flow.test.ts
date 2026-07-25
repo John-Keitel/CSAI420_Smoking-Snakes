@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-    BALANCE_TEST_SCRIPT,
     applyExerciseAction,
+    BALANCE_TEST_SCRIPT,
     buildStepTwiml,
     convertScriptToVoiceSteps,
     createInitialExerciseState,
