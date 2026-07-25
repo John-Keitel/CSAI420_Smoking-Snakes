@@ -192,23 +192,29 @@ describe('resolveFlaggedSession', () => {
     });
 
     it('marks PENDING as RESOLVED', async () => {
-        prismaMock.flaggedSession.findUnique.mockResolvedValue({
-            sessionId,
-            status: 'PENDING',
-            reviewerNotes: null,
-        });
-        prismaMock.flaggedSession.update.mockResolvedValue({
-            sessionId,
-            status: 'RESOLVED',
-        });
+        prismaMock.flaggedSession.findUnique
+            .mockResolvedValueOnce({
+                sessionId,
+                status: 'PENDING',
+                reviewerNotes: null,
+            })
+            .mockResolvedValueOnce({
+                sessionId,
+                status: 'RESOLVED',
+            });
+        prismaMock.flaggedSession.updateMany.mockResolvedValue({ count: 1 });
 
         await resolveFlaggedSession({
             sessionId,
             resolvedByUserId: 'mod-1',
         });
 
-        expect(prismaMock.flaggedSession.update).toHaveBeenCalledWith(
+        expect(prismaMock.flaggedSession.updateMany).toHaveBeenCalledWith(
             expect.objectContaining({
+                where: expect.objectContaining({
+                    sessionId,
+                    status: { not: 'RESOLVED' },
+                }),
                 data: expect.objectContaining({
                     status: 'RESOLVED',
                     resolvedByUserId: 'mod-1',
@@ -217,11 +223,42 @@ describe('resolveFlaggedSession', () => {
         );
     });
 
+    it('throws 404 when flagged session is missing', async () => {
+        prismaMock.flaggedSession.findUnique.mockResolvedValue(null);
+
+        await expect(
+            resolveFlaggedSession({
+                sessionId,
+                resolvedByUserId: 'mod-1',
+            })
+        ).rejects.toMatchObject({ statusCode: 404 });
+        expect(prismaMock.flaggedSession.updateMany).not.toHaveBeenCalled();
+    });
+
     it('throws 409 when already resolved', async () => {
         prismaMock.flaggedSession.findUnique.mockResolvedValue({
             sessionId,
             status: 'RESOLVED',
         });
+        prismaMock.flaggedSession.updateMany.mockResolvedValue({ count: 0 });
+
+        await expect(
+            resolveFlaggedSession({
+                sessionId,
+                resolvedByUserId: 'mod-1',
+            })
+        ).rejects.toMatchObject({ statusCode: 409 });
+    });
+
+    it('throws 409 when a concurrent resolve wins the race between read and write', async () => {
+        // existing read still shows PENDING, but another resolve already committed by the
+        // time our conditional write runs — updateMany matches zero rows.
+        prismaMock.flaggedSession.findUnique.mockResolvedValue({
+            sessionId,
+            status: 'PENDING',
+            reviewerNotes: null,
+        });
+        prismaMock.flaggedSession.updateMany.mockResolvedValue({ count: 0 });
 
         await expect(
             resolveFlaggedSession({
