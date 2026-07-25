@@ -28,7 +28,7 @@ const DatabaseSchema = z.object({
 });
 
 const NodeEnvSchema = z.object({
-    NODE_ENV: z.enum(['production', 'development']).default('production'),
+    NODE_ENV: z.enum(['production', 'development', 'test']).default('production'),
 });
 
 const AuthSchema = z.object({
