@@ -138,9 +138,7 @@ export async function resolveFlaggedSession(args: {
             resolvedAt: new Date(),
             ...(args.resolutionNotes
                 ? {
-                      reviewerNotes: existing.reviewerNotes
-                          ? `${existing.reviewerNotes}\n${args.resolutionNotes}`
-                          : args.resolutionNotes,
+                      reviewerNotes: existing.reviewerNotes ? `${existing.reviewerNotes}\n${args.resolutionNotes}` : args.resolutionNotes,
                   }
                 : {}),
         },

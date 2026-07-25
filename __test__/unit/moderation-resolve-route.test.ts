@@ -64,9 +64,7 @@ describe('PATCH /api/moderation/resolve/[sessionId]', () => {
     });
 
     it('returns 409 when already resolved', async () => {
-        resolveFlaggedSessionMock.mockRejectedValue(
-            new HttpException(409, 'Flagged session already resolved')
-        );
+        resolveFlaggedSessionMock.mockRejectedValue(new HttpException(409, 'Flagged session already resolved'));
 
         const response = await PATCH(buildRequest(), {
             params: Promise.resolve({ sessionId }),
