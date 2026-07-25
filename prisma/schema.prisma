@@ -64,17 +64,53 @@ enum ChatMessageSender {
     system
 }
 
+enum ModerationSeverity {
+    LOW
+    MEDIUM
+    HIGH
+}
+
+enum ModerationStatus {
+    PENDING
+    IN_REVIEW
+    RESOLVED
+}
+
 model ChatSession {
     id            String        @id @default(uuid()) @db.Uuid
     customerEmail String        @map("customer_email") @db.VarChar(128)
     createdAt     DateTime      @default(now()) @map("created_at")
 
     // Relations
-    customer User          @relation(fields: [customerEmail], references: [email], onDelete: Cascade)
-    messages ChatMessage[]
+    customer       User            @relation(fields: [customerEmail], references: [email], onDelete: Cascade)
+    messages       ChatMessage[]
+    flaggedSession FlaggedSession?
 
     @@index([customerEmail])
     @@map("chat_sessions")
+}
+
+model FlaggedSession {
+    id               String             @id @default(uuid()) @db.Uuid
+    sessionId        String             @unique @map("session_id") @db.Uuid
+    customerEmail    String             @map("customer_email") @db.VarChar(128)
+    severity         ModerationSeverity @default(HIGH)
+    status           ModerationStatus   @default(PENDING)
+    aiRecommendation String?            @map("ai_recommendation") @db.Text
+    humanOverride    String?            @map("human_override") @db.Text
+    reviewerNotes    String?            @map("reviewer_notes") @db.Text
+    reviewedByUserId String?            @map("reviewed_by_user_id") @db.VarChar(32)
+    resolvedByUserId String?            @map("resolved_by_user_id") @db.VarChar(32)
+    flaggedAt        DateTime           @default(now()) @map("flagged_at")
+    reviewedAt       DateTime?          @map("reviewed_at")
+    resolvedAt       DateTime?          @map("resolved_at")
+    alertedAt        DateTime?          @map("alerted_at")
+
+    // Relations
+    session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+    @@index([status, severity, flaggedAt])
+    @@map("flagged_sessions")
 }
 
 model ChatMessage {
