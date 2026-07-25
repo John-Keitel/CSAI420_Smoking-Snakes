@@ -28,10 +28,7 @@ describe('notifyModeratorsHighRisk', () => {
     });
 
     it('sends Expo pushes to active provider/developer tokens and sets alertedAt', async () => {
-        prismaMock.expoPushToken.findMany.mockResolvedValue([
-            { token: 'ExponentPushToken[aaa]' },
-            { token: 'ExponentPushToken[bbb]' },
-        ]);
+        prismaMock.expoPushToken.findMany.mockResolvedValue([{ token: 'ExponentPushToken[aaa]' }, { token: 'ExponentPushToken[bbb]' }]);
 
         await notifyModeratorsHighRisk({
             id: 'flag-1',
