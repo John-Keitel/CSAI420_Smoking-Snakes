@@ -16,11 +16,7 @@ const { prismaMock, loggerMock } = vi.hoisted(() => ({
 vi.mock('@/lib/db', () => ({ prisma: prismaMock }));
 vi.mock('@/lib/logger', () => ({ getAppLogger: () => loggerMock }));
 
-import {
-    listOpenFlaggedSessions,
-    reviewFlaggedSession,
-    upsertFlaggedSessionOnEscalate,
-} from '@/lib/moderation/repository';
+import { listOpenFlaggedSessions, reviewFlaggedSession, upsertFlaggedSessionOnEscalate } from '@/lib/moderation/repository';
 
 const sessionId = '11111111-1111-4111-8111-111111111111';
 const customerEmail = 'patient@example.com';

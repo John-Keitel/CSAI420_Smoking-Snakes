@@ -73,9 +73,7 @@ describe('POST /api/moderation/review', () => {
     });
 
     it('returns 409 when already resolved', async () => {
-        reviewFlaggedSessionMock.mockRejectedValue(
-            new HttpException(409, 'Flagged session already resolved')
-        );
+        reviewFlaggedSessionMock.mockRejectedValue(new HttpException(409, 'Flagged session already resolved'));
 
         const response = await POST(
             buildRequest({
