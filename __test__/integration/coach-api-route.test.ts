@@ -260,13 +260,7 @@ describe('POST /api/coach/chat integration boundaries', () => {
     });
 
     it('Path 500: returns internal server error when session lookup fails with database connectivity error', async () => {
-        const {
-            POST,
-            loggerErrorMock,
-            saveUserMessageMock,
-            generateCoachAiResponseMock,
-            saveAiResponseMock,
-        } = await loadRoute({
+        const { POST, loggerErrorMock, saveUserMessageMock, generateCoachAiResponseMock, saveAiResponseMock } = await loadRoute({
             sessionCheck: { ok: true, user: { id: 'user-123', email: 'patient@example.com', type: 'standard' } },
             findOrCreateError: new Error('Database connection failed'),
         });

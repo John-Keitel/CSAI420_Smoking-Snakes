@@ -15,9 +15,7 @@ export type UpsertFlaggedSessionArgs = {
  * Create or refresh a flagged moderation row when the coach escalates.
  * Returns null when escalate is false (no-op).
  */
-export async function upsertFlaggedSessionOnEscalate(
-    args: UpsertFlaggedSessionArgs
-): Promise<FlaggedSession | null> {
+export async function upsertFlaggedSessionOnEscalate(args: UpsertFlaggedSessionArgs): Promise<FlaggedSession | null> {
     if (!args.escalate) {
         return null;
     }
