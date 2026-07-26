@@ -23,6 +23,11 @@ model User {
     id   String   @id @default(cuid())
     type UserType @default(standard)
 
+    // EPIC 14 (SCRUM-110) scaffold for register-chat baseline contract.
+    // Required registration fields preserved/declared for: id, name, email, password, dob, createdAt, updatedAt.
+    name String? @db.VarChar(128)
+    dob  DateTime? @db.Date
+
     // Auth
     email         String    @unique @db.VarChar(128)
     phone         String    @db.VarChar(32)
