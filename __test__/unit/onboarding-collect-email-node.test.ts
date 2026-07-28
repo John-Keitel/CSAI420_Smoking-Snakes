@@ -81,10 +81,12 @@ describe('collectEmailNode (SCRUM-103)', () => {
         await advanceToCollectEmail(onboardingGraph, threadConfig);
         const result = await onboardingGraph.invoke(new Command({ resume: 'john@example.com' }), threadConfig);
 
-        expect(isInterrupted(result)).toBe(false);
+        // COLLECT_DOB calls interrupt() as of SCRUM-104, so the graph now pauses there
+        // instead of completing. See onboarding-collect-dob-node.test.ts for that node's
+        // own behavior and the full-cycle smoke test; this just confirms COLLECT_EMAIL advanced.
+        expect(isInterrupted(result)).toBe(true);
         expect(result.collectedEmail).toBe('john@example.com');
         expect(result.lastValidationError).toBeNull();
-        expect(result.step).toBe('COLLECT_DOB');
     });
 
     it('loops back to COLLECT_EMAIL with a re-prompt when the reply is not a plausible email', async () => {
