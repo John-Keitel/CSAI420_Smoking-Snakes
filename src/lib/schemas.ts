@@ -80,3 +80,14 @@ export const ModerationReviewSchema = z.object({
 export const ModerationResolveSchema = z.object({
     resolutionNotes: z.string().max(10000).optional(),
 });
+
+export const EscalateQuestionSchema = z.object({
+    phoneNumber: z.string({ error: 'required' }).regex(/^\+[1-9]\d{1,14}$/, 'invalid E.164 format'),
+    question: z.string({ error: 'required' }).min(1).max(5000),
+    aiResponse: z.string({ error: 'required' }).min(1).max(5000),
+    responsePreference: z.enum(['call', 'text', 'chat'], { error: 'invalid response preference' }),
+    waitingForResponse: z.boolean().optional(),
+    sessionId: z.string().max(128).optional(),
+    userId: z.string().max(64).optional(),
+    timestamp: z.coerce.date().optional(),
+});
