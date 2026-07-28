@@ -228,6 +228,47 @@ model CustomerConsent {
     @@map("customer_consents")
 }
 
+enum EscalationResponsePreference {
+    call
+    text
+    chat
+}
+
+enum EscalationPriority {
+    high
+    medium
+    low
+}
+
+enum EscalationStatus {
+    pending
+    assigned
+    resolved
+}
+
+model Escalation {
+    id                  String                        @id @default(cuid())
+    escalationId        String                        @unique @map("escalation_id") @db.VarChar(64)
+    userId              String?                       @map("user_id") @db.VarChar(64)
+    phoneNumber         String                        @map("phone_number") @db.VarChar(32)
+    originalQuestion    String                        @map("original_question") @db.Text
+    aiResponse          String                        @map("ai_response") @db.Text
+    responsePreference  EscalationResponsePreference   @map("response_preference")
+    waitingForResponse  Boolean                        @default(false) @map("waiting_for_response")
+    priority            EscalationPriority             @default(medium)
+    category            String                         @db.VarChar(32)
+    status              EscalationStatus               @default(pending)
+    questionTimestamp   DateTime?                      @map("question_timestamp")
+    escalationTimestamp DateTime                       @default(now()) @map("escalation_timestamp")
+
+    // Audit
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    @@index([status, priority, escalationTimestamp])
+    @@map("escalations")
+}
+
 model ExpoPushToken {
     id     String @id @default(cuid())
     userId String @map("user_id") @db.VarChar(32)
