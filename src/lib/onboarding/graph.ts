@@ -1,9 +1,10 @@
 import { END, MemorySaver, START, StateGraph } from '@langchain/langgraph';
 
+import { greetingNode } from '@/lib/onboarding/nodes/greeting';
 import { OnboardingStateAnnotation, type OnboardingState, type OnboardingStep } from '@/lib/onboarding/state';
 
 /**
- * Placeholder node body for SCRUM-101–104, which each replace one of these
+ * Placeholder node body for SCRUM-102–104, which each replace one of these
  * with real prompt/extraction/guardrail logic (see design.md § Node contract).
  */
 function createStubNode(step: OnboardingStep) {
@@ -11,7 +12,7 @@ function createStubNode(step: OnboardingStep) {
 }
 
 const builder = new StateGraph(OnboardingStateAnnotation)
-    .addNode('GREETING', createStubNode('GREETING'))
+    .addNode('GREETING', greetingNode)
     .addNode('COLLECT_NAME', createStubNode('COLLECT_NAME'))
     .addNode('COLLECT_EMAIL', createStubNode('COLLECT_EMAIL'))
     .addNode('COLLECT_DOB', createStubNode('COLLECT_DOB'))
