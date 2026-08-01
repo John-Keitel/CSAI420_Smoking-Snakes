@@ -130,6 +130,21 @@ model ChatMessage {
     @@map("chat_messages")
 }
 
+// Anonymous chat-registration sessions keyed by the opaque string ids the chat
+// flow mints (e.g. `session_1234567890`). Deliberately separate from ChatSession,
+// which is UUID-keyed and FK-bound to a registered User.
+model ChatRegistrationSession {
+    id                  String   @id @default(uuid()) @db.Uuid
+    chatSessionId       String   @unique @map("chat_session_id") @db.VarChar(128)
+    conversationContext Json     @map("conversation_context")
+    currentStep         String   @map("current_step") @db.VarChar(64)
+    lastActivity        DateTime @default(now()) @map("last_activity")
+    createdAt           DateTime @default(now()) @map("created_at")
+    updatedAt           DateTime @updatedAt @map("updated_at")
+
+    @@map("chat_registration_sessions")
+}
+
 model Session {
     id     String @id @default(cuid())
     userId String @map("user_id") @db.VarChar(36)
