@@ -9,6 +9,10 @@ import { formatZodErrors } from '@/lib/validation';
 
 const logger = getAppLogger('api:notifications:register');
 
+const AUTH_ERROR_CODES: Record<string, string> = {
+    'Session token expired': 'SESSION_TOKEN_EXPIRED',
+};
+
 type ValidSession = {
     ok: true;
     user: {
@@ -28,7 +32,11 @@ function validateSession(request: NextRequest) {
 
 function errorResponse(error: unknown) {
     if (error instanceof HttpException) {
-        return NextResponse.json({ error: error.message }, { status: error.statusCode });
+        const body: Record<string, string> = { error: error.message };
+        if (error.statusCode === 401) {
+            body.code = AUTH_ERROR_CODES[error.message] ?? 'UNAUTHORIZED';
+        }
+        return NextResponse.json(body, { status: error.statusCode });
     }
 
     logger.error('request failed: %s', error);

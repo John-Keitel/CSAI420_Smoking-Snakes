@@ -58,8 +58,9 @@ function decodeJwtClaims(token: string): Record<string, unknown> {
 /**
  * Validate the legacy STEDI session token header `suresteps.session.token`.
  * For this implementation we simulate the old STEDI session validation by
- * requiring a non-empty header. In a real system this would validate the
- * token against a session store or verification service.
+ * requiring a non-empty header and rejecting tokens whose JWT `exp` claim is
+ * in the past. In a real system this would validate the token against a
+ * session store or verification service.
  */
 export function validateSureStepsSession(request: NextRequest): SureStepsSessionCheck {
     try {
@@ -72,6 +73,15 @@ export function validateSureStepsSession(request: NextRequest): SureStepsSession
         if (token.trim().length === 0) return { ok: false, reason: 'Empty session token' };
 
         const claims = decodeJwtClaims(token);
+
+        // Reject expired session tokens. JWT `exp` is epoch seconds; tokens
+        // without a finite `exp` claim (e.g. legacy non-JWT tokens) are left
+        // to the simulated validation above.
+        const exp = claims.exp;
+        if (typeof exp === 'number' && Number.isFinite(exp) && exp * 1000 <= Date.now()) {
+            return { ok: false, reason: 'Session token expired' };
+        }
+
         const userId =
             asString(request.headers.get('suresteps.user.id')) ??
             asString(request.headers.get('x-user-id')) ??

@@ -1,5 +1,6 @@
 import 'dotenv/config';
 
+import { SignJWT } from 'jose';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 const configuredApiUrl = process.env.API_URL;
@@ -141,6 +142,22 @@ describe('push notification registration flow', () => {
         const response = await registerToken({ token: pushToken, userId }, {});
 
         expect(response.status).toBe(401);
+    });
+
+    it('rejects an expired session token with 401 and SESSION_TOKEN_EXPIRED', async () => {
+        // validateSureStepsSession reads claims only (no signature check), so an
+        // expired JWT signed with any secret is rejected on its exp claim.
+        const expiredToken = await new SignJWT({ sub: userId })
+            .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
+            .setIssuedAt()
+            .setExpirationTime(Math.floor(Date.now() / 1000) - 3600)
+            .sign(new TextEncoder().encode('integration-test-secret'));
+
+        const response = await registerToken({ token: pushToken, userId }, { 'suresteps.session.token': expiredToken });
+        const body = await response.json();
+
+        expect(response.status, JSON.stringify(body)).toBe(401);
+        expect(body).toMatchObject({ error: 'Session token expired', code: 'SESSION_TOKEN_EXPIRED' });
     });
 
     it('rejects registration for a non-existent user with 404', async () => {

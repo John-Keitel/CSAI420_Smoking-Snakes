@@ -81,11 +81,11 @@ Format:
 - **Branch**: [git branch name]
 -->
 
-- **Feature**: realtime-data-path / .specs/features/realtime-data-path/
-- **Phase / Task**: Planning closed — tasks published to SCRUM-18…22
-- **Completed**: spec.md, design.md, tasks.md, epic brief, Jira rewrite
+- **Feature**: session-token-expiry-distinction / .specs/features/session-token-expiry-distinction/
+- **Phase / Task**: Planning — spec.md + tasks.md drafted, awaiting human review
+- **Completed**: spec.md, tasks.md (source: PR #64 review comment by ljm234)
 - **In-progress**: (none)
-- **Next step**: Start a new session with `/sdd-execute-jira` on SCRUM-17 / branch `jira-scrum-17`.
+- **Next step**: Human reviews/edits slice docs, then runs `/sdd-tasks-jira` to publish task issues; execution later in a separate `/sdd-execute-jira` session on branch `fix/session-token-expiry-distinction`.
 - **Blockers**: none
-- **Uncommitted files**: planning artifacts committed on slice branch only
-- **Branch**: jira-scrum-17
+- **Uncommitted files**: `.specs/features/session-token-expiry-distinction/{spec.md,tasks.md}` (+ this STATE.md edit) — planning session, not committed
+- **Branch**: main (no code branch created during planning)
