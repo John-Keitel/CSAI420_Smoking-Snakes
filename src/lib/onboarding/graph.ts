@@ -1,24 +1,30 @@
 import { END, MemorySaver, START, StateGraph } from '@langchain/langgraph';
 
+import { collectNameNode } from '@/lib/onboarding/nodes/collect-name';
 import { greetingNode } from '@/lib/onboarding/nodes/greeting';
 import { OnboardingStateAnnotation, type OnboardingState, type OnboardingStep } from '@/lib/onboarding/state';
 
 /**
- * Placeholder node body for SCRUM-102–104, which each replace one of these
+ * Placeholder node body for SCRUM-103–104, which each replace one of these
  * with real prompt/extraction/guardrail logic (see design.md § Node contract).
  */
 function createStubNode(step: OnboardingStep) {
     return async (): Promise<Partial<OnboardingState>> => ({ step });
 }
 
+/** SCRUM-102: advance once a name has been collected, otherwise loop back for a retry. */
+function routeAfterCollectName(state: OnboardingState): 'COLLECT_EMAIL' | 'COLLECT_NAME' {
+    return state.collectedName ? 'COLLECT_EMAIL' : 'COLLECT_NAME';
+}
+
 const builder = new StateGraph(OnboardingStateAnnotation)
     .addNode('GREETING', greetingNode)
-    .addNode('COLLECT_NAME', createStubNode('COLLECT_NAME'))
+    .addNode('COLLECT_NAME', collectNameNode)
     .addNode('COLLECT_EMAIL', createStubNode('COLLECT_EMAIL'))
     .addNode('COLLECT_DOB', createStubNode('COLLECT_DOB'))
     .addEdge(START, 'GREETING')
     .addEdge('GREETING', 'COLLECT_NAME')
-    .addEdge('COLLECT_NAME', 'COLLECT_EMAIL')
+    .addConditionalEdges('COLLECT_NAME', routeAfterCollectName)
     .addEdge('COLLECT_EMAIL', 'COLLECT_DOB')
     .addEdge('COLLECT_DOB', END);
 
