@@ -21,3 +21,13 @@ export function formatZodErrors(zodError: ZodError): ValidationError {
         ),
     };
 }
+
+/**
+ * Flat variant of formatZodErrors, for endpoints whose contract is `{ errors: string[] }`
+ * rather than `{ message, errors: Record<string, string[]> }`. Each message is prefixed with
+ * its dotted field path (e.g. "userData.password: ...") so a client-side substring check on the
+ * field name (e.g. looking for "password") works without the caller needing to parse structure.
+ */
+export function formatZodErrorsAsList(zodError: ZodError): string[] {
+    return zodError.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`);
+}
