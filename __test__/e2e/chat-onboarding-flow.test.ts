@@ -184,8 +184,9 @@ describe('React Native onboarding chat E2E suite (Vitest)', () => {
         });
 
         expect(registration.status).toBe(201);
-        expect(registration.body.success).toBe(true);
-        expect(registration.body.data.email).toBe('alex@example.com');
+        const registrationBody = registration.body as { success: boolean; data: { email: string } };
+        expect(registrationBody.success).toBe(true);
+        expect(registrationBody.data.email).toBe('alex@example.com');
 
         const users = backend.listUsers();
         expect(users).toHaveLength(1);
