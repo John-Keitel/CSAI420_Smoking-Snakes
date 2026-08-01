@@ -28,7 +28,7 @@ const DatabaseSchema = z.object({
 });
 
 const NodeEnvSchema = z.object({
-    NODE_ENV: z.enum(['production', 'development', 'test']).default('production'),
+    NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
 
 const AuthSchema = z.object({
@@ -71,6 +71,11 @@ function validateEnvWithSchema<TSchema extends z.ZodType>(schema: TSchema, schem
     if (!result.success) {
         console.error(`(${schemaName}) There is an error with the environment variables\n`);
         console.error(z.prettifyError(result.error));
+
+        if (process.env.NODE_ENV === 'test' || process.env.VITEST) {
+            throw new Error(`(${schemaName}) Invalid environment variables`);
+        }
+
         process.exit(1);
     }
 
