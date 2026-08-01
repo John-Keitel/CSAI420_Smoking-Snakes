@@ -13,11 +13,14 @@ if (apiUrl.hostname === 'stedi.me' || apiUrl.hostname.endsWith('.stedi.me')) {
     throw new Error(`API_URL must point to this project, not the legacy STEDI API: ${apiUrl.origin}`);
 }
 
-// The legacy session validator (validateSureStepsSession) only requires a
-// non-empty `suresteps.session.token` header, so any non-empty value
-// authenticates the register endpoint.
-const sessionToken = 'integration-test-session-token';
-const sessionHeaders: Record<string, string> = { 'suresteps.session.token': sessionToken };
+// The register endpoint binds the push token to the identity resolved from the
+// `suresteps.session.token` session (session-binding hardening): validateSureStepsSession
+// requires a non-empty token and derives the user id from `suresteps.user.id` /
+// `x-user-id` headers or JWT claims (`sub`, `userId`), falling back to the token
+// itself. So the happy-path tests authenticate with a real session token issued by
+// /auth/signin for the created user; the 404 case uses a session whose resolved
+// user id does not exist.
+let sessionHeaders: Record<string, string> = {};
 
 const stamp = Date.now();
 const testUser = {
@@ -47,9 +50,9 @@ async function registerToken(body: Record<string, unknown>, headers: Record<stri
 }
 
 beforeAll(async () => {
-    // The register endpoint validates userId against this project's own users
-    // table, so we create a real user through /auth/signup (which returns the
-    // new user's id) rather than the legacy STEDI proxy.
+    // The register endpoint validates the session-resolved user id against this
+    // project's own users table, so we create a real user through /auth/signup
+    // (which returns the new user's id) rather than the legacy STEDI proxy.
     const response = await apiFetch('/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -73,6 +76,22 @@ beforeAll(async () => {
 
     const created = (await response.json()) as { id: string };
     userId = created.id;
+
+    // Sign the test user in to obtain a real session token. The register endpoint
+    // resolves the user id from this token's claims, so it must belong to the
+    // user whose push token we are registering.
+    const signin = await apiFetch('/auth/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: testUser.email, password: testUser.password }),
+    });
+
+    if (signin.status !== 200) {
+        throw new Error(`Failed to sign in integration-test user: ${signin.status} ${await signin.text()}`);
+    }
+
+    const session = (await signin.json()) as { token: string };
+    sessionHeaders = { 'suresteps.session.token': session.token };
 });
 
 describe('push notification registration flow', () => {
@@ -125,10 +144,19 @@ describe('push notification registration flow', () => {
     });
 
     it('rejects registration for a non-existent user with 404', async () => {
-        const response = await registerToken({
-            token: `ExponentPushToken[ghost-${stamp}]`,
-            userId: 'clghostuser0000000000000000',
-        });
+        // The session token itself is arbitrary here (validateSureStepsSession
+        // only requires it to be non-empty); the resolved user id comes from the
+        // `suresteps.user.id` header, which references a user that does not exist.
+        const response = await registerToken(
+            {
+                token: `ExponentPushToken[ghost-${stamp}]`,
+                userId: 'clghostuser0000000000000000',
+            },
+            {
+                'suresteps.session.token': 'integration-test-session-token',
+                'suresteps.user.id': 'clghostuser0000000000000000',
+            }
+        );
 
         expect(response.status).toBe(404);
     });
