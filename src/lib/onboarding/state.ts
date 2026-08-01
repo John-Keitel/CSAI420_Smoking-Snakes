@@ -1,0 +1,33 @@
+import { addMessages, Annotation } from '@langchain/langgraph';
+import type { BaseMessage } from '@langchain/core/messages';
+
+export type OnboardingStep = 'GREETING' | 'COLLECT_NAME' | 'COLLECT_EMAIL' | 'COLLECT_DOB' | 'COMPLETE';
+
+export const OnboardingStateAnnotation = Annotation.Root({
+    messages: Annotation<BaseMessage[]>({
+        reducer: addMessages,
+        default: () => [],
+    }),
+    step: Annotation<OnboardingStep>({
+        reducer: (_previous, next) => next,
+        default: () => 'GREETING',
+    }),
+    collectedName: Annotation<string | null>({
+        reducer: (_previous, next) => next,
+        default: () => null,
+    }),
+    collectedEmail: Annotation<string | null>({
+        reducer: (_previous, next) => next,
+        default: () => null,
+    }),
+    collectedDob: Annotation<string | null>({
+        reducer: (_previous, next) => next,
+        default: () => null,
+    }),
+    lastValidationError: Annotation<string | null>({
+        reducer: (_previous, next) => next,
+        default: () => null,
+    }),
+});
+
+export type OnboardingState = typeof OnboardingStateAnnotation.State;

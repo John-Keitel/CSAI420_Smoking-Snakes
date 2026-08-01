@@ -1,0 +1,61 @@
+# Scheduled, informational-only audit of the FULL dependency tree (including
+# dev dependencies, no severity floor). This is deliberately separate from the
+# `Audit dependencies` step in ci.yml, which only runs `npm audit --omit=dev
+# --audit-level=high` so that dev-tooling and moderate-severity findings never
+# block a PR. This workflow exists to keep those excluded findings visible
+# over time without gating merges on them (SCRUM-88).
+name: Dependency Audit
+
+on:
+    schedule:
+        - cron: '0 6 * * 1' # every Monday at 06:00 UTC
+    workflow_dispatch:
+
+permissions:
+    contents: read
+    issues: write
+
+jobs:
+    audit:
+        name: Full npm audit
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v7
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version-file: '.nvmrc'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Run full npm audit
+              id: audit
+              continue-on-error: true
+              run: npm audit 2>&1 | tee audit-output.txt
+
+            - name: Report findings as a GitHub issue
+              if: steps.audit.outcome == 'failure'
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  existing=$(gh issue list --search "Scheduled dependency audit found issues in:title" --state open --label dependencies --json number --jq '.[0].number')
+                  body_file=$(mktemp)
+                  {
+                    echo "The scheduled full \`npm audit\` (no \`--omit=dev\`, no \`--audit-level\` floor) found findings on \`$(date -u +%Y-%m-%d)\`."
+                    echo
+                    echo '```'
+                    cat audit-output.txt
+                    echo '```'
+                    echo
+                    echo "This is informational only and does not block PR merges — see the \`Audit dependencies\` step in \`ci.yml\` for the PR-blocking, production-only check."
+                  } > "$body_file"
+
+                  if [ -n "$existing" ]; then
+                    gh issue comment "$existing" --body-file "$body_file"
+                  else
+                    gh issue create --title "Scheduled dependency audit found issues" --label dependencies --body-file "$body_file"
+                  fi
