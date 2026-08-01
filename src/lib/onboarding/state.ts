@@ -1,5 +1,5 @@
-import { addMessages, Annotation } from '@langchain/langgraph';
 import type { BaseMessage } from '@langchain/core/messages';
+import { addMessages, Annotation } from '@langchain/langgraph';
 
 export type OnboardingStep = 'GREETING' | 'COLLECT_NAME' | 'COLLECT_EMAIL' | 'COLLECT_DOB' | 'COMPLETE';
 
