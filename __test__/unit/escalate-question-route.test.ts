@@ -9,7 +9,10 @@ const { loggerMock, validateSessionMock, createEscalationMock } = vi.hoisted(() 
 
 vi.mock('@/lib/logger', () => ({ getAppLogger: () => loggerMock }));
 vi.mock('@/lib/auth/suresteps', () => ({ validateSureStepsSession: validateSessionMock }));
-vi.mock('@/lib/escalation', () => ({ createEscalation: createEscalationMock }));
+// Mock only the repository leaf module (the one that imports @/lib/db) — this keeps the real
+// @/lib/escalation barrel exports (ESTIMATED_RESPONSE_TIME_BY_PRIORITY, classifyEscalation,
+// sanitizeText, ...) live instead of hand-duplicating them here.
+vi.mock('@/lib/escalation/repository', () => ({ createEscalation: createEscalationMock }));
 
 import { POST } from '@/app/escalate-question/route';
 

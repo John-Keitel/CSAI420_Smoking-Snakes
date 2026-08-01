@@ -91,3 +91,18 @@ export const EscalateQuestionSchema = z.object({
     userId: z.string().max(64).optional(),
     timestamp: z.coerce.date().optional(),
 });
+
+export const EscalateRegistrationSchema = z.object({
+    // Lenient on purpose, unlike EscalateQuestionSchema's required E.164 format: this endpoint
+    // is reached mid-registration (see src/lib/chat-registration/schemas.ts's phone pattern for
+    // the same reasoning), and the AI assistant may pass through whatever format the user typed.
+    phoneNumber: z.string({ error: 'required' }).regex(/^\+?[\d\s\-()]+$/, 'invalid phone number format'),
+    registrationData: z.record(z.string(), z.unknown()).optional(),
+    chatSessionId: z.string({ error: 'required' }).min(1),
+    issueType: z.enum(['confusion_about_process', 'technical_difficulties', 'account_creation_failed', 'validation_errors'], {
+        error: 'invalid issue type',
+    }),
+    aiResponse: z.string({ error: 'required' }).min(1).max(5000),
+    responsePreference: z.enum(['call', 'text', 'chat', 'email'], { error: 'invalid response preference' }),
+    conversationContext: z.array(z.object({ role: z.enum(['user', 'assistant']), message: z.string() })).optional(),
+});
