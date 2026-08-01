@@ -121,14 +121,73 @@ describe('collectEmailNode (SCRUM-103)', () => {
         expect(isInterrupted(result)).toBe(true);
     });
 
-    it('falls back to a deterministic re-prompt when the email extraction model call fails', async () => {
-        const { onboardingGraph } = await loadGraphModule({ openAiApiKey: 'test-key', emailExtraction: 'throw' });
-        const threadConfig = { configurable: { thread_id: 'scrum-103-model-error' } };
+    it('validates the raw reply against the guardrail schema when OPENAI_API_KEY is unset', async () => {
+        const { onboardingGraph, emailInvokeMock } = await loadGraphModule({ openAiApiKey: undefined });
+        const threadConfig = { configurable: { thread_id: 'scrum-103-fallback-valid' } };
 
         await advanceToCollectEmail(onboardingGraph, threadConfig);
         const result = await onboardingGraph.invoke(new Command({ resume: 'john@example.com' }), threadConfig);
 
-        expect(result.collectedEmail).toBeNull();
+        // No model to call, but a well-formed email should still advance instead of
+        // looping forever (SCRUM-106) — COLLECT_DOB then pauses for its own reply.
+        expect(emailInvokeMock).not.toHaveBeenCalled();
+        expect(result.collectedEmail).toBe('john@example.com');
+        expect(result.lastValidationError).toBeNull();
         expect(isInterrupted(result)).toBe(true);
+    });
+
+    it('re-prompts when OPENAI_API_KEY is unset and the raw reply also fails the guardrail schema', async () => {
+        const { onboardingGraph, emailInvokeMock } = await loadGraphModule({ openAiApiKey: undefined });
+        const threadConfig = { configurable: { thread_id: 'scrum-103-fallback-invalid' } };
+
+        await advanceToCollectEmail(onboardingGraph, threadConfig);
+        const result = await onboardingGraph.invoke(new Command({ resume: 'not an email' }), threadConfig);
+
+        expect(emailInvokeMock).not.toHaveBeenCalled();
+        expect(result.collectedEmail).toBeNull();
+        expect(result.lastValidationError).toBeTruthy();
+        expect(isInterrupted(result)).toBe(true);
+    });
+
+    it('validates the raw reply against the guardrail schema when the email extraction model call fails', async () => {
+        const { onboardingGraph } = await loadGraphModule({ openAiApiKey: 'test-key', emailExtraction: 'throw' });
+        const threadConfig = { configurable: { thread_id: 'scrum-103-model-error-valid' } };
+
+        await advanceToCollectEmail(onboardingGraph, threadConfig);
+        const result = await onboardingGraph.invoke(new Command({ resume: 'john@example.com' }), threadConfig);
+
+        expect(result.collectedEmail).toBe('john@example.com');
+        expect(result.lastValidationError).toBeNull();
+        expect(isInterrupted(result)).toBe(true);
+    });
+
+    it('re-prompts when the email extraction model call fails and the raw reply also fails the guardrail schema', async () => {
+        const { onboardingGraph } = await loadGraphModule({ openAiApiKey: 'test-key', emailExtraction: 'throw' });
+        const threadConfig = { configurable: { thread_id: 'scrum-103-model-error-invalid' } };
+
+        await advanceToCollectEmail(onboardingGraph, threadConfig);
+        const result = await onboardingGraph.invoke(new Command({ resume: 'not an email' }), threadConfig);
+
+        expect(result.collectedEmail).toBeNull();
+        expect(result.lastValidationError).toBeTruthy();
+        expect(isInterrupted(result)).toBe(true);
+    });
+
+    it('abandons the flow after 3 consecutive failed attempts instead of looping forever', async () => {
+        const { onboardingGraph } = await loadGraphModule({
+            openAiApiKey: 'test-key',
+            emailExtraction: { extractedEmail: '', looksLikeAValidEmail: false },
+        });
+        const threadConfig = { configurable: { thread_id: 'scrum-103-abandon' } };
+
+        await advanceToCollectEmail(onboardingGraph, threadConfig);
+        await onboardingGraph.invoke(new Command({ resume: 'not an email' }), threadConfig);
+        await onboardingGraph.invoke(new Command({ resume: 'not an email' }), threadConfig);
+        const result = await onboardingGraph.invoke(new Command({ resume: 'not an email' }), threadConfig);
+
+        expect(isInterrupted(result)).toBe(false);
+        expect(result.step).toBe('ABANDONED');
+        expect(result.collectedEmail).toBeNull();
+        expect(result.messages[result.messages.length - 1]?.content).toBeTruthy();
     });
 });

@@ -105,26 +105,73 @@ describe('collectNameNode (SCRUM-102)', () => {
         expect(isInterrupted(result)).toBe(true);
     });
 
-    it('falls back to a deterministic re-prompt when OPENAI_API_KEY is unset', async () => {
+    it('validates the raw reply against the guardrail schema when OPENAI_API_KEY is unset', async () => {
         const { onboardingGraph, nameInvokeMock } = await loadGraphModule({ openAiApiKey: undefined });
-        const threadConfig = { configurable: { thread_id: 'scrum-102-fallback' } };
+        const threadConfig = { configurable: { thread_id: 'scrum-102-fallback-valid' } };
 
         await onboardingGraph.invoke({}, threadConfig);
         const result = await onboardingGraph.invoke(new Command({ resume: 'John Smith' }), threadConfig);
 
+        // No model to call, but a plausible name should still advance instead of
+        // looping forever (SCRUM-106) — COLLECT_EMAIL then pauses for its own reply.
         expect(nameInvokeMock).not.toHaveBeenCalled();
-        expect(result.collectedName).toBeNull();
+        expect(result.collectedName).toBe('John Smith');
+        expect(result.lastValidationError).toBeNull();
         expect(isInterrupted(result)).toBe(true);
     });
 
-    it('falls back to a deterministic re-prompt when the model call fails', async () => {
+    it('re-prompts when OPENAI_API_KEY is unset and the raw reply also fails the guardrail schema', async () => {
+        const { onboardingGraph, nameInvokeMock } = await loadGraphModule({ openAiApiKey: undefined });
+        const threadConfig = { configurable: { thread_id: 'scrum-102-fallback-invalid' } };
+
+        await onboardingGraph.invoke({}, threadConfig);
+        const result = await onboardingGraph.invoke(new Command({ resume: 'asdf 123' }), threadConfig);
+
+        expect(nameInvokeMock).not.toHaveBeenCalled();
+        expect(result.collectedName).toBeNull();
+        expect(result.lastValidationError).toBeTruthy();
+        expect(isInterrupted(result)).toBe(true);
+    });
+
+    it('validates the raw reply against the guardrail schema when the model call fails', async () => {
         const { onboardingGraph } = await loadGraphModule({ openAiApiKey: 'test-key', nameExtraction: 'throw' });
-        const threadConfig = { configurable: { thread_id: 'scrum-102-model-error' } };
+        const threadConfig = { configurable: { thread_id: 'scrum-102-model-error-valid' } };
 
         await onboardingGraph.invoke({}, threadConfig);
         const result = await onboardingGraph.invoke(new Command({ resume: 'John Smith' }), threadConfig);
 
-        expect(result.collectedName).toBeNull();
+        expect(result.collectedName).toBe('John Smith');
+        expect(result.lastValidationError).toBeNull();
         expect(isInterrupted(result)).toBe(true);
+    });
+
+    it('re-prompts when the model call fails and the raw reply also fails the guardrail schema', async () => {
+        const { onboardingGraph } = await loadGraphModule({ openAiApiKey: 'test-key', nameExtraction: 'throw' });
+        const threadConfig = { configurable: { thread_id: 'scrum-102-model-error-invalid' } };
+
+        await onboardingGraph.invoke({}, threadConfig);
+        const result = await onboardingGraph.invoke(new Command({ resume: 'asdf 123' }), threadConfig);
+
+        expect(result.collectedName).toBeNull();
+        expect(result.lastValidationError).toBeTruthy();
+        expect(isInterrupted(result)).toBe(true);
+    });
+
+    it('abandons the flow after 3 consecutive failed attempts instead of looping forever', async () => {
+        const { onboardingGraph } = await loadGraphModule({
+            openAiApiKey: 'test-key',
+            nameExtraction: { extractedName: '', looksLikeAValidFullName: false },
+        });
+        const threadConfig = { configurable: { thread_id: 'scrum-102-abandon' } };
+
+        await onboardingGraph.invoke({}, threadConfig);
+        await onboardingGraph.invoke(new Command({ resume: 'asdf 123' }), threadConfig);
+        await onboardingGraph.invoke(new Command({ resume: 'asdf 123' }), threadConfig);
+        const result = await onboardingGraph.invoke(new Command({ resume: 'asdf 123' }), threadConfig);
+
+        expect(isInterrupted(result)).toBe(false);
+        expect(result.step).toBe('ABANDONED');
+        expect(result.collectedName).toBeNull();
+        expect(result.messages[result.messages.length - 1]?.content).toBeTruthy();
     });
 });

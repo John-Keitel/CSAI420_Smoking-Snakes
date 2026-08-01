@@ -81,7 +81,7 @@ describe('collectDobNode (SCRUM-104)', () => {
 
         expect(isInterrupted(result)).toBe(true);
         if (isInterrupted<{ question: string }>(result)) {
-            expect(result[INTERRUPT][0].value?.question).toBe("What's your date of birth?");
+            expect(result[INTERRUPT][0].value?.question).toBe("What's your date of birth? (YYYY-MM-DD)");
         }
     });
 
@@ -115,8 +115,22 @@ describe('collectDobNode (SCRUM-104)', () => {
         expect(result.lastValidationError).toBeTruthy();
         expect(isInterrupted(result)).toBe(true);
         if (isInterrupted<{ question: string }>(result)) {
-            expect(result[INTERRUPT][0].value?.question).not.toBe("What's your date of birth?");
+            expect(result[INTERRUPT][0].value?.question).not.toBe("What's your date of birth? (YYYY-MM-DD)");
         }
+    });
+
+    it('rejects a date not in YYYY-MM-DD format even when the model claims it is valid', async () => {
+        const { onboardingGraph } = await loadGraphModule({
+            openAiApiKey: 'test-key',
+            dobExtraction: { extractedDob: '07/31/1996', looksLikeAValidDob: true },
+        });
+        const threadConfig = { configurable: { thread_id: 'scrum-104-bad-format' } };
+
+        await advanceToCollectDob(onboardingGraph, threadConfig);
+        const result = await onboardingGraph.invoke(new Command({ resume: 'July 31st, 1996' }), threadConfig);
+
+        expect(result.collectedDob).toBeNull();
+        expect(isInterrupted(result)).toBe(true);
     });
 
     it('rejects a future date even when the model claims it is valid', async () => {
@@ -149,15 +163,76 @@ describe('collectDobNode (SCRUM-104)', () => {
         expect(isInterrupted(result)).toBe(true);
     });
 
-    it('falls back to a deterministic re-prompt when the DOB extraction model call fails', async () => {
-        const { onboardingGraph } = await loadGraphModule({ openAiApiKey: 'test-key', dobExtraction: 'throw' });
-        const threadConfig = { configurable: { thread_id: 'scrum-104-model-error' } };
+    it('validates the raw reply against the guardrail schema when OPENAI_API_KEY is unset', async () => {
+        const { onboardingGraph, dobInvokeMock } = await loadGraphModule({ openAiApiKey: undefined });
+        const threadConfig = { configurable: { thread_id: 'scrum-104-fallback-valid' } };
+        const validDob = isoDateYearsFromToday(-30);
 
         await advanceToCollectDob(onboardingGraph, threadConfig);
-        const result = await onboardingGraph.invoke(new Command({ resume: isoDateYearsFromToday(-30) }), threadConfig);
+        const result = await onboardingGraph.invoke(new Command({ resume: validDob }), threadConfig);
+
+        // No model to call, but a well-formed, plausible date of birth should still
+        // complete the graph instead of looping forever (SCRUM-106).
+        expect(dobInvokeMock).not.toHaveBeenCalled();
+        expect(result.collectedDob).toBe(validDob);
+        expect(result.lastValidationError).toBeNull();
+        expect(isInterrupted(result)).toBe(false);
+    });
+
+    it('re-prompts when OPENAI_API_KEY is unset and the raw reply also fails the guardrail schema', async () => {
+        const { onboardingGraph, dobInvokeMock } = await loadGraphModule({ openAiApiKey: undefined });
+        const threadConfig = { configurable: { thread_id: 'scrum-104-fallback-invalid' } };
+
+        await advanceToCollectDob(onboardingGraph, threadConfig);
+        const result = await onboardingGraph.invoke(new Command({ resume: 'not a date' }), threadConfig);
+
+        expect(dobInvokeMock).not.toHaveBeenCalled();
+        expect(result.collectedDob).toBeNull();
+        expect(result.lastValidationError).toBeTruthy();
+        expect(isInterrupted(result)).toBe(true);
+    });
+
+    it('validates the raw reply against the guardrail schema when the DOB extraction model call fails', async () => {
+        const { onboardingGraph } = await loadGraphModule({ openAiApiKey: 'test-key', dobExtraction: 'throw' });
+        const threadConfig = { configurable: { thread_id: 'scrum-104-model-error-valid' } };
+        const validDob = isoDateYearsFromToday(-30);
+
+        await advanceToCollectDob(onboardingGraph, threadConfig);
+        const result = await onboardingGraph.invoke(new Command({ resume: validDob }), threadConfig);
+
+        expect(result.collectedDob).toBe(validDob);
+        expect(result.lastValidationError).toBeNull();
+        expect(isInterrupted(result)).toBe(false);
+    });
+
+    it('re-prompts when the DOB extraction model call fails and the raw reply also fails the guardrail schema', async () => {
+        const { onboardingGraph } = await loadGraphModule({ openAiApiKey: 'test-key', dobExtraction: 'throw' });
+        const threadConfig = { configurable: { thread_id: 'scrum-104-model-error-invalid' } };
+
+        await advanceToCollectDob(onboardingGraph, threadConfig);
+        const result = await onboardingGraph.invoke(new Command({ resume: 'not a date' }), threadConfig);
 
         expect(result.collectedDob).toBeNull();
+        expect(result.lastValidationError).toBeTruthy();
         expect(isInterrupted(result)).toBe(true);
+    });
+
+    it('abandons the flow after 3 consecutive failed attempts instead of looping forever', async () => {
+        const { onboardingGraph } = await loadGraphModule({
+            openAiApiKey: 'test-key',
+            dobExtraction: { extractedDob: '', looksLikeAValidDob: false },
+        });
+        const threadConfig = { configurable: { thread_id: 'scrum-104-abandon' } };
+
+        await advanceToCollectDob(onboardingGraph, threadConfig);
+        await onboardingGraph.invoke(new Command({ resume: 'not a date' }), threadConfig);
+        await onboardingGraph.invoke(new Command({ resume: 'not a date' }), threadConfig);
+        const result = await onboardingGraph.invoke(new Command({ resume: 'not a date' }), threadConfig);
+
+        expect(isInterrupted(result)).toBe(false);
+        expect(result.step).toBe('ABANDONED');
+        expect(result.collectedDob).toBeNull();
+        expect(result.messages[result.messages.length - 1]?.content).toBeTruthy();
     });
 });
 
