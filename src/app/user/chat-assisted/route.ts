@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
                 lastName: userData.lastName,
                 dateOfBirth: userData.birthDate,
                 dob: userData.birthDate,
-                phone: userData.phone,
+                phone: userData.phone ?? 'N/A',
                 locale: locale ?? null,
             },
             select: {

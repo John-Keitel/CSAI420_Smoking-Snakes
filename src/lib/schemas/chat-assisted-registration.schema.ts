@@ -15,9 +15,14 @@ const BirthDateSchema = z
     }, 'birthDate must be a valid date')
     .transform(({ date }) => date);
 
-// Week 5 contract: optional leading `+`, 7-15 digits (the shared SignUpSchema
-// E.164 rule rejects the suite's `8014567890` — this feature-local rule does not).
-const PhoneSchema = z.string({ error: 'phone is required' }).regex(/^\+?\d{7,15}$/, 'phone must be a valid phone number');
+// Week 5 contract: optional leading `+`, 7-15 digits when present (the shared
+// SignUpSchema E.164 rule rejects the suite's `8014567890` — this feature-local
+// rule does not). The suite's non-happy-path payloads omit `phone` entirely, so
+// it must be optional; the route stores 'N/A' when absent (register-chat precedent).
+const PhoneSchema = z
+    .string({ error: 'phone is required' })
+    .regex(/^\+?\d{7,15}$/, 'phone must be a valid phone number')
+    .optional();
 
 // Week 5 contract: names must not contain markup or SQL metacharacters
 // (`<script>` XSS and `DROP TABLE users;--` SQLi are rejected with 400).

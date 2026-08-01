@@ -123,6 +123,12 @@ describe('ChatAssistedRegistrationSchema', () => {
         const alphaPhone = parseChat({ ...validUserData, userData: { ...validUserData.userData, phone: 'invalid-phone' } });
         expect(alphaPhone.ok).toBe(false);
     });
+
+    it('accepts payloads that omit phone entirely (Week 5 matrix payloads)', () => {
+        const { phone: _phone, ...userDataWithoutPhone } = validUserData.userData;
+        const result = parseChat({ ...validUserData, userData: userDataWithoutPhone });
+        expect(result.ok).toBe(true);
+    });
 });
 
 describe('RegistrationEscalationSchema', () => {

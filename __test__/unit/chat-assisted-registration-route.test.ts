@@ -183,6 +183,18 @@ describe('POST /user/chat-assisted', () => {
         });
     });
 
+    it('accepts payloads without a phone and stores the N/A placeholder', async () => {
+        const { phone: _phone, ...userDataWithoutPhone } = validPayload.userData;
+
+        const response = await POST(buildRequest({ ...validPayload, userData: userDataWithoutPhone }));
+
+        expect(response.status).toBe(201);
+        expect(prismaUserCreate).toHaveBeenCalledWith({
+            data: expect.objectContaining({ phone: 'N/A' }),
+            select: expect.anything(),
+        });
+    });
+
     it('returns 408 for a session last active more than 30 minutes ago, before validation (CAT-08)', async () => {
         const expiredPayload = {
             chatSessionId: 'timeout_session_123',
