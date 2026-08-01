@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { ENV_VARS } from '@/lib/env-vars';
-import { hasRecentSensorData, VoiceTransport } from '@/lib/ivr-exercise-flow';
 import { HttpException } from '@/lib/http';
+import { hasRecentSensorData, VoiceTransport } from '@/lib/ivr-exercise-flow';
 import { getAppLogger } from '@/lib/logger';
 
 const logger = getAppLogger('api:voice:exercise:iot');

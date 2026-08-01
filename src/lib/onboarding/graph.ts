@@ -1,6 +1,6 @@
 import { END, MemorySaver, START, StateGraph } from '@langchain/langgraph';
 
-import { OnboardingStateAnnotation, type OnboardingState, type OnboardingStep } from '@/lib/onboarding/state';
+import { type OnboardingState, OnboardingStateAnnotation, type OnboardingStep } from '@/lib/onboarding/state';
 
 /**
  * Placeholder node body for SCRUM-101–104, which each replace one of these

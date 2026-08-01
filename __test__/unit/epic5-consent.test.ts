@@ -55,7 +55,7 @@ describe('Epic 5 consent route handlers', () => {
         expect(await response.json()).toEqual({ error: 'Missing suresteps.session.token header' });
     });
 
-    it('approves with case-insensitive YES and sets +30 day token TTL', async () => {
+    it('approves with case-insensitive YES and sets +30 day token TTL for the session-authenticated customer', async () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date('2026-07-11T00:00:00.000Z'));
 
@@ -77,7 +77,6 @@ describe('Epic 5 consent route handlers', () => {
                 'suresteps.user.type': 'patient',
             },
             body: JSON.stringify({
-                customerEmail: 'customer@example.com',
                 clinicianId: 'clinician-1',
                 approval: 'yEs',
             }),
@@ -104,5 +103,36 @@ describe('Epic 5 consent route handlers', () => {
         expect(body.updated.count).toBe(1);
 
         vi.useRealTimers();
+    });
+
+    it('ignores a body-supplied customerEmail and only approves requests for the authenticated session user', async () => {
+        validateSureStepsSessionMock.mockReturnValue({
+            ok: true,
+            user: { email: 'customer@example.com', type: 'patient' },
+        });
+
+        updateManyMock.mockResolvedValue({ count: 1 });
+
+        const request = new NextRequest('http://localhost/api/consent/approval', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'suresteps.session.token': 'legacy-session-token',
+                'suresteps.user.email': 'customer@example.com',
+            },
+            body: JSON.stringify({
+                customerEmail: 'someone-else@example.com',
+                clinicianId: 'clinician-1',
+                approval: 'YES',
+            }),
+        });
+
+        await postConsentApproval(request);
+
+        expect(updateManyMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: expect.objectContaining({ customerEmail: 'customer@example.com' }),
+            })
+        );
     });
 });

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { prisma } from '@/lib/db';
 import { validateSureStepsSession } from '@/lib/auth/suresteps';
+import { prisma } from '@/lib/db';
 
 type RouteContext = {
     params: Promise<{
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
         });
 
         return NextResponse.json({ clinicians }, { status: 200 });
-    } catch (err: any) {
+    } catch (err) {
         console.error('GET /api/consentedClinicians/[customer] error', err);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
