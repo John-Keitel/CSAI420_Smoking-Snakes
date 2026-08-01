@@ -174,4 +174,60 @@ describe('collectNameNode (SCRUM-102)', () => {
         expect(result.collectedName).toBeNull();
         expect(result.messages[result.messages.length - 1]?.content).toBeTruthy();
     });
+
+    describe('guardrails (SCRUM-108)', () => {
+        it('redirects a clinical-advice request without giving medical advice, and without calling the model', async () => {
+            const { onboardingGraph, nameInvokeMock } = await loadGraphModule({ openAiApiKey: 'test-key' });
+            const threadConfig = { configurable: { thread_id: 'scrum-108-name-clinical' } };
+
+            await onboardingGraph.invoke({}, threadConfig);
+            const result = await onboardingGraph.invoke(new Command({ resume: 'what dosage of aspirin should I take?' }), threadConfig);
+
+            expect(nameInvokeMock).not.toHaveBeenCalled();
+            expect(result.collectedName).toBeNull();
+            expect(isInterrupted(result)).toBe(true);
+            const lastMessage = String(result.messages[result.messages.length - 1]?.content ?? '');
+            expect(lastMessage.toLowerCase()).toContain('medical advice');
+        });
+
+        it('redirects an off-topic question back to the sign-up flow', async () => {
+            const { onboardingGraph, nameInvokeMock } = await loadGraphModule({ openAiApiKey: 'test-key' });
+            const threadConfig = { configurable: { thread_id: 'scrum-108-name-off-topic' } };
+
+            await onboardingGraph.invoke({}, threadConfig);
+            const result = await onboardingGraph.invoke(new Command({ resume: "what's the weather like today?" }), threadConfig);
+
+            expect(nameInvokeMock).not.toHaveBeenCalled();
+            expect(result.collectedName).toBeNull();
+            expect(isInterrupted(result)).toBe(true);
+            const lastMessage = String(result.messages[result.messages.length - 1]?.content ?? '');
+            expect(lastMessage.toLowerCase()).toContain('signing up');
+        });
+
+        it('does not count an off-topic detour as a failed attempt — abandonment still needs 3 genuine failures', async () => {
+            const { onboardingGraph } = await loadGraphModule({
+                openAiApiKey: 'test-key',
+                nameExtraction: { extractedName: '', looksLikeAValidFullName: false },
+            });
+            const threadConfig = { configurable: { thread_id: 'scrum-108-name-no-attempt-consumed' } };
+
+            await onboardingGraph.invoke({}, threadConfig);
+
+            const afterFailure1 = await onboardingGraph.invoke(new Command({ resume: 'asdf 123' }), threadConfig);
+            expect(afterFailure1.fieldAttempts).toBe(1);
+
+            const afterDetour = await onboardingGraph.invoke(new Command({ resume: 'can you diagnose my back pain?' }), threadConfig);
+            expect(afterDetour.fieldAttempts).toBe(1); // unchanged by the detour
+            expect(isInterrupted(afterDetour)).toBe(true);
+
+            const afterFailure2 = await onboardingGraph.invoke(new Command({ resume: 'asdf 123' }), threadConfig);
+            expect(afterFailure2.fieldAttempts).toBe(2);
+            expect(isInterrupted(afterFailure2)).toBe(true); // not abandoned yet — only 2 genuine failures so far
+
+            const afterFailure3 = await onboardingGraph.invoke(new Command({ resume: 'asdf 123' }), threadConfig);
+            expect(afterFailure3.fieldAttempts).toBe(3);
+            expect(afterFailure3.step).toBe('ABANDONED');
+            expect(isInterrupted(afterFailure3)).toBe(false);
+        });
+    });
 });

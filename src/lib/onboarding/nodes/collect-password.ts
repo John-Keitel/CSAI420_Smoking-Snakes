@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import { hashPassword } from '@/lib/auth/password';
 import { getAppLogger } from '@/lib/logger';
+import { detectOffTopicOrClinicalRequest } from '@/lib/onboarding/guardrails';
 import { getOnboardingModel } from '@/lib/onboarding/model';
 import { PasswordFieldSchema } from '@/lib/onboarding/schemas';
 import { MAX_FIELD_ATTEMPTS, type OnboardingState } from '@/lib/onboarding/state';
@@ -78,6 +79,17 @@ async function validateRawReplyOrRePrompt(state: OnboardingState, replyText: str
 }
 
 /**
+ * SCRUM-108: a detour (off-topic question or clinical-advice request) is not a failed
+ * attempt at providing a password — omitting fieldAttempts/lastValidationError from the
+ * returned state leaves them exactly as they were, so this never counts toward
+ * MAX_FIELD_ATTEMPTS. The redirect goes to `messages` (like ABANDON_MESSAGE), not
+ * `lastValidationError`, so the next question asked is unaffected.
+ */
+function redirectWithoutConsumingAttempt(message: string): Partial<OnboardingState> {
+    return { step: 'COLLECT_PASSWORD', messages: [new AIMessage(message)] };
+}
+
+/**
  * SCRUM-105 — prompts for and validates the user's password, then hashes it
  * (via src/lib/auth/password.ts, the same bcrypt helper EPIC 14 uses for stored
  * credentials) before it is ever assigned to OnboardingState. The plaintext
@@ -90,6 +102,13 @@ export async function collectPasswordNode(state: OnboardingState): Promise<Parti
     const question = state.lastValidationError ? PASSWORD_REPROMPT : PASSWORD_QUESTION;
     const userReply = interrupt({ question });
     const replyText = String(userReply);
+
+    // treatQuestionMarkAsOffTopic: false — unlike name/email/DOB, a password can legitimately
+    // contain '?' as a complexity character, so that heuristic would misfire here.
+    const redirect = detectOffTopicOrClinicalRequest(replyText, { treatQuestionMarkAsOffTopic: false });
+    if (redirect) {
+        return redirectWithoutConsumingAttempt(redirect.message);
+    }
 
     const model = getOnboardingModel();
     if (!model) {

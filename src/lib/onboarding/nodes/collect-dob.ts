@@ -3,6 +3,7 @@ import { interrupt } from '@langchain/langgraph';
 import { z } from 'zod';
 
 import { getAppLogger } from '@/lib/logger';
+import { detectOffTopicOrClinicalRequest } from '@/lib/onboarding/guardrails';
 import { getOnboardingModel } from '@/lib/onboarding/model';
 import { DobFieldSchema } from '@/lib/onboarding/schemas';
 import { MAX_FIELD_ATTEMPTS, type OnboardingState } from '@/lib/onboarding/state';
@@ -57,6 +58,17 @@ function validateRawReplyOrRePrompt(state: OnboardingState, replyText: string): 
 }
 
 /**
+ * SCRUM-108: a detour (off-topic question or clinical-advice request) is not a failed
+ * attempt at providing a date of birth — omitting fieldAttempts/lastValidationError from
+ * the returned state leaves them exactly as they were, so this never counts toward
+ * MAX_FIELD_ATTEMPTS. The redirect goes to `messages` (like ABANDON_MESSAGE), not
+ * `lastValidationError`, so the next question asked is unaffected.
+ */
+function redirectWithoutConsumingAttempt(message: string): Partial<OnboardingState> {
+    return { step: 'COLLECT_DOB', messages: [new AIMessage(message)] };
+}
+
+/**
  * SCRUM-104 — prompts for and validates the user's date of birth.
  * Loops back to itself (via graph.ts's conditional edge) on invalid input.
  * The success edge routes to COLLECT_PASSWORD (SCRUM-105) next.
@@ -65,6 +77,11 @@ export async function collectDobNode(state: OnboardingState): Promise<Partial<On
     const question = state.lastValidationError ? DOB_REPROMPT : DOB_QUESTION;
     const userReply = interrupt({ question });
     const replyText = String(userReply);
+
+    const redirect = detectOffTopicOrClinicalRequest(replyText);
+    if (redirect) {
+        return redirectWithoutConsumingAttempt(redirect.message);
+    }
 
     const model = getOnboardingModel();
     if (!model) {
