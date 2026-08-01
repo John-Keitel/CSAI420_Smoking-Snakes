@@ -266,3 +266,61 @@ model ExpoPushToken {
     @@index([userId])
     @@map("expo_push_tokens")
 }
+
+enum EscalationPriority {
+    LOW
+    MEDIUM
+    HIGH
+}
+
+enum EscalationCategory {
+    GENERAL
+    MEDICAL
+    TECHNICAL
+}
+
+enum EscalationStatus {
+    PENDING
+    ASSIGNED
+    RESOLVED
+}
+
+enum EscalationResponsePreference {
+    CALL
+    TEXT
+    CHAT
+}
+
+model Escalation {
+    id           String @id @default(uuid()) @db.Uuid
+    escalationId String @unique @map("escalation_id") @db.VarChar(64)
+
+    // Chatbot context (opaque identifiers supplied by the caller, not foreign keys)
+    userId    String? @map("user_id") @db.VarChar(128)
+    sessionId String? @map("session_id") @db.VarChar(128)
+
+    // Escalated content
+    phoneNumber        String                       @map("phone_number") @db.VarChar(20)
+    originalQuestion   String                       @map("original_question") @db.Text
+    aiResponse         String                       @map("ai_response") @db.Text
+    responsePreference EscalationResponsePreference @map("response_preference")
+    waitingForResponse Boolean                      @default(true) @map("waiting_for_response")
+
+    // Triage
+    priority EscalationPriority @default(MEDIUM)
+    category EscalationCategory @default(GENERAL)
+    status   EscalationStatus   @default(PENDING)
+    coachId  String?            @map("coach_id") @db.VarChar(128)
+
+    // Timeline
+    questionTimestamp   DateTime  @map("question_timestamp")
+    escalationTimestamp DateTime  @default(now()) @map("escalation_timestamp")
+    resolutionTimestamp DateTime? @map("resolution_timestamp")
+
+    // Audit
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    @@index([status, priority, escalationTimestamp])
+    @@map("escalations")
+}

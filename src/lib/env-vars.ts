@@ -16,6 +16,7 @@ const AppSchema = z.object({
         .transform((value) => value === 'true'),
     OPENAI_API_KEY: z.string().optional(),
     OPENAI_MODEL: z.string().default('gpt-4o-mini'),
+    ESCALATION_QUEUE_NAME: z.string().default('mobility-coach-escalations'),
 });
 
 const DatabaseSchema = z.object({

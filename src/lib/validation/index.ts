@@ -21,3 +21,20 @@ export function formatZodErrors(zodError: ZodError): ValidationError {
         ),
     };
 }
+
+/**
+ * Strip markup from free text supplied by an external caller before it is stored
+ * or echoed back. Declarations (doctype, processing instructions, comments) are
+ * removed first because they can wrap nested brackets, so the generic `<[^>]*>`
+ * pass alone would leave their tail behind. Whitespace is normalized last.
+ */
+export function stripHtml(input: string): string {
+    return input
+        .replace(/\p{Cc}/gu, ' ')
+        .replace(/<!--[\s\S]*?-->/g, ' ')
+        .replace(/<\?[\s\S]*?\?>/g, ' ')
+        .replace(/<![^<>]*(?:\[[\s\S]*?\][^<>]*)?>/g, ' ')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
