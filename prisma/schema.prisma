@@ -101,8 +101,8 @@ model FlaggedSession {
     aiRecommendation String?            @map("ai_recommendation") @db.Text
     humanOverride    String?            @map("human_override") @db.Text
     reviewerNotes    String?            @map("reviewer_notes") @db.Text
-    reviewedByUserId String?            @map("reviewed_by_user_id") @db.VarChar(32)
-    resolvedByUserId String?            @map("resolved_by_user_id") @db.VarChar(32)
+    reviewedByUserId String?            @map("reviewed_by_user_id") @db.VarChar(36)
+    resolvedByUserId String?            @map("resolved_by_user_id") @db.VarChar(36)
     flaggedAt        DateTime           @default(now()) @map("flagged_at")
     reviewedAt       DateTime?          @map("reviewed_at")
     resolvedAt       DateTime?          @map("resolved_at")
@@ -132,7 +132,7 @@ model ChatMessage {
 
 model Session {
     id     String @id @default(cuid())
-    userId String @map("user_id") @db.VarChar(32)
+    userId String @map("user_id") @db.VarChar(36)
 
     // Audit
     createdAt DateTime @default(now()) @map("created_at")
@@ -162,7 +162,7 @@ model Device {
 
 model Assessment {
     id       String    @id @default(cuid())
-    userId   String    @map("user_id") @db.VarChar(32)
+    userId   String    @map("user_id") @db.VarChar(36)
     deviceId String    @map("device_id") @db.VarChar(32)
     started  DateTime? @default(now())
     ended    DateTime?
@@ -183,7 +183,7 @@ model Step {
     id           String  @id @default(cuid())
     deviceId     String  @map("device_id") @db.VarChar(32)
     assessmentId String? @map("assessment_id") @db.VarChar(32)
-    userId       String? @map("user_id") @db.VarChar(32)
+    userId       String? @map("user_id") @db.VarChar(36)
 
     points Json
 
@@ -232,7 +232,7 @@ model CustomerConsent {
 
 model ExpoPushToken {
     id     String @id @default(cuid())
-    userId String @map("user_id") @db.VarChar(32)
+    userId String @map("user_id") @db.VarChar(36)
 
     // Token
     token      String    @unique @db.VarChar(255)
