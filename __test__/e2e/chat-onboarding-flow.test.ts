@@ -12,9 +12,12 @@ type StoredUser = {
 type BackendHarness = {
     resetMockSessionServer: () => Promise<void>;
     startMockSession: (entryPoint: 'need-help' | 'default') => Promise<{ sessionId: string; step: string }>;
-    sendMockMessage: (sessionId: string, message: string) => Promise<{ sessionId: string; step: string; transcript: Array<{ role: string; content: string }> }>;
+    sendMockMessage: (
+        sessionId: string,
+        message: string
+    ) => Promise<{ sessionId: string; step: string; transcript: Array<{ role: string; content: string }> }>;
     getMockSession: (sessionId: string) => Promise<{ sessionId: string; step: string; transcript: Array<{ role: string; content: string }> }>;
-    registerChatUser: (payload: { name: string; email: string; password: string; dob: string }) => Promise<{ status: number; body: any }>;
+    registerChatUser: (payload: { name: string; email: string; password: string; dob: string }) => Promise<{ status: number; body: unknown }>;
     listUsers: () => StoredUser[];
 };
 

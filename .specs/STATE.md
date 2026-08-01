@@ -81,6 +81,17 @@ Format:
 - **Branch**: [git branch name]
 -->
 
+- **Feature**: chat-assisted-registration / .specs/features/chat-assisted-registration/
+- **Phase / Task**: Planning — spec.md + design.md + tasks.md drafted, awaiting human review
+- **Completed**: spec.md, design.md, tasks.md (Week 5 integration suite contract; user decisions: implement endpoints, public auth, rule-based MVP, no Jira, EPIC 14 untouched)
+- **In-progress**: (none)
+- **Next step**: Human reviews/edits the three slice docs, approves, then execution happens in a NEW session (repo rule: planning ≠ execution; no Jira publishing) — implement T1→T6 per tasks.md, then T7 runs the official `week5.test.js` suite against local and deployed code.
+- **Blockers**: none
+- **Uncommitted files**: `.specs/features/chat-assisted-registration/{spec.md,design.md,tasks.md}` (+ this STATE.md edit) — planning session, not committed
+- **Branch**: main (no code branch created during planning)
+
+---
+
 - **Feature**: session-token-expiry-distinction / .specs/features/session-token-expiry-distinction/
 - **Phase / Task**: Planning — spec.md + tasks.md drafted, awaiting human review
 - **Completed**: spec.md, tasks.md (source: PR #64 review comment by ljm234)
