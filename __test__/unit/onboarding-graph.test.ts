@@ -3,10 +3,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const ONBOARDING_NODES = ['GREETING', 'COLLECT_NAME', 'COLLECT_EMAIL', 'COLLECT_DOB'];
 
+function mockEnvVarsWithoutOpenAiKey() {
+    vi.doMock('@/lib/env-vars', () => ({
+        ENV_VARS: { OPENAI_API_KEY: undefined, OPENAI_MODEL: 'gpt-4o-mini' },
+    }));
+}
+
 describe('onboarding LangGraph setup (SCRUM-100)', () => {
     beforeEach(() => {
         vi.resetModules();
-        vi.doUnmock('@/lib/env-vars');
+        mockEnvVarsWithoutOpenAiKey();
     });
 
     it('compiles a StateGraph with the four onboarding nodes registered', async () => {
@@ -33,10 +39,6 @@ describe('onboarding LangGraph setup (SCRUM-100)', () => {
     });
 
     it('does not throw at import time when OPENAI_API_KEY is unset', async () => {
-        vi.doMock('@/lib/env-vars', () => ({
-            ENV_VARS: { OPENAI_API_KEY: undefined, OPENAI_MODEL: 'gpt-4o-mini' },
-        }));
-
         await expect(import('@/lib/onboarding')).resolves.toBeDefined();
 
         const { getOnboardingModel } = await import('@/lib/onboarding/model');
