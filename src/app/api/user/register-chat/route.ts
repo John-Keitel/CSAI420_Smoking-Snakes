@@ -1,12 +1,16 @@
 import bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { signUserToken } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { HttpException } from '@/lib/http';
+import { getAppLogger } from '@/lib/logger';
 import { UserRegisterChatSchema } from '@/lib/schemas/user-registration.schema';
 import { sanitizeObjectStrings, sanitizeUserRegistrationInput } from '@/lib/sanitization';
 import { formatZodErrors } from '@/lib/validation';
+
+const logger = getAppLogger('api:user:register-chat');
 
 function splitName(name: string): { firstName: string; lastName: string } {
     const normalized = name.trim().replace(/\s+/g, ' ');
@@ -19,13 +23,23 @@ function splitName(name: string): { firstName: string; lastName: string } {
 }
 
 export async function POST(request: NextRequest) {
+    const requestId = randomUUID();
+
     try {
+        logger.info('register-chat request started requestId=%s', requestId);
+
         const body = await request.json();
         const sanitizedBody = sanitizeObjectStrings(body);
         const parsed = UserRegisterChatSchema.safeParse(sanitizedBody);
 
         if (!parsed.success) {
-            throw new HttpException(422, JSON.stringify(formatZodErrors(parsed.error)));
+            const validationError = formatZodErrors(parsed.error);
+            logger.warn(
+                'register-chat validation failed requestId=%s statusCode=422 fields=%s',
+                requestId,
+                Object.keys(validationError.errors).join(',')
+            );
+            throw new HttpException(422, JSON.stringify(validationError));
         }
 
         const { name, email, password, dob } = sanitizeUserRegistrationInput(parsed.data);
@@ -37,6 +51,7 @@ export async function POST(request: NextRequest) {
         });
 
         if (existingUser) {
+            logger.warn('register-chat email conflict requestId=%s statusCode=409', requestId);
             throw new HttpException(409, 'Email already registered');
         }
 
@@ -65,6 +80,8 @@ export async function POST(request: NextRequest) {
 
         const token = await signUserToken({ userId: createdUser.id, email: createdUser.email });
 
+        logger.info('register-chat request succeeded requestId=%s statusCode=201 userId=%s', requestId, createdUser.id);
+
         return NextResponse.json(
             {
                 success: true,
@@ -75,6 +92,7 @@ export async function POST(request: NextRequest) {
         );
     } catch (error) {
         if (error instanceof HttpException) {
+            logger.warn('register-chat request failed requestId=%s statusCode=%d', requestId, error.statusCode);
             return NextResponse.json(
                 {
                     success: false,
@@ -84,6 +102,8 @@ export async function POST(request: NextRequest) {
                 { status: error.statusCode }
             );
         }
+
+        logger.error('register-chat unexpected error requestId=%s: %s', requestId, error);
 
         return NextResponse.json(
             {
