@@ -44,8 +44,37 @@ describe('POST /api/notifications/register', () => {
         const response = await POST(buildRequest({ token: validToken }));
 
         expect(response.status).toBe(401);
+        await expect(response.json()).resolves.toEqual({
+            error: 'Missing suresteps.session.token header',
+            code: 'UNAUTHORIZED',
+        });
         expect(prismaMock.user.findUnique).not.toHaveBeenCalled();
         expect(prismaMock.expoPushToken.upsert).not.toHaveBeenCalled();
+    });
+
+    it('returns 401 with SESSION_TOKEN_EXPIRED when the session token is expired', async () => {
+        validateSessionMock.mockReturnValue({ ok: false, reason: 'Session token expired' });
+
+        const response = await POST(buildRequest({ token: validToken }));
+
+        expect(response.status).toBe(401);
+        await expect(response.json()).resolves.toEqual({
+            error: 'Session token expired',
+            code: 'SESSION_TOKEN_EXPIRED',
+        });
+        expect(prismaMock.expoPushToken.upsert).not.toHaveBeenCalled();
+    });
+
+    it('returns 401 with UNAUTHORIZED for any other session failure', async () => {
+        validateSessionMock.mockReturnValue({ ok: false, reason: 'Session user identity missing' });
+
+        const response = await POST(buildRequest({ token: validToken }));
+
+        expect(response.status).toBe(401);
+        await expect(response.json()).resolves.toEqual({
+            error: 'Session user identity missing',
+            code: 'UNAUTHORIZED',
+        });
     });
 
     it('returns 422 when the body fails validation', async () => {
@@ -65,6 +94,7 @@ describe('POST /api/notifications/register', () => {
         const response = await POST(buildRequest({ token: validToken }));
 
         expect(response.status).toBe(404);
+        await expect(response.json()).resolves.toEqual({ error: 'User not found' });
         expect(prismaMock.user.findUnique).toHaveBeenCalledWith({ where: { id: userId } });
         expect(prismaMock.expoPushToken.upsert).not.toHaveBeenCalled();
     });
