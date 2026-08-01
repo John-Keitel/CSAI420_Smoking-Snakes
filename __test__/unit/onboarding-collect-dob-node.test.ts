@@ -85,7 +85,7 @@ describe('collectDobNode (SCRUM-104)', () => {
         }
     });
 
-    it('completes the graph when the reply is a valid, plausible date of birth', async () => {
+    it('advances to COLLECT_PASSWORD when the reply is a valid, plausible date of birth', async () => {
         const validDob = isoDateYearsFromToday(-30);
         const { onboardingGraph } = await loadGraphModule({
             openAiApiKey: 'test-key',
@@ -96,7 +96,10 @@ describe('collectDobNode (SCRUM-104)', () => {
         await advanceToCollectDob(onboardingGraph, threadConfig);
         const result = await onboardingGraph.invoke(new Command({ resume: validDob }), threadConfig);
 
-        expect(isInterrupted(result)).toBe(false);
+        // COLLECT_PASSWORD calls interrupt() as of SCRUM-105, so the graph now pauses there
+        // instead of completing. See onboarding-collect-password-node.test.ts for that node's
+        // own behavior; this just confirms COLLECT_DOB itself advanced.
+        expect(isInterrupted(result)).toBe(true);
         expect(result.collectedDob).toBe(validDob);
         expect(result.lastValidationError).toBeNull();
     });
@@ -172,11 +175,12 @@ describe('collectDobNode (SCRUM-104)', () => {
         const result = await onboardingGraph.invoke(new Command({ resume: validDob }), threadConfig);
 
         // No model to call, but a well-formed, plausible date of birth should still
-        // complete the graph instead of looping forever (SCRUM-106).
+        // advance instead of looping forever (SCRUM-106) — COLLECT_PASSWORD then
+        // pauses for its own reply.
         expect(dobInvokeMock).not.toHaveBeenCalled();
         expect(result.collectedDob).toBe(validDob);
         expect(result.lastValidationError).toBeNull();
-        expect(isInterrupted(result)).toBe(false);
+        expect(isInterrupted(result)).toBe(true);
     });
 
     it('re-prompts when OPENAI_API_KEY is unset and the raw reply also fails the guardrail schema', async () => {
@@ -202,7 +206,7 @@ describe('collectDobNode (SCRUM-104)', () => {
 
         expect(result.collectedDob).toBe(validDob);
         expect(result.lastValidationError).toBeNull();
-        expect(isInterrupted(result)).toBe(false);
+        expect(isInterrupted(result)).toBe(true);
     });
 
     it('re-prompts when the DOB extraction model call fails and the raw reply also fails the guardrail schema', async () => {
@@ -237,7 +241,7 @@ describe('collectDobNode (SCRUM-104)', () => {
 });
 
 describe('onboarding graph full-cycle smoke test (SCRUM-100–104)', () => {
-    it('walks GREETING → COLLECT_NAME → COLLECT_EMAIL → COLLECT_DOB → END with all valid replies on the first attempt', async () => {
+    it('walks GREETING → COLLECT_NAME → COLLECT_EMAIL → COLLECT_DOB → COLLECT_PASSWORD with all valid replies on the first attempt', async () => {
         const validDob = isoDateYearsFromToday(-30);
         const { onboardingGraph, greetingInvokeMock, nameInvokeMock, emailInvokeMock, dobInvokeMock } = await loadGraphModule({
             openAiApiKey: 'test-key',
@@ -257,12 +261,15 @@ describe('onboarding graph full-cycle smoke test (SCRUM-100–104)', () => {
         expect(isInterrupted(afterEmail)).toBe(true);
         expect(afterEmail.collectedEmail).toBe('john@example.com');
 
-        const final = await onboardingGraph.invoke(new Command({ resume: validDob }), threadConfig);
-        expect(isInterrupted(final)).toBe(false);
-        expect(final.collectedName).toBe('John Smith');
-        expect(final.collectedEmail).toBe('john@example.com');
-        expect(final.collectedDob).toBe(validDob);
-        expect(final.lastValidationError).toBeNull();
+        const afterDob = await onboardingGraph.invoke(new Command({ resume: validDob }), threadConfig);
+        // COLLECT_PASSWORD calls interrupt() as of SCRUM-105, so the graph now pauses there
+        // instead of completing. See onboarding-collect-password-node.test.ts for that node's
+        // own behavior and the true full-cycle smoke test; this just confirms COLLECT_DOB advanced.
+        expect(isInterrupted(afterDob)).toBe(true);
+        expect(afterDob.collectedName).toBe('John Smith');
+        expect(afterDob.collectedEmail).toBe('john@example.com');
+        expect(afterDob.collectedDob).toBe(validDob);
+        expect(afterDob.lastValidationError).toBeNull();
 
         expect(greetingInvokeMock).toHaveBeenCalledOnce();
         expect(nameInvokeMock).toHaveBeenCalledOnce();

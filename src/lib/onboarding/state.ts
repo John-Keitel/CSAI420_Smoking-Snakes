@@ -1,7 +1,7 @@
 import { addMessages, Annotation } from '@langchain/langgraph';
 import type { BaseMessage } from '@langchain/core/messages';
 
-export type OnboardingStep = 'GREETING' | 'COLLECT_NAME' | 'COLLECT_EMAIL' | 'COLLECT_DOB' | 'ABANDONED' | 'COMPLETE';
+export type OnboardingStep = 'GREETING' | 'COLLECT_NAME' | 'COLLECT_EMAIL' | 'COLLECT_DOB' | 'COLLECT_PASSWORD' | 'ABANDONED' | 'COMPLETE';
 
 /** SCRUM-107: a COLLECT_* node gives up and abandons the flow after this many failed attempts on its field. */
 export const MAX_FIELD_ATTEMPTS = 3;
@@ -24,6 +24,13 @@ export const OnboardingStateAnnotation = Annotation.Root({
         default: () => null,
     }),
     collectedDob: Annotation<string | null>({
+        reducer: (_previous, next) => next,
+        default: () => null,
+    }),
+    // SCRUM-105: only ever a bcrypt hash (see src/lib/auth/password.ts), never the plaintext
+    // password — the plaintext is hashed inside collect-password.ts before this is set, so it
+    // never rests in checkpointed graph state (which a future durable checkpointer could persist).
+    collectedPasswordHash: Annotation<string | null>({
         reducer: (_previous, next) => next,
         default: () => null,
     }),
