@@ -23,3 +23,15 @@ export const NameFieldSchema = z
     .refine((value) => !SUSPICIOUS_NAME_PATTERN.test(value), 'That does not look like a name.')
     .refine((value) => PLAUSIBLE_NAME_PATTERN.test(value), 'That does not look like a first and last name.')
     .refine((value) => value.split(/\s+/).length <= NAME_MAX_WORDS, 'That name looks unusually long.');
+
+// Matches User.email's @db.VarChar(128) in prisma/schema.prisma, so a collected
+// address won't later fail to persist once EPIC 14 wires this up to registration.
+const EMAIL_MAX_LENGTH = 128;
+
+/**
+ * Guardrail for the COLLECT_EMAIL node (SCRUM-103). Used both to re-validate the
+ * model's structured extraction and as the sole check on the no-model fallback path.
+ * Callers are expected to trim the candidate before parsing — z.email()'s own format
+ * check runs before any chained check, so untrimmed whitespace would fail it first.
+ */
+export const EmailFieldSchema = z.email('That does not look like a valid email address.').max(EMAIL_MAX_LENGTH, 'That email address is too long.');

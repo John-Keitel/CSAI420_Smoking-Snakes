@@ -65,10 +65,12 @@ describe('collectNameNode (SCRUM-102)', () => {
         await onboardingGraph.invoke({}, threadConfig);
         const result = await onboardingGraph.invoke(new Command({ resume: 'John Smith' }), threadConfig);
 
-        expect(isInterrupted(result)).toBe(false);
+        // COLLECT_EMAIL calls interrupt() as of SCRUM-103, so the graph now pauses there
+        // instead of running through to COLLECT_DOB. See onboarding-collect-email-node.test.ts
+        // for that node's own behavior; this just confirms COLLECT_NAME itself advanced.
+        expect(isInterrupted(result)).toBe(true);
         expect(result.collectedName).toBe('John Smith');
         expect(result.lastValidationError).toBeNull();
-        expect(result.step).toBe('COLLECT_DOB');
     });
 
     it('loops back to COLLECT_NAME with a re-prompt when the reply is not a plausible name', async () => {
