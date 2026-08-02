@@ -1,0 +1,20 @@
+{
+    "expo": {
+        "name": "STEDI Onboarding",
+        "slug": "cs420-mobile",
+        "version": "0.1.0",
+        "orientation": "portrait",
+        "userInterfaceStyle": "automatic",
+        "newArchEnabled": true,
+        "ios": {
+            "supportsTablet": true,
+            "bundleIdentifier": "com.asf0.cs420mobile"
+        },
+        "android": {
+            "package": "com.asf0.cs420mobile"
+        },
+        "extra": {
+            "apiBaseUrl": "http://localhost:3000"
+        }
+    }
+}

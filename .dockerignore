@@ -20,6 +20,7 @@ test-results
 __test__
 bruno_collection
 docs
+mobile
 scripts
 
 *.pdf
