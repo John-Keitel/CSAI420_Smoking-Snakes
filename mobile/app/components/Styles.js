@@ -50,10 +50,18 @@ export function useThemeStyles() {
     const colors = palette[scheme === 'dark' ? 'dark' : 'light'];
 
     const styles = StyleSheet.create({
-        screen: {
+        screenRoot: {
             flex: 1,
             backgroundColor: colors.background,
+        },
+        screen: {
+            flexGrow: 1,
+            backgroundColor: colors.background,
             padding: 24,
+        },
+        helpRow: {
+            marginTop: 16,
+            alignItems: 'center',
         },
         title: {
             fontSize: 24,
