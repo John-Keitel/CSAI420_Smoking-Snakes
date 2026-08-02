@@ -65,13 +65,13 @@ closed as superseded once this slice lands.
 
 ## User Stories
 
-### P1: Foundation — a mobile app that talks to the API ⭐ MVP
+### P1: Foundation — a mobile app that talks to the API ⭐ MVP — SCRUM-145
 
 **User Story**: As the developer, I want an Expo app with a tested transport layer, so that the chat
 components have somewhere to live and a single place that knows the API contract.
 
-**Why P1**: Nothing else in this slice can exist without it. It is the only task without a
-pre-existing Jira issue.
+**Why P1**: Nothing else in this slice can exist without it. EPIC 12 had no issue covering it —
+SCRUM-90..94 all presuppose an app that does not exist — so SCRUM-145 was created to fill the gap.
 
 **Acceptance Criteria**:
 
@@ -183,12 +183,12 @@ announced and to stay readable, so that the accessible registration path is actu
 
 | Requirement ID | Story | Jira | Phase | Status |
 | --- | --- | --- | --- | --- |
-| FND-01 | Foundation | *(new issue)* | Tasks | Mapped |
-| FND-02 | Foundation | *(new issue)* | Tasks | Mapped |
-| FND-03 | Foundation | *(new issue)* | Tasks | Mapped |
-| FND-04 | Foundation | *(new issue)* | Tasks | Mapped |
-| FND-05 | Foundation | *(new issue)* | Tasks | Mapped |
-| FND-06 | Foundation | *(new issue)* | Tasks | Mapped |
+| FND-01 | Foundation | SCRUM-145 | Tasks | Mapped |
+| FND-02 | Foundation | SCRUM-145 | Tasks | Mapped |
+| FND-03 | Foundation | SCRUM-145 | Tasks | Mapped |
+| FND-04 | Foundation | SCRUM-145 | Tasks | Mapped |
+| FND-05 | Foundation | SCRUM-145 | Tasks | Mapped |
+| FND-06 | Foundation | SCRUM-145 | Tasks | Mapped |
 | HELP-01 | Request help | SCRUM-90 | Tasks | Mapped |
 | HELP-02 | Request help | SCRUM-90 | Tasks | Mapped |
 | HELP-03 | Request help | SCRUM-90 | Tasks | Mapped |

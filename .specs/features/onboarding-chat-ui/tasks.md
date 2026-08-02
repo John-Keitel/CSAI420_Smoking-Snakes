@@ -2,7 +2,7 @@
 
 **Spec**: `.specs/features/onboarding-chat-ui/spec.md`
 **Design**: `.specs/features/onboarding-chat-ui/design.md`
-**Epic / Slice**: [SCRUM-140](https://csai420.atlassian.net/browse/SCRUM-140) — task issues SCRUM-90..94 exist and are enriched from this file; T1 needs one new child issue.
+**Epic / Slice**: [SCRUM-140](https://csai420.atlassian.net/browse/SCRUM-140) — task issues SCRUM-90..94 exist and are enriched from this file; T1 is SCRUM-145, created to fill the foundation gap.
 **Branch (planned)**: `feat/onboarding-chat-ui` — single slice branch; one atomic commit per task.
 **Execution**: Runs in a separate session via `/sdd-execute-jira` — never inline with this planning session.
 
@@ -72,7 +72,7 @@ Tests are part of the task that changes behavior — never a separate task. This
 
 ## Task Breakdown
 
-### T1: Scaffold `mobile/`, transport, and toolchain fences
+### T1: Scaffold `mobile/`, transport, and toolchain fences — SCRUM-145
 
 **What**: Create the Expo application, the `chatClient` transport, the `stepRules` pure module, and
 the session-id helper — and fence `mobile/` from every root toolchain entry point.

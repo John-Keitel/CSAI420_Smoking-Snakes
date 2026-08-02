@@ -91,6 +91,17 @@ Format:
 - **Branch**: [git branch name]
 -->
 
+- **Feature**: onboarding-chat-ui (EPIC 12 / SCRUM-140) / .specs/features/onboarding-chat-ui/
+- **Phase / Task**: Planning COMPLETE — spec.md, design.md, tasks.md drafted; ADR-001 + TDD written; Jira enriched. Awaiting human review.
+- **Completed**: ADR-001 (+ AD-004, docs/engineering/adr/README.md); TDD 2026-08-onboarding-chat-mobile-client; spec.md (45 requirement IDs, all mapped); design.md (normative step→field mapping); tasks.md (T1–T6); SCRUM-90..94 descriptions filled from the spec; SCRUM-145 created under SCRUM-140 for the T1 foundation gap
+- **In-progress**: (none)
+- **Next step**: Human reviews/edits the slice docs, then execution runs in a NEW session via `/sdd-execute-jira` on branch `feat/onboarding-chat-ui`, one task at a time starting with T1/SCRUM-145.
+- **Blockers**: none. Two open questions logged in the TDD, neither blocking: (1) scheduling the follow-up backend slice that redacts the plaintext password persisted into `ChatRegistrationSession.conversationContext` by `/chat/continue-session`; (2) whether SCRUM-99 is closed as superseded, since tests ship inside each task.
+- **Uncommitted files**: none — planning artifacts committed on `jira-scrum-140`
+- **Branch**: `jira-scrum-140` (planning artifacts only; no source code, per the two-session protocol)
+
+---
+
 - **Feature**: chat-assisted-registration / .specs/features/chat-assisted-registration/
 - **Phase / Task**: EXECUTION COMPLETE — T1-T6 committed (e6fc145, e4ba792, 66744c1, dc5d13a, d29f560, 3e414a3), T7 green
 - **Completed**: T1 schemas+formatter; T2 ChatRegistrationSession model+migration (hand-written, matches prisma output); T3 POST /user/chat-assisted (phone optional, 'N/A' default — suite matrix omits phone); T4 POST /escalate-registration (issueType SLA map, technical_difficulties → "15-30 minutes"); T5 POST /chat/continue-session (rule-based state machine, DB-persisted); T6 DELETE /user/[userId]; T7 official week5 suite **17/17 PASS** against deployed https://cs420-api.asf0.dev (server root@192.168.0.234, docker compose); Verifier PASS 21/21 ACs, no surviving mutants; EPIC 14 register-chat untouched

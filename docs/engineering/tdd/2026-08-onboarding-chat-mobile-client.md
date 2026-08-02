@@ -194,7 +194,7 @@ Slice-scoped; the task breakdown lives in `.specs/features/onboarding-chat-ui/ta
 
 | Phase                    | Task                                   | Jira      |
 | ------------------------ | -------------------------------------- | --------- |
-| **Phase 1 — Foundation** | Expo scaffold, transport, toolchain fences | *(new issue)* |
+| **Phase 1 — Foundation** | Expo scaffold, transport, toolchain fences | SCRUM-145 |
 | **Phase 2 — Surface**    | Need Help? button                      | SCRUM-90  |
 | **Phase 2 — Surface**    | Modal / bottom-sheet container         | SCRUM-91  |
 | **Phase 3 — Transcript** | Auto-scrolling message list            | SCRUM-92  |
