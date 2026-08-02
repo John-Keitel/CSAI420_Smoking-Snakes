@@ -82,13 +82,13 @@ Format:
 -->
 
 - **Feature**: chat-assisted-registration / .specs/features/chat-assisted-registration/
-- **Phase / Task**: Planning — spec.md + design.md + tasks.md drafted, awaiting human review
-- **Completed**: spec.md, design.md, tasks.md (Week 5 integration suite contract; user decisions: implement endpoints, public auth, rule-based MVP, no Jira, EPIC 14 untouched)
+- **Phase / Task**: EXECUTION COMPLETE — T1-T6 committed (e6fc145, e4ba792, 66744c1, dc5d13a, d29f560, 3e414a3), T7 green
+- **Completed**: T1 schemas+formatter; T2 ChatRegistrationSession model+migration (hand-written, matches prisma output); T3 POST /user/chat-assisted (phone optional, 'N/A' default — suite matrix omits phone); T4 POST /escalate-registration (issueType SLA map, technical_difficulties → "15-30 minutes"); T5 POST /chat/continue-session (rule-based state machine, DB-persisted); T6 DELETE /user/[userId]; T7 official week5 suite **17/17 PASS** against deployed https://cs420-api.asf0.dev (server root@192.168.0.234, docker compose); Verifier PASS 21/21 ACs, no surviving mutants; EPIC 14 register-chat untouched
 - **In-progress**: (none)
-- **Next step**: Human reviews/edits the three slice docs, approves, then execution happens in a NEW session (repo rule: planning ≠ execution; no Jira publishing) — implement T1→T6 per tasks.md, then T7 runs the official `week5.test.js` suite against local and deployed code.
+- **Next step**: none — slice delivered. Follow-up note: pending escalation work from prior session was landed as chore 515808f (deploy dependency of T4); prod DB migrated via compose migrate service.
 - **Blockers**: none
-- **Uncommitted files**: `.specs/features/chat-assisted-registration/{spec.md,design.md,tasks.md}` (+ this STATE.md edit) — planning session, not committed
-- **Branch**: main (no code branch created during planning)
+- **Uncommitted files**: `.claude/`, `weekly-assignment-answers.md` (personal, left out of commits)
+- **Branch**: main (pushed to origin)
 
 ---
 
