@@ -118,6 +118,20 @@ describe('overflow (MSG-05)', () => {
         expect(bubbleStyle.maxWidth).toBe('85%');
     });
 
+    it('renders every entry past the default virtualization batch', () => {
+        // Regression: FlatList's default initialNumToRender of 10 silently dropped
+        // the newest turns once a full conversation exceeded ten entries.
+        const long = Array.from({ length: 14 }, (_entry, index) => ({
+            role: index % 2 === 0 ? 'assistant' : 'user',
+            message: `turn ${index}`,
+        }));
+
+        render(<MessageList entries={long} />);
+
+        expect(screen.getByText('turn 13')).toBeTruthy();
+        expect(screen.getByTestId('chat-message-13')).toBeTruthy();
+    });
+
     it('does not scroll horizontally', () => {
         render(<MessageList entries={transcript} />);
 

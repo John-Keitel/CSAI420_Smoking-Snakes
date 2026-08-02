@@ -61,6 +61,10 @@ export default function MessageList({ entries, maskedIndexes = NO_MASKED_INDEXES
             renderItem={renderItem}
             onContentSizeChange={scrollToEnd}
             contentContainerStyle={styles.messageList}
+            // An onboarding conversation is bounded at roughly fourteen turns, so
+            // windowing buys nothing and the default batch of ten silently drops
+            // the newest messages - the exact opposite of what a chat needs.
+            initialNumToRender={entries.length || 1}
             testID="chat-transcript"
         />
     );

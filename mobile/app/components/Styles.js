@@ -242,6 +242,13 @@ export function useThemeStyles() {
             marginTop: 8,
             flexShrink: 1,
         },
+        successText: {
+            color: colors.primary,
+            fontSize: 15,
+            fontWeight: '600',
+            marginTop: 16,
+            flexShrink: 1,
+        },
         noticeText: {
             color: colors.mutedText,
             fontSize: 14,

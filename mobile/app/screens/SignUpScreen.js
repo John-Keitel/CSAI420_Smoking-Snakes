@@ -14,14 +14,23 @@ export default function SignUpScreen() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [chatSessionId, setChatSessionId] = useState(null);
+    const [registeredUser, setRegisteredUser] = useState(null);
 
     // A session id is minted per opening rather than per mount: dismissing the
     // sheet ends that conversation, and reopening starts a fresh one (SHEET-07).
     const openChat = useCallback(() => {
+        setRegisteredUser(null);
         setChatSessionId(createChatSessionId());
     }, []);
 
     const closeChat = useCallback(() => {
+        setChatSessionId(null);
+    }, []);
+
+    // The confirmation belongs on the screen rather than inside the sheet, so it
+    // survives the dismissal the success path triggers.
+    const handleRegistered = useCallback((user) => {
+        setRegisteredUser(user);
         setChatSessionId(null);
     }, []);
 
@@ -59,6 +68,12 @@ export default function SignUpScreen() {
                     <Text style={styles.buttonText}>Sign up</Text>
                 </TouchableOpacity>
 
+                {registeredUser === null ? null : (
+                    <Text style={styles.successText} testID="signup-success" accessibilityLiveRegion="polite">
+                        Account created for {registeredUser.email}. You can sign in now.
+                    </Text>
+                )}
+
                 <View style={styles.helpRow}>
                     <TouchableOpacity
                         style={styles.secondaryButton}
@@ -73,7 +88,13 @@ export default function SignUpScreen() {
                 </View>
             </ScrollView>
 
-            <ChatSheet visible={chatSessionId !== null} chatSessionId={chatSessionId} onDismiss={closeChat} />
+            <ChatSheet
+                visible={chatSessionId !== null}
+                chatSessionId={chatSessionId}
+                onDismiss={closeChat}
+                onRegistered={handleRegistered}
+                onRestart={openChat}
+            />
         </View>
     );
 }
