@@ -213,10 +213,10 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
                     onPress={onDismiss}
                     testID="chat-backdrop"
                     accessibilityRole="button"
-                    accessibilityLabel="Close the sign up assistant"
+                    accessibilityLabel="Dismiss the sign up assistant"
                 />
 
-                <View style={styles.sheet} accessibilityViewIsModal>
+                <View style={styles.sheet} accessibilityViewIsModal testID="chat-sheet-surface">
                     <View style={styles.sheetHeader}>
                         <Text style={styles.sheetTitle} maxFontSizeMultiplier={MAX_FONT_SCALE}>
                             Sign up assistant

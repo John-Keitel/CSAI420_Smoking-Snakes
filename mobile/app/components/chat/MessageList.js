@@ -1,6 +1,7 @@
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { FlatList, Text, View } from 'react-native';
 
+import { announce } from '../../lib/accessibility';
 import { MAX_FONT_SCALE, useThemeStyles } from '../Styles';
 
 /** Stand-in for a credential turn. The typed characters never reach a Text node. */
@@ -23,6 +24,20 @@ export default function MessageList({ entries, maskedIndexes = NO_MASKED_INDEXES
     const listRef = useRef(null);
 
     const masked = useMemo(() => new Set(maskedIndexes), [maskedIndexes]);
+    const announcedRef = useRef(null);
+
+    // A new reply arrives below the fold, so a screen reader user would otherwise
+    // have to go looking for it.
+    useEffect(() => {
+        const latest = entries[entries.length - 1];
+
+        if (!latest || latest.role !== 'assistant' || announcedRef.current === latest.message) {
+            return;
+        }
+
+        announcedRef.current = latest.message;
+        announce(latest.message);
+    }, [entries]);
 
     const scrollToEnd = useCallback(() => {
         listRef.current?.scrollToEnd({ animated: true });
@@ -65,6 +80,7 @@ export default function MessageList({ entries, maskedIndexes = NO_MASKED_INDEXES
             // windowing buys nothing and the default batch of ten silently drops
             // the newest messages - the exact opposite of what a chat needs.
             initialNumToRender={entries.length || 1}
+            accessibilityLiveRegion="polite"
             testID="chat-transcript"
         />
     );

@@ -2,7 +2,8 @@ import { useCallback, useState } from 'react';
 import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import ChatSheet from '../components/chat/ChatSheet';
-import { useThemeStyles } from '../components/Styles';
+import { MAX_FONT_SCALE, useThemeStyles } from '../components/Styles';
+import { SCREEN_READER_MODE, useScreenReaderEnabled } from '../lib/accessibility';
 import { createChatSessionId } from '../lib/session';
 
 /**
@@ -15,6 +16,7 @@ export default function SignUpScreen() {
     const [password, setPassword] = useState('');
     const [chatSessionId, setChatSessionId] = useState(null);
     const [registeredUser, setRegisteredUser] = useState(null);
+    const screenReaderEnabled = useScreenReaderEnabled();
 
     // A session id is minted per opening rather than per mount: dismissing the
     // sheet ends that conversation, and reopening starts a fresh one (SHEET-07).
@@ -37,10 +39,10 @@ export default function SignUpScreen() {
     return (
         <View style={styles.screenRoot}>
             <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
-                <Text style={styles.title}>Create your account</Text>
-                <Text style={styles.subtitle}>Join STEDI to track your balance and mobility.</Text>
+                <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_SCALE}>Create your account</Text>
+                <Text style={styles.subtitle} maxFontSizeMultiplier={MAX_FONT_SCALE}>Join STEDI to track your balance and mobility.</Text>
 
-                <Text style={styles.label}>Email</Text>
+                <Text style={styles.label} maxFontSizeMultiplier={MAX_FONT_SCALE}>Email</Text>
                 <TextInput
                     style={styles.textInput}
                     value={email}
@@ -52,7 +54,7 @@ export default function SignUpScreen() {
                     testID="signup-email"
                 />
 
-                <Text style={styles.label}>Password</Text>
+                <Text style={styles.label} maxFontSizeMultiplier={MAX_FONT_SCALE}>Password</Text>
                 <TextInput
                     style={styles.textInput}
                     value={password}
@@ -65,11 +67,11 @@ export default function SignUpScreen() {
                 />
 
                 <TouchableOpacity style={styles.button} testID="signup-submit">
-                    <Text style={styles.buttonText}>Sign up</Text>
+                    <Text style={styles.buttonText} maxFontSizeMultiplier={MAX_FONT_SCALE}>Sign up</Text>
                 </TouchableOpacity>
 
                 {registeredUser === null ? null : (
-                    <Text style={styles.successText} testID="signup-success" accessibilityLiveRegion="polite">
+                    <Text style={styles.successText} testID="signup-success" accessibilityLiveRegion="polite" maxFontSizeMultiplier={MAX_FONT_SCALE}>
                         Account created for {registeredUser.email}. You can sign in now.
                     </Text>
                 )}
@@ -83,7 +85,7 @@ export default function SignUpScreen() {
                         accessibilityLabel="Need help? Sign up by chat instead"
                         accessibilityHint="Opens a chat that walks you through creating your account"
                     >
-                        <Text style={styles.secondaryButtonText}>Need Help?</Text>
+                        <Text style={styles.secondaryButtonText} maxFontSizeMultiplier={MAX_FONT_SCALE}>Need Help?</Text>
                     </TouchableOpacity>
                 </View>
             </ScrollView>
@@ -94,6 +96,7 @@ export default function SignUpScreen() {
                 onDismiss={closeChat}
                 onRegistered={handleRegistered}
                 onRestart={openChat}
+                accessibilityMode={screenReaderEnabled ? SCREEN_READER_MODE : null}
             />
         </View>
     );

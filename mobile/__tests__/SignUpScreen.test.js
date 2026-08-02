@@ -21,6 +21,14 @@ jest.mock('../app/api/chatClient', () => ({
     registerChatAssisted: jest.fn(),
 }));
 
+// Stubbed synchronously so the hook's async probe does not settle mid-assertion;
+// accessibility.test.js covers the real behaviour.
+jest.mock('../app/lib/accessibility', () => ({
+    SCREEN_READER_MODE: 'screen-reader',
+    useScreenReaderEnabled: () => false,
+    announce: jest.fn(),
+}));
+
 afterEach(() => {
     jest.clearAllMocks();
 });
