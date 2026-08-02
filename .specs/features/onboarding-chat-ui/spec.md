@@ -183,53 +183,53 @@ announced and to stay readable, so that the accessible registration path is actu
 
 | Requirement ID | Story | Jira | Phase | Status |
 | --- | --- | --- | --- | --- |
-| FND-01 | Foundation | *(new issue)* | Design | Pending |
-| FND-02 | Foundation | *(new issue)* | Design | Pending |
-| FND-03 | Foundation | *(new issue)* | Design | Pending |
-| FND-04 | Foundation | *(new issue)* | Design | Pending |
-| FND-05 | Foundation | *(new issue)* | Design | Pending |
-| FND-06 | Foundation | *(new issue)* | Design | Pending |
-| HELP-01 | Request help | SCRUM-90 | Design | Pending |
-| HELP-02 | Request help | SCRUM-90 | Design | Pending |
-| HELP-03 | Request help | SCRUM-90 | Design | Pending |
-| HELP-04 | Request help | SCRUM-90 | Design | Pending |
-| HELP-05 | Request help | SCRUM-90 | Design | Pending |
-| SHEET-01 | Conversational surface | SCRUM-91 | Design | Pending |
-| SHEET-02 | Conversational surface | SCRUM-91 | Design | Pending |
-| SHEET-03 | Conversational surface | SCRUM-91 | Design | Pending |
-| SHEET-04 | Conversational surface | SCRUM-91 | Design | Pending |
-| SHEET-05 | Conversational surface | SCRUM-91 | Design | Pending |
-| SHEET-06 | Conversational surface | SCRUM-91 | Design | Pending |
-| SHEET-07 | Conversational surface | SCRUM-91 | Design | Pending |
-| MSG-01 | Read the conversation | SCRUM-92 | Design | Pending |
-| MSG-02 | Read the conversation | SCRUM-92 | Design | Pending |
-| MSG-03 | Read the conversation | SCRUM-92 | Design | Pending |
-| MSG-04 | Read the conversation | SCRUM-92 | Design | Pending |
-| MSG-05 | Read the conversation | SCRUM-92 | Design | Pending |
-| INPUT-01 | Answer each question | SCRUM-93 | Design | Pending |
-| INPUT-02 | Answer each question | SCRUM-93 | Design | Pending |
-| INPUT-03 | Answer each question | SCRUM-93 | Design | Pending |
-| INPUT-04 | Answer each question | SCRUM-93 | Design | Pending |
-| INPUT-05 | Answer each question | SCRUM-93 | Design | Pending |
-| INPUT-06 | Answer each question | SCRUM-93 | Design | Pending |
-| INPUT-07 | Answer each question | SCRUM-93 | Design | Pending |
-| INPUT-08 | Answer each question | SCRUM-93 | Design | Pending |
-| INPUT-09 | Answer each question | SCRUM-93 | Design | Pending |
-| INPUT-10 | Answer each question | SCRUM-93 | Design | Pending |
-| INPUT-11 | Answer each question | SCRUM-93 | Design | Pending |
-| INPUT-12 | Answer each question | SCRUM-93 | Design | Pending |
-| INPUT-13 | Answer each question | SCRUM-93 | Design | Pending |
-| INPUT-14 | Answer each question | SCRUM-93 | Design | Pending |
-| INPUT-15 | Answer each question | SCRUM-93 | Design | Pending |
-| A11Y-01 | Accessible flow | SCRUM-94 | Design | Pending |
-| A11Y-02 | Accessible flow | SCRUM-94 | Design | Pending |
-| A11Y-03 | Accessible flow | SCRUM-94 | Design | Pending |
-| A11Y-04 | Accessible flow | SCRUM-94 | Design | Pending |
-| A11Y-05 | Accessible flow | SCRUM-94 | Design | Pending |
-| A11Y-06 | Accessible flow | SCRUM-94 | Design | Pending |
-| A11Y-07 | Accessible flow | SCRUM-94 | Design | Pending |
+| FND-01 | Foundation | *(new issue)* | Tasks | Mapped |
+| FND-02 | Foundation | *(new issue)* | Tasks | Mapped |
+| FND-03 | Foundation | *(new issue)* | Tasks | Mapped |
+| FND-04 | Foundation | *(new issue)* | Tasks | Mapped |
+| FND-05 | Foundation | *(new issue)* | Tasks | Mapped |
+| FND-06 | Foundation | *(new issue)* | Tasks | Mapped |
+| HELP-01 | Request help | SCRUM-90 | Tasks | Mapped |
+| HELP-02 | Request help | SCRUM-90 | Tasks | Mapped |
+| HELP-03 | Request help | SCRUM-90 | Tasks | Mapped |
+| HELP-04 | Request help | SCRUM-90 | Tasks | Mapped |
+| HELP-05 | Request help | SCRUM-90 | Tasks | Mapped |
+| SHEET-01 | Conversational surface | SCRUM-91 | Tasks | Mapped |
+| SHEET-02 | Conversational surface | SCRUM-91 | Tasks | Mapped |
+| SHEET-03 | Conversational surface | SCRUM-91 | Tasks | Mapped |
+| SHEET-04 | Conversational surface | SCRUM-91 | Tasks | Mapped |
+| SHEET-05 | Conversational surface | SCRUM-91 | Tasks | Mapped |
+| SHEET-06 | Conversational surface | SCRUM-91 | Tasks | Mapped |
+| SHEET-07 | Conversational surface | SCRUM-91 | Tasks | Mapped |
+| MSG-01 | Read the conversation | SCRUM-92 | Tasks | Mapped |
+| MSG-02 | Read the conversation | SCRUM-92 | Tasks | Mapped |
+| MSG-03 | Read the conversation | SCRUM-92 | Tasks | Mapped |
+| MSG-04 | Read the conversation | SCRUM-92 | Tasks | Mapped |
+| MSG-05 | Read the conversation | SCRUM-92 | Tasks | Mapped |
+| INPUT-01 | Answer each question | SCRUM-93 | Tasks | Mapped |
+| INPUT-02 | Answer each question | SCRUM-93 | Tasks | Mapped |
+| INPUT-03 | Answer each question | SCRUM-93 | Tasks | Mapped |
+| INPUT-04 | Answer each question | SCRUM-93 | Tasks | Mapped |
+| INPUT-05 | Answer each question | SCRUM-93 | Tasks | Mapped |
+| INPUT-06 | Answer each question | SCRUM-93 | Tasks | Mapped |
+| INPUT-07 | Answer each question | SCRUM-93 | Tasks | Mapped |
+| INPUT-08 | Answer each question | SCRUM-93 | Tasks | Mapped |
+| INPUT-09 | Answer each question | SCRUM-93 | Tasks | Mapped |
+| INPUT-10 | Answer each question | SCRUM-93 | Tasks | Mapped |
+| INPUT-11 | Answer each question | SCRUM-93 | Tasks | Mapped |
+| INPUT-12 | Answer each question | SCRUM-93 | Tasks | Mapped |
+| INPUT-13 | Answer each question | SCRUM-93 | Tasks | Mapped |
+| INPUT-14 | Answer each question | SCRUM-93 | Tasks | Mapped |
+| INPUT-15 | Answer each question | SCRUM-93 | Tasks | Mapped |
+| A11Y-01 | Accessible flow | SCRUM-94 | Tasks | Mapped |
+| A11Y-02 | Accessible flow | SCRUM-94 | Tasks | Mapped |
+| A11Y-03 | Accessible flow | SCRUM-94 | Tasks | Mapped |
+| A11Y-04 | Accessible flow | SCRUM-94 | Tasks | Mapped |
+| A11Y-05 | Accessible flow | SCRUM-94 | Tasks | Mapped |
+| A11Y-06 | Accessible flow | SCRUM-94 | Tasks | Mapped |
+| A11Y-07 | Accessible flow | SCRUM-94 | Tasks | Mapped |
 
-**Coverage:** 45 total, 0 mapped to tasks, 45 unmapped ⚠️
+**Coverage:** 45 total, 45 mapped to tasks, 0 unmapped ✅ — FND→T1, HELP→T2, SHEET→T3, MSG→T4, INPUT→T5, A11Y→T6 (see `tasks.md`)
 
 ---
 
