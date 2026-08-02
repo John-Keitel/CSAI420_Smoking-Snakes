@@ -1,0 +1,67 @@
+import { useCallback, useMemo, useRef } from 'react';
+import { FlatList, Text, View } from 'react-native';
+
+import { MAX_FONT_SCALE, useThemeStyles } from '../Styles';
+
+/** Stand-in for a credential turn. The typed characters never reach a Text node. */
+export const MASKED_MESSAGE = '••••••••';
+
+const NO_MASKED_INDEXES = [];
+
+const keyExtractor = (item, index) => `${item.role}-${index}`;
+
+/**
+ * The conversation transcript.
+ *
+ * Entries are `{role, message}` - note `message`, not `content`, which is the
+ * shape used by the unrelated mock LangGraph endpoints.
+ *
+ * @param {{entries: Array<{role: string, message: string}>, maskedIndexes?: number[]}} props
+ */
+export default function MessageList({ entries, maskedIndexes = NO_MASKED_INDEXES }) {
+    const { styles } = useThemeStyles();
+    const listRef = useRef(null);
+
+    const masked = useMemo(() => new Set(maskedIndexes), [maskedIndexes]);
+
+    const scrollToEnd = useCallback(() => {
+        listRef.current?.scrollToEnd({ animated: true });
+    }, []);
+
+    const renderItem = useCallback(
+        ({ item, index }) => {
+            const isUser = item.role === 'user';
+            const text = masked.has(index) ? MASKED_MESSAGE : item.message;
+
+            return (
+                <View
+                    style={[styles.bubbleBase, isUser ? styles.userBubble : styles.assistantBubble]}
+                    testID={`chat-message-${index}`}
+                    accessible
+                    accessibilityRole="text"
+                    accessibilityLabel={`${isUser ? 'You said' : 'Assistant said'}: ${text}`}
+                >
+                    <Text
+                        style={isUser ? styles.userBubbleText : styles.assistantBubbleText}
+                        maxFontSizeMultiplier={MAX_FONT_SCALE}
+                    >
+                        {text}
+                    </Text>
+                </View>
+            );
+        },
+        [masked, styles]
+    );
+
+    return (
+        <FlatList
+            ref={listRef}
+            data={entries}
+            keyExtractor={keyExtractor}
+            renderItem={renderItem}
+            onContentSizeChange={scrollToEnd}
+            contentContainerStyle={styles.messageList}
+            testID="chat-transcript"
+        />
+    );
+}

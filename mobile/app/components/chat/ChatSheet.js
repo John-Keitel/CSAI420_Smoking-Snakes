@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import { continueSession } from '../../api/chatClient';
 import { fieldForStep, INITIAL_CHAT_STEP } from '../../lib/stepRules';
 import { useThemeStyles } from '../Styles';
+import MessageList from './MessageList';
+
+const NO_MASKED_INDEXES = [];
 
 /**
  * `message` is required (min 1), so the first prompt cannot be obtained without
@@ -128,6 +131,12 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss }) {
         [applyFailure, chatSessionId, pending, session.currentStep]
     );
 
+    // Hoisted out of JSX so a stable empty array is reused between renders.
+    const maskedIndexes = useMemo(
+        () => (session.credentialTurnIndex === null ? NO_MASKED_INDEXES : [session.credentialTurnIndex]),
+        [session.credentialTurnIndex]
+    );
+
     const handleSend = useCallback(() => {
         const trimmed = draft.trim();
 
@@ -164,17 +173,7 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss }) {
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView contentContainerStyle={styles.messageList} testID="chat-transcript">
-                        {session.transcript.map((entry, index) => (
-                            <Text
-                                key={`${entry.role}-${index}`}
-                                testID={`chat-message-${index}`}
-                                style={[styles.bubbleBase, entry.role === 'user' ? styles.userBubble : styles.assistantBubble]}
-                            >
-                                {index === session.credentialTurnIndex ? '••••••••' : entry.message}
-                            </Text>
-                        ))}
-                    </ScrollView>
+                    <MessageList entries={session.transcript} maskedIndexes={maskedIndexes} />
 
                     {session.error === null ? null : (
                         <Text style={styles.errorText} testID="chat-error">
