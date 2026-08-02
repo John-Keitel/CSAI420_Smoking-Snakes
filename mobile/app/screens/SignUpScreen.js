@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
-import { Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
+import ChatSheet from '../components/chat/ChatSheet';
 import { useThemeStyles } from '../components/Styles';
 import { createChatSessionId } from '../lib/session';
 
@@ -72,30 +73,7 @@ export default function SignUpScreen() {
                 </View>
             </ScrollView>
 
-            <Modal
-                visible={chatSessionId !== null}
-                animationType="slide"
-                transparent
-                onRequestClose={closeChat}
-                testID="chat-sheet"
-            >
-                <View style={styles.backdrop}>
-                    <View style={styles.sheet}>
-                        <View style={styles.sheetHeader}>
-                            <Text style={styles.sheetTitle}>Sign up assistant</Text>
-                            <TouchableOpacity
-                                style={styles.closeButton}
-                                onPress={closeChat}
-                                testID="chat-close-button"
-                                accessibilityRole="button"
-                                accessibilityLabel="Close the sign up assistant"
-                            >
-                                <Text style={styles.closeButtonText}>Done</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
+            <ChatSheet visible={chatSessionId !== null} chatSessionId={chatSessionId} onDismiss={closeChat} />
         </View>
     );
 }

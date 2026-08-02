@@ -15,6 +15,12 @@ jest.mock('../app/lib/session', () => {
     };
 });
 
+// This suite owns the entry point, not the conversation; ChatSheet has its own.
+jest.mock('../app/api/chatClient', () => ({
+    continueSession: jest.fn(() => new Promise(() => {})),
+    registerChatAssisted: jest.fn(),
+}));
+
 afterEach(() => {
     jest.clearAllMocks();
 });

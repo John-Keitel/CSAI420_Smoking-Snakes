@@ -126,6 +126,9 @@ export function useThemeStyles() {
             backgroundColor: colors.backdrop,
             justifyContent: 'flex-end',
         },
+        backdropDismissArea: {
+            flex: 1,
+        },
         sheet: {
             backgroundColor: colors.background,
             borderTopLeftRadius: 16,
