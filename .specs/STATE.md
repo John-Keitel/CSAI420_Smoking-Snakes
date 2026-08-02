@@ -92,13 +92,13 @@ Format:
 -->
 
 - **Feature**: onboarding-chat-ui (EPIC 12 / SCRUM-140) / .specs/features/onboarding-chat-ui/
-- **Phase / Task**: Planning COMPLETE — spec.md, design.md, tasks.md drafted; ADR-001 + TDD written; Jira enriched. Awaiting human review.
-- **Completed**: ADR-001 (+ AD-004, docs/engineering/adr/README.md); TDD 2026-08-onboarding-chat-mobile-client; spec.md (45 requirement IDs, all mapped); design.md (normative step→field mapping); tasks.md (T1–T6); SCRUM-90..94 descriptions filled from the spec; SCRUM-145 created under SCRUM-140 for the T1 foundation gap
+- **Phase / Task**: EXECUTION COMPLETE — T1–T6 implemented and committed on `feat/onboarding-chat-ui`. Awaiting review/PR.
+- **Completed**: Planning (ADR-001 + AD-004, TDD, spec.md 45 reqs, design.md, tasks.md; SCRUM-90..94 enriched; SCRUM-145 created). Execution: T1 Expo scaffold + chatClient + stepRules + 5 toolchain fences + CI job (527eadb); T2 Need Help entry point (cf5a90b); T3 ChatSheet session owner (9629d8c); T4 MessageList (5266e2a); T5 InputBar + validation + registration (d0c1155); T6 accessibility (a75eefd). **149 mobile tests pass; root format/lint/typecheck/205 unit tests/build all green.**
 - **In-progress**: (none)
-- **Next step**: Human reviews/edits the slice docs, then execution runs in a NEW session via `/sdd-execute-jira` on branch `feat/onboarding-chat-ui`, one task at a time starting with T1/SCRUM-145.
-- **Blockers**: none. Two open questions logged in the TDD, neither blocking: (1) scheduling the follow-up backend slice that redacts the plaintext password persisted into `ChatRegistrationSession.conversationContext` by `/chat/continue-session`; (2) whether SCRUM-99 is closed as superseded, since tests ship inside each task.
-- **Uncommitted files**: none — planning artifacts committed on `jira-scrum-140`
-- **Branch**: `jira-scrum-140` (planning artifacts only; no source code, per the two-session protocol)
+- **Next step**: Open a PR for `feat/onboarding-chat-ui` and run `/sdd-execute-jira`'s Verifier or `sdd-pr-review`. Then do the manual device pass the spec's Success Criteria require — it is the only unverified part (see Blockers).
+- **Blockers**: none blocking, but three things are explicitly NOT yet verified: (1) **no manual device run** — the flow has never been exercised against a live API, only against mocked transports, so `extra.apiBaseUrl` must be pointed at a LAN address or the deployed host and walked end to end; (2) VoiceOver/TalkBack and max-font-size passes are unautomatable and outstanding (A11Y-03/04 have unit coverage only); (3) the plaintext-password defect in `/chat/continue-session` is unfixed by design — the client masks and withholds it, but the server still persists it, and a follow-up backend slice is needed. Also open: whether SCRUM-99 is closed as superseded.
+- **Uncommitted files**: none
+- **Branch**: `feat/onboarding-chat-ui` (branched from `jira-scrum-140`; note the repo's two-session protocol was explicitly waived by the user for this slice)
 
 ---
 
