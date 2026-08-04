@@ -94,7 +94,7 @@ function maskDatabaseUrl(url: string): string {
     }
 }
 
-function printSample(label: string, items: string[]): void {
+function printSample(_label: string, items: string[]): void {
     const shown = items.slice(0, SAMPLE_LIMIT);
     for (const item of shown) {
         console.log(`    - ${item}`);
