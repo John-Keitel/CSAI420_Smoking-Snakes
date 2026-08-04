@@ -228,66 +228,6 @@ model CustomerConsent {
     @@map("customer_consents")
 }
 
-enum EscalationResponsePreference {
-    call
-    text
-    chat
-    email
-}
-
-enum EscalationPriority {
-    high
-    medium
-    low
-}
-
-enum EscalationStatus {
-    pending
-    assigned
-    resolved
-}
-
-// POST /escalate-registration (week 5) issue types. Registration escalations classify by this
-// directly instead of the free-text keyword classification question escalations use — see
-// src/lib/escalation/issue-type.ts.
-enum EscalationIssueType {
-    confusion_about_process
-    technical_difficulties
-    account_creation_failed
-    validation_errors
-}
-
-model Escalation {
-    id                  String                        @id @default(cuid())
-    escalationId        String                        @unique @map("escalation_id") @db.VarChar(64)
-    userId              String?                       @map("user_id") @db.VarChar(64)
-    phoneNumber         String                        @map("phone_number") @db.VarChar(32)
-    // Null for registration escalations (POST /escalate-registration), which have no single
-    // free-text question — they use issueType/registrationData below instead.
-    originalQuestion    String?                       @map("original_question") @db.Text
-    aiResponse          String                        @map("ai_response") @db.Text
-    responsePreference  EscalationResponsePreference   @map("response_preference")
-    waitingForResponse  Boolean                        @default(false) @map("waiting_for_response")
-    priority            EscalationPriority             @default(medium)
-    category            String                         @db.VarChar(32)
-    status              EscalationStatus               @default(pending)
-    questionTimestamp   DateTime?                      @map("question_timestamp")
-    escalationTimestamp DateTime                       @default(now()) @map("escalation_timestamp")
-
-    // Registration-escalation fields (POST /escalate-registration) — null for question
-    // escalations (POST /escalate-question).
-    issueType           EscalationIssueType?          @map("issue_type")
-    registrationData    Json?                         @map("registration_data")
-    conversationContext Json?                         @map("conversation_context")
-
-    // Audit
-    createdAt DateTime @default(now()) @map("created_at")
-    updatedAt DateTime @updatedAt @map("updated_at")
-
-    @@index([status, priority, escalationTimestamp])
-    @@map("escalations")
-}
-
 model ExpoPushToken {
     id     String @id @default(cuid())
     userId String @map("user_id") @db.VarChar(32)
