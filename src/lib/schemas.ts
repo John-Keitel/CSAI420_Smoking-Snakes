@@ -80,3 +80,18 @@ export const ModerationReviewSchema = z.object({
 export const ModerationResolveSchema = z.object({
     resolutionNotes: z.string().max(10000).optional(),
 });
+
+export const EscalateQuestionSchema = z.object({
+    // E.164 format +<country_code><number>, same rule the signup flow enforces.
+    phoneNumber: z.string({ error: 'required' }).regex(/^\+[1-9]\d{1,14}$/, 'invalid E.164 format'),
+    question: z.string({ error: 'required' }).min(1).max(10000),
+    aiResponse: z.string({ error: 'required' }).min(1).max(10000),
+    responsePreference: z.enum(['call', 'text', 'chat'], { error: 'must be one of call, text, chat' }),
+    timestamp: z.coerce.date().optional(),
+    waitingForResponse: z.boolean().optional().default(true),
+    // Chatbot-supplied identifiers are opaque strings (e.g. `session_12345`), not UUIDs.
+    sessionId: z.string().min(1).max(128).optional(),
+    userId: z.string().min(1).max(128).optional(),
+});
+
+export type EscalateQuestionInput = z.infer<typeof EscalateQuestionSchema>;

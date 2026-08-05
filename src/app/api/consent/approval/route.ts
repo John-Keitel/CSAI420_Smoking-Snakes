@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { validateSureStepsSession, addDays } from '@/lib/auth/suresteps';
 import { randomUUID } from 'crypto';
+import { NextRequest, NextResponse } from 'next/server';
+
+import { addDays, validateSureStepsSession } from '@/lib/auth/suresteps';
+import { prisma } from '@/lib/db';
 
 /**
  * POST /api/consent/approval
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
         }
 
         return NextResponse.json({ rejected }, { status: 200 });
-    } catch (err: any) {
+    } catch (err) {
         console.error('POST /api/consent/approval error', err);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }

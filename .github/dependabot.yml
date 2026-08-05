@@ -10,6 +10,17 @@ updates:
               update-types:
                   - minor
                   - patch
+      ignore:
+          # eslint 10 removes context.getFilename() etc.; eslint-plugin-react
+          # (bundled in eslint-config-next) does not support it yet - see PR #39
+          - dependency-name: eslint
+            update-types:
+                - version-update:semver-major
+          # Next.js 16.2.12 requires the TS 6 compiler API; typescript-eslint
+          # crashes on TS 7 - see PR #34
+          - dependency-name: typescript
+            update-types:
+                - version-update:semver-major
       open-pull-requests-limit: 10
 
     - package-ecosystem: github-actions

@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
+import { HttpException } from '@/lib/http';
 import {
-    ExerciseAction,
-    BALANCE_TEST_SCRIPT,
     applyExerciseAction,
+    BALANCE_TEST_SCRIPT,
     buildStepTwiml,
     convertScriptToVoiceSteps,
+    ExerciseAction,
     IvrExerciseState,
 } from '@/lib/ivr-exercise-flow';
-import { HttpException } from '@/lib/http';
 import { getAppLogger } from '@/lib/logger';
 
 const logger = getAppLogger('api:voice:exercise:interaction');

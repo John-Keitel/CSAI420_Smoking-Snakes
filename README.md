@@ -157,6 +157,32 @@ The application exposes a single Next.js App Router tree under `src/app/`:
 
 The STEDI pass-through endpoints use `STEDI_API_BASE_URL`, which defaults to `https://dev.stedi.me`. Upstream fetches abort after `STEDI_PROXY_TIMEOUT_MS` (default `8000`) and return HTTP `504` on timeout. Epic 3 (Real-Time Data Transmission & Analysis) is V1 pass-through only: this API does not introduce Kafka, SNS, SQS, or EventBridge, and STEDI owns scoring. See `docs/product/epic-3-realtime-data-path.md`.
 
+### Mock LangGraph API (UI and Mobile Testing)
+
+These endpoints provide an in-memory onboarding conversation flow for UI and React Native integration testing.
+
+- `POST /api/mock/langgraph/session` — start a mock onboarding session
+- `GET /api/mock/langgraph/session/[sessionId]` — recover current session state and transcript
+- `POST /api/mock/langgraph/session/[sessionId]/message` — advance one conversation turn
+- `POST /api/mock/langgraph/reset` — clear all mock sessions for deterministic tests
+
+Example payloads:
+
+```bash
+# Start from Need Help
+curl -X POST http://localhost:3000/api/mock/langgraph/session \
+	-H "Content-Type: application/json" \
+	-d '{"entryPoint":"need-help"}'
+
+# Advance one step
+curl -X POST http://localhost:3000/api/mock/langgraph/session/<sessionId>/message \
+	-H "Content-Type: application/json" \
+	-d '{"message":"Alex Johnson"}'
+
+# Recover state
+curl http://localhost:3000/api/mock/langgraph/session/<sessionId>
+```
+
 ## Tests
 
 ### Deployed IVR integration tests
@@ -186,3 +212,17 @@ npm run test:e2e
 ```
 
 The Playwright suite tests the database-backed routes against the local application.
+
+### Vitest onboarding chat E2E (React Native client mock)
+
+The onboarding chat flow suite runs entirely in Vitest and calls backend route handlers directly with a mocked React Native client.
+
+```bash
+npx vitest run __test__/e2e/chat-onboarding-flow.test.ts
+```
+
+Covered scenarios:
+
+- Happy path: Need Help → onboarding chat completion → `/api/user/register-chat` success (`201`) and user persisted
+- Duplicate email conflict: onboarding completes but registration returns `409 Email already registered`
+- Mid-conversation drop-off and recovery: session resumes from collected state and can complete
