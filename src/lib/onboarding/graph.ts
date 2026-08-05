@@ -12,9 +12,20 @@ function createStubNode(step: OnboardingStep) {
     return async (): Promise<Partial<OnboardingState>> => ({ step });
 }
 
-/** SCRUM-102: advance once a name has been collected, otherwise loop back for a retry. */
-function routeAfterCollectName(state: OnboardingState): 'COLLECT_EMAIL' | 'COLLECT_NAME' {
-    return state.collectedName ? 'COLLECT_EMAIL' : 'COLLECT_NAME';
+/** Max re-prompt attempts before giving up on collecting the name. */
+const MAX_NAME_ATTEMPTS = 3;
+
+/**
+ * SCRUM-102: advance once a name has been collected, otherwise loop back for a
+ * retry. Exits to END after MAX_NAME_ATTEMPTS so a degraded path (e.g. missing
+ * OPENAI_API_KEY) cannot loop forever against LangGraph's recursion limit.
+ */
+function routeAfterCollectName(state: OnboardingState): 'COLLECT_EMAIL' | 'COLLECT_NAME' | typeof END {
+    if (state.collectedName) {
+        return 'COLLECT_EMAIL';
+    }
+
+    return state.nameAttempts >= MAX_NAME_ATTEMPTS ? END : 'COLLECT_NAME';
 }
 
 const builder = new StateGraph(OnboardingStateAnnotation)

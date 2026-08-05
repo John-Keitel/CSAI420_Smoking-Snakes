@@ -16,6 +16,10 @@ export const OnboardingStateAnnotation = Annotation.Root({
         reducer: (_previous, next) => next,
         default: () => null,
     }),
+    nameAttempts: Annotation<number>({
+        reducer: (_previous, next) => next,
+        default: () => 0,
+    }),
     collectedEmail: Annotation<string | null>({
         reducer: (_previous, next) => next,
         default: () => null,

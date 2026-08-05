@@ -25,8 +25,8 @@ const nameExtractionSchema = z.object({
         ),
 });
 
-function rePrompt(reason: string): Partial<OnboardingState> {
-    return { step: 'COLLECT_NAME', lastValidationError: reason };
+function rePrompt(reason: string, state: OnboardingState): Partial<OnboardingState> {
+    return { step: 'COLLECT_NAME', lastValidationError: reason, nameAttempts: state.nameAttempts + 1 };
 }
 
 /**
@@ -41,7 +41,7 @@ export async function collectNameNode(state: OnboardingState): Promise<Partial<O
     const model = getOnboardingModel();
     if (!model) {
         logger.warn('collect-name fallback activated: missing OPENAI_API_KEY');
-        return rePrompt(FALLBACK_REPROMPT);
+        return rePrompt(FALLBACK_REPROMPT, state);
     }
 
     try {
@@ -49,17 +49,17 @@ export async function collectNameNode(state: OnboardingState): Promise<Partial<O
         const extraction = await structuredModel.invoke([new HumanMessage(replyText)]);
 
         if (!extraction.looksLikeAValidFullName) {
-            return rePrompt(NAME_REPROMPT);
+            return rePrompt(NAME_REPROMPT, state);
         }
 
         const parsed = NameFieldSchema.safeParse(extraction.extractedName);
         if (!parsed.success) {
-            return rePrompt(parsed.error.issues[0]?.message ?? NAME_REPROMPT);
+            return rePrompt(parsed.error.issues[0]?.message ?? NAME_REPROMPT, state);
         }
 
         return { step: 'COLLECT_NAME', collectedName: parsed.data, lastValidationError: null };
     } catch (error) {
         logger.error('collect-name fallback activated: %s', error);
-        return rePrompt(FALLBACK_REPROMPT);
+        return rePrompt(FALLBACK_REPROMPT, state);
     }
 }

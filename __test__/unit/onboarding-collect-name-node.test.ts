@@ -125,4 +125,24 @@ describe('collectNameNode (SCRUM-102)', () => {
         expect(result.collectedName).toBeNull();
         expect(isInterrupted(result)).toBe(true);
     });
+
+    it('exits to END instead of looping forever once the re-prompt attempt cap is hit', async () => {
+        const { onboardingGraph } = await loadGraphModule({ openAiApiKey: undefined });
+        const threadConfig = { configurable: { thread_id: 'scrum-102-attempt-cap' } };
+
+        await onboardingGraph.invoke({}, threadConfig);
+
+        let result = await onboardingGraph.invoke(new Command({ resume: 'John Smith' }), threadConfig);
+        expect(result.nameAttempts).toBe(1);
+        expect(isInterrupted(result)).toBe(true);
+
+        result = await onboardingGraph.invoke(new Command({ resume: 'John Smith' }), threadConfig);
+        expect(result.nameAttempts).toBe(2);
+        expect(isInterrupted(result)).toBe(true);
+
+        result = await onboardingGraph.invoke(new Command({ resume: 'John Smith' }), threadConfig);
+        expect(result.nameAttempts).toBe(3);
+        expect(isInterrupted(result)).toBe(false);
+        expect(result.collectedName).toBeNull();
+    });
 });
