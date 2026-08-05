@@ -1,12 +1,18 @@
-import { START } from '@langchain/langgraph';
+import { isInterrupted, START } from '@langchain/langgraph';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const ONBOARDING_NODES = ['GREETING', 'COLLECT_NAME', 'COLLECT_EMAIL', 'COLLECT_DOB'];
 
+function mockEnvVarsWithoutOpenAiKey() {
+    vi.doMock('@/lib/env-vars', () => ({
+        ENV_VARS: { OPENAI_API_KEY: undefined, OPENAI_MODEL: 'gpt-4o-mini' },
+    }));
+}
+
 describe('onboarding LangGraph setup (SCRUM-100)', () => {
     beforeEach(() => {
         vi.resetModules();
-        vi.doUnmock('@/lib/env-vars');
+        mockEnvVarsWithoutOpenAiKey();
     });
 
     it('compiles a StateGraph with the four onboarding nodes registered', async () => {
@@ -24,19 +30,18 @@ describe('onboarding LangGraph setup (SCRUM-100)', () => {
         expect(hasStartToGreeting).toBe(true);
     });
 
-    it('runs the stub chain end-to-end from GREETING to COLLECT_DOB', async () => {
+    it('pauses once it reaches the first guarded node (COLLECT_NAME) instead of running unattended', async () => {
         const { onboardingGraph } = await import('@/lib/onboarding/graph');
 
         const result = await onboardingGraph.invoke({}, { configurable: { thread_id: 'scrum-100-unit-test' } });
 
-        expect(result.step).toBe('COLLECT_DOB');
+        // COLLECT_NAME calls interrupt() as of SCRUM-102, so a fresh invoke pauses there
+        // rather than running through to COLLECT_DOB. See onboarding-collect-name-node.test.ts
+        // for the interrupt/resume behavior itself; this just guards the graph's shape.
+        expect(isInterrupted(result)).toBe(true);
     });
 
     it('does not throw at import time when OPENAI_API_KEY is unset', async () => {
-        vi.doMock('@/lib/env-vars', () => ({
-            ENV_VARS: { OPENAI_API_KEY: undefined, OPENAI_MODEL: 'gpt-4o-mini' },
-        }));
-
         await expect(import('@/lib/onboarding')).resolves.toBeDefined();
 
         const { getOnboardingModel } = await import('@/lib/onboarding/model');
