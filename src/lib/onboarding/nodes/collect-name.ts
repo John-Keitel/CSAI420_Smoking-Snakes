@@ -16,9 +16,7 @@ const FALLBACK_REPROMPT = "I'm having trouble processing that right now — coul
 const nameExtractionSchema = z.object({
     extractedName: z
         .string()
-        .describe(
-            "The user's full name exactly as stated, trimmed and properly capitalized. Empty string if no plausible name is present."
-        ),
+        .describe("The user's full name exactly as stated, trimmed and properly capitalized. Empty string if no plausible name is present."),
     looksLikeAValidFullName: z
         .boolean()
         .describe(
