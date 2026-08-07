@@ -69,6 +69,7 @@ export default function InputBar({ currentStep, pending, onSubmit }) {
                     maxFontSizeMultiplier={MAX_FONT_SCALE}
                     testID="chat-input"
                     accessibilityLabel="Your reply"
+                    accessibilityHint="Enter your answer to the current question"
                 />
                 <TouchableOpacity
                     style={[styles.sendButton, pending ? styles.sendButtonDisabled : null]}
@@ -77,6 +78,7 @@ export default function InputBar({ currentStep, pending, onSubmit }) {
                     testID="chat-send-button"
                     accessibilityRole="button"
                     accessibilityLabel={pending ? 'Sending your reply' : 'Send reply'}
+                    accessibilityHint="Submits your reply"
                 >
                     <Text style={styles.sendButtonText} maxFontSizeMultiplier={MAX_FONT_SCALE}>
                         {pending ? '...' : 'Send'}

@@ -40,7 +40,7 @@ const DEFAULT_SESSION_COUNT = 50;
 const DEFAULT_ESCALATION_PERCENT = 10;
 const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS) || 10_000;
 
-const CHAT_STEPS = ['initial_greeting', 'name_provided', 'email_collection', 'phone_collection'] as const;
+type ChatStep = 'initial_greeting' | 'name_provided' | 'email_collection' | 'phone_collection';
 
 type CliOptions = {
     apiUrl: string;
@@ -136,7 +136,7 @@ async function runSession(apiUrl: string, index: number, escalate: boolean): Pro
     const fixture = buildFixture(index);
     const steps: StepResult[] = [];
 
-    const conversationTurns: Array<{ context?: (typeof CHAT_STEPS)[number]; message: string }> = [
+    const conversationTurns: Array<{ context?: ChatStep; message: string }> = [
         { message: "Hi! I'd like to create an account." },
         { context: 'name_provided', message: `${fixture.firstName} ${fixture.lastName}` },
         { context: 'email_collection', message: fixture.email },

@@ -39,10 +39,16 @@ export default function SignUpScreen() {
     return (
         <View style={styles.screenRoot}>
             <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
-                <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_SCALE}>Create your account</Text>
-                <Text style={styles.subtitle} maxFontSizeMultiplier={MAX_FONT_SCALE}>Join STEDI to track your balance and mobility.</Text>
+                <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+                    Create your account
+                </Text>
+                <Text style={styles.subtitle} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+                    Join STEDI to track your balance and mobility.
+                </Text>
 
-                <Text style={styles.label} maxFontSizeMultiplier={MAX_FONT_SCALE}>Email</Text>
+                <Text style={styles.label} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+                    Email
+                </Text>
                 <TextInput
                     style={styles.textInput}
                     value={email}
@@ -52,9 +58,13 @@ export default function SignUpScreen() {
                     autoCorrect={false}
                     textContentType="emailAddress"
                     testID="signup-email"
+                    accessibilityLabel="Email address"
+                    accessibilityHint="Enter the email address for your account"
                 />
 
-                <Text style={styles.label} maxFontSizeMultiplier={MAX_FONT_SCALE}>Password</Text>
+                <Text style={styles.label} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+                    Password
+                </Text>
                 <TextInput
                     style={styles.textInput}
                     value={password}
@@ -64,14 +74,29 @@ export default function SignUpScreen() {
                     autoCorrect={false}
                     textContentType="newPassword"
                     testID="signup-password"
+                    accessibilityLabel="Password"
+                    accessibilityHint="Enter a password for your account"
                 />
 
-                <TouchableOpacity style={styles.button} testID="signup-submit">
-                    <Text style={styles.buttonText} maxFontSizeMultiplier={MAX_FONT_SCALE}>Sign up</Text>
+                <TouchableOpacity
+                    style={styles.button}
+                    testID="signup-submit"
+                    accessibilityRole="button"
+                    accessibilityLabel="Sign up"
+                    accessibilityHint="Creates your account"
+                >
+                    <Text style={styles.buttonText} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+                        Sign up
+                    </Text>
                 </TouchableOpacity>
 
                 {registeredUser === null ? null : (
-                    <Text style={styles.successText} testID="signup-success" accessibilityLiveRegion="polite" maxFontSizeMultiplier={MAX_FONT_SCALE}>
+                    <Text
+                        style={styles.successText}
+                        testID="signup-success"
+                        accessibilityLiveRegion="polite"
+                        maxFontSizeMultiplier={MAX_FONT_SCALE}
+                    >
                         Account created for {registeredUser.email}. You can sign in now.
                     </Text>
                 )}
@@ -85,7 +110,9 @@ export default function SignUpScreen() {
                         accessibilityLabel="Need help? Sign up by chat instead"
                         accessibilityHint="Opens a chat that walks you through creating your account"
                     >
-                        <Text style={styles.secondaryButtonText} maxFontSizeMultiplier={MAX_FONT_SCALE}>Need Help?</Text>
+                        <Text style={styles.secondaryButtonText} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+                            Need Help?
+                        </Text>
                     </TouchableOpacity>
                 </View>
             </ScrollView>

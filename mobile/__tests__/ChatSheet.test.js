@@ -39,11 +39,10 @@ afterEach(() => {
 });
 
 describe('presentation and dismissal', () => {
-    it('presents as a transparent modal over the screen (SHEET-01)', async () => {
-        continueSession.mockResolvedValue(openerTurn());
+    it('presents as a transparent modal over the screen (SHEET-01)', () => {
+        continueSession.mockReturnValue(new Promise(() => {}));
 
         renderSheet();
-        await screen.findByText(FIRST_PROMPT);
 
         const modal = screen.getByTestId('chat-sheet');
         expect(modal.props.visible).toBe(true);

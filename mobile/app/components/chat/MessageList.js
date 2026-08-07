@@ -55,11 +55,9 @@ export default function MessageList({ entries, maskedIndexes = NO_MASKED_INDEXES
                     accessible
                     accessibilityRole="text"
                     accessibilityLabel={`${isUser ? 'You said' : 'Assistant said'}: ${text}`}
+                    accessibilityHint="Read this conversation message"
                 >
-                    <Text
-                        style={isUser ? styles.userBubbleText : styles.assistantBubbleText}
-                        maxFontSizeMultiplier={MAX_FONT_SCALE}
-                    >
+                    <Text style={isUser ? styles.userBubbleText : styles.assistantBubbleText} maxFontSizeMultiplier={MAX_FONT_SCALE}>
                         {text}
                     </Text>
                 </View>

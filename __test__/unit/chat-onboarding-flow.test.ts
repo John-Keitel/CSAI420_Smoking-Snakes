@@ -221,7 +221,7 @@ describe('React Native onboarding chat E2E suite (Vitest)', () => {
         });
 
         expect(conflict.status).toBe(409);
-        expect(conflict.body).toEqual({ error: 'Email already registered' });
+        expect(conflict.body).toEqual({ success: false, error: 'Email already registered', statusCode: 409 });
 
         const recovered = await app.recoverChatSession(started.sessionId);
         expect(recovered.sessionId).toBe(started.sessionId);
