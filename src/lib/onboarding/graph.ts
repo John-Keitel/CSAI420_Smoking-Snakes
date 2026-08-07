@@ -1,17 +1,10 @@
 import { END, MemorySaver, START, StateGraph } from '@langchain/langgraph';
 
+import { collectDobNode } from '@/lib/onboarding/nodes/collect-dob';
 import { collectEmailNode } from '@/lib/onboarding/nodes/collect-email';
 import { collectNameNode } from '@/lib/onboarding/nodes/collect-name';
 import { greetingNode } from '@/lib/onboarding/nodes/greeting';
-import { OnboardingStateAnnotation, type OnboardingState, type OnboardingStep } from '@/lib/onboarding/state';
-
-/**
- * Placeholder node body for SCRUM-104, which replaces this with real
- * prompt/extraction/guardrail logic (see design.md § Node contract).
- */
-function createStubNode(step: OnboardingStep) {
-    return async (): Promise<Partial<OnboardingState>> => ({ step });
-}
+import { OnboardingStateAnnotation, type OnboardingState } from '@/lib/onboarding/state';
 
 /** SCRUM-102: advance once a name has been collected, otherwise loop back for a retry. */
 function routeAfterCollectName(state: OnboardingState): 'COLLECT_EMAIL' | 'COLLECT_NAME' {
@@ -23,16 +16,26 @@ function routeAfterCollectEmail(state: OnboardingState): 'COLLECT_DOB' | 'COLLEC
     return state.collectedEmail ? 'COLLECT_DOB' : 'COLLECT_EMAIL';
 }
 
+/**
+ * SCRUM-104: advance to the END placeholder once a DOB has been collected,
+ * otherwise loop back for a retry. See design.md § State transitions — END
+ * here is a named placeholder, not a real "onboarding complete" state; a
+ * future ticket replaces it with COLLECT_PASSWORD.
+ */
+function routeAfterCollectDob(state: OnboardingState): typeof END | 'COLLECT_DOB' {
+    return state.collectedDob ? END : 'COLLECT_DOB';
+}
+
 const builder = new StateGraph(OnboardingStateAnnotation)
     .addNode('GREETING', greetingNode)
     .addNode('COLLECT_NAME', collectNameNode)
     .addNode('COLLECT_EMAIL', collectEmailNode)
-    .addNode('COLLECT_DOB', createStubNode('COLLECT_DOB'))
+    .addNode('COLLECT_DOB', collectDobNode)
     .addEdge(START, 'GREETING')
     .addEdge('GREETING', 'COLLECT_NAME')
     .addConditionalEdges('COLLECT_NAME', routeAfterCollectName)
     .addConditionalEdges('COLLECT_EMAIL', routeAfterCollectEmail)
-    .addEdge('COLLECT_DOB', END);
+    .addConditionalEdges('COLLECT_DOB', routeAfterCollectDob);
 
 /**
  * MemorySaver is in-process only and does not survive across serverless

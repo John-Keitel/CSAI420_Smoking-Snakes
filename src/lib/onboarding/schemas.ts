@@ -35,3 +35,26 @@ const EMAIL_MAX_LENGTH = 128;
  * check runs before any chained check, so untrimmed whitespace would fail it first.
  */
 export const EmailFieldSchema = z.email('That does not look like a valid email address.').max(EMAIL_MAX_LENGTH, 'That email address is too long.');
+
+const DOB_MAX_AGE_YEARS = 120;
+
+function yearsAgo(years: number): Date {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() - years);
+    return date;
+}
+
+function toIsoDate(date: Date): string {
+    return date.toISOString().slice(0, 10);
+}
+
+/**
+ * Guardrail for the COLLECT_DOB node (SCRUM-104). z.coerce.date() already rejects
+ * unparseable input (Invalid Date); this adds future-date and implausible-age
+ * bounds, then normalizes to an ISO 8601 date string for OnboardingState.collectedDob.
+ */
+export const DobFieldSchema = z.coerce
+    .date()
+    .refine((date) => date.getTime() <= Date.now(), 'That date of birth is in the future.')
+    .refine((date) => date.getTime() >= yearsAgo(DOB_MAX_AGE_YEARS).getTime(), 'That date of birth seems implausibly long ago.')
+    .transform(toIsoDate);
