@@ -1,7 +1,5 @@
 function stripScriptsAndTags(value: string): string {
-    return value
-        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ')
-        .replace(/<[^>]+>/g, ' ');
+    return value.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ').replace(/<[^>]+>/g, ' ');
 }
 
 function stripInjectionChars(value: string): string {
@@ -22,10 +20,7 @@ export function sanitizeObjectStrings<T>(input: T): T {
     }
 
     if (input !== null && typeof input === 'object') {
-        const sanitizedEntries = Object.entries(input as Record<string, unknown>).map(([key, value]) => [
-            key,
-            sanitizeObjectStrings(value),
-        ]);
+        const sanitizedEntries = Object.entries(input as Record<string, unknown>).map(([key, value]) => [key, sanitizeObjectStrings(value)]);
 
         return Object.fromEntries(sanitizedEntries) as T;
     }

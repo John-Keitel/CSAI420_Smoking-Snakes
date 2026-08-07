@@ -6,8 +6,8 @@ import { signUserToken } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { HttpException } from '@/lib/http';
 import { getAppLogger } from '@/lib/logger';
-import { UserRegisterChatSchema } from '@/lib/schemas/user-registration.schema';
 import { sanitizeObjectStrings, sanitizeUserRegistrationInput } from '@/lib/sanitization';
+import { UserRegisterChatSchema } from '@/lib/schemas/user-registration.schema';
 import { formatZodErrors } from '@/lib/validation';
 
 const logger = getAppLogger('api:user:register-chat');

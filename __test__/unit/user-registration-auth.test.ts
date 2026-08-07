@@ -5,9 +5,9 @@ vi.mock('@/lib/env-vars', () => ({
     ENV_VARS: { AUTH_SECRET: 'test-auth-secret' },
 }));
 
-import { UserRegisterChatSchema } from '@/lib/schemas/user-registration.schema';
-import { sanitizeInputString } from '@/lib/sanitization';
 import { signUserToken } from '@/lib/auth';
+import { sanitizeInputString } from '@/lib/sanitization';
+import { UserRegisterChatSchema } from '@/lib/schemas/user-registration.schema';
 
 describe('user registration security utilities', () => {
     afterEach(() => {
