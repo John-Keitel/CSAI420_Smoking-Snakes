@@ -1,10 +1,16 @@
 import bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 
+import { signUserToken } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { HttpException } from '@/lib/http';
+import { getAppLogger } from '@/lib/logger';
+import { sanitizeObjectStrings, sanitizeUserRegistrationInput } from '@/lib/sanitization';
 import { UserRegisterChatSchema } from '@/lib/schemas/user-registration.schema';
 import { formatZodErrors } from '@/lib/validation';
+
+const logger = getAppLogger('api:user:register-chat');
 
 function splitName(name: string): { firstName: string; lastName: string } {
     const normalized = name.trim().replace(/\s+/g, ' ');
@@ -17,15 +23,26 @@ function splitName(name: string): { firstName: string; lastName: string } {
 }
 
 export async function POST(request: NextRequest) {
+    const requestId = randomUUID();
+
     try {
+        logger.info('register-chat request started requestId=%s', requestId);
+
         const body = await request.json();
-        const parsed = UserRegisterChatSchema.safeParse(body);
+        const sanitizedBody = sanitizeObjectStrings(body);
+        const parsed = UserRegisterChatSchema.safeParse(sanitizedBody);
 
         if (!parsed.success) {
-            return NextResponse.json(formatZodErrors(parsed.error), { status: 422 });
+            const validationError = formatZodErrors(parsed.error);
+            logger.warn(
+                'register-chat validation failed requestId=%s statusCode=422 fields=%s',
+                requestId,
+                Object.keys(validationError.errors).join(',')
+            );
+            throw new HttpException(422, JSON.stringify(validationError));
         }
 
-        const { name, email, password, dob } = parsed.data;
+        const { name, email, password, dob } = sanitizeUserRegistrationInput(parsed.data);
 
         // SCRUM-114: Verificação de e-mail duplicado lançando 409 Conflict
         const existingUser = await prisma.user.findUnique({
@@ -34,6 +51,7 @@ export async function POST(request: NextRequest) {
         });
 
         if (existingUser) {
+            logger.warn('register-chat email conflict requestId=%s statusCode=409', requestId);
             throw new HttpException(409, 'Email already registered');
         }
 
@@ -60,18 +78,40 @@ export async function POST(request: NextRequest) {
             },
         });
 
+        const token = await signUserToken({ userId: createdUser.id, email: createdUser.email });
+
+        logger.info('register-chat request succeeded requestId=%s statusCode=201 userId=%s', requestId, createdUser.id);
+
         return NextResponse.json(
             {
                 success: true,
+                token,
                 data: createdUser,
             },
             { status: 201 }
         );
     } catch (error) {
         if (error instanceof HttpException) {
-            return NextResponse.json({ error: error.message }, { status: error.statusCode });
+            logger.warn('register-chat request failed requestId=%s statusCode=%d', requestId, error.statusCode);
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: error.message,
+                    statusCode: error.statusCode,
+                },
+                { status: error.statusCode }
+            );
         }
 
-        return NextResponse.json({ error: 'Server Error' }, { status: 500 });
+        logger.error('register-chat unexpected error requestId=%s: %s', requestId, error);
+
+        return NextResponse.json(
+            {
+                success: false,
+                error: 'Internal Server Error',
+                statusCode: 500,
+            },
+            { status: 500 }
+        );
     }
 }
