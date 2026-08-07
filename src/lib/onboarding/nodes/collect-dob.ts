@@ -59,8 +59,7 @@ function validateRawReplyOrRePrompt(state: OnboardingState, replyText: string): 
 /**
  * SCRUM-104 — prompts for and validates the user's date of birth.
  * Loops back to itself (via graph.ts's conditional edge) on invalid input.
- * The success edge routes to END as a named placeholder pending a future
- * password/submit ticket (see design.md § State transitions).
+ * The success edge routes to COLLECT_PASSWORD (SCRUM-105) next.
  */
 export async function collectDobNode(state: OnboardingState): Promise<Partial<OnboardingState>> {
     const question = state.lastValidationError ? DOB_REPROMPT : DOB_QUESTION;

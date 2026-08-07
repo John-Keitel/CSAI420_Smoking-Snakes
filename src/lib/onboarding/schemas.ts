@@ -79,3 +79,27 @@ export const DobFieldSchema = z
     .refine((date) => date.getTime() <= Date.now(), 'That date of birth is in the future.')
     .refine((date) => date.getTime() >= yearsAgo(DOB_MAX_AGE_YEARS).getTime(), 'That date of birth seems implausibly long ago.')
     .transform(toIsoDate);
+
+const PASSWORD_MIN_LENGTH = 10;
+
+// bcrypt (src/lib/auth/password.ts's hashPassword) silently truncates input beyond 72 bytes —
+// without this cap, a user could set two different long passwords that hash identically because
+// they share the same 72-byte prefix. Also comfortably fits User.password's @db.VarChar(64) hash
+// column in prisma/schema.prisma (a bcrypt hash is 60 characters, independent of input length).
+const PASSWORD_MAX_LENGTH = 72;
+
+const PASSWORD_HAS_LETTER_PATTERN = /[A-Za-z]/;
+const PASSWORD_HAS_DIGIT_PATTERN = /\d/;
+
+/**
+ * Guardrail for the COLLECT_PASSWORD node (SCRUM-105). Used both to re-validate the
+ * model's structured extraction and as the sole check on the no-model fallback path.
+ * Deliberately does not trim: leading/trailing whitespace could be part of what the
+ * user actually intends as their password.
+ */
+export const PasswordFieldSchema = z
+    .string()
+    .min(PASSWORD_MIN_LENGTH, `Your password must be at least ${PASSWORD_MIN_LENGTH} characters long.`)
+    .max(PASSWORD_MAX_LENGTH, `Your password must be at most ${PASSWORD_MAX_LENGTH} characters long.`)
+    .refine((value) => PASSWORD_HAS_LETTER_PATTERN.test(value), 'Your password must include at least one letter.')
+    .refine((value) => PASSWORD_HAS_DIGIT_PATTERN.test(value), 'Your password must include at least one number.');
