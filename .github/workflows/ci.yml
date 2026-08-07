@@ -83,6 +83,9 @@ jobs:
             - name: Jest tests
               run: npx jest --ci
 
+            - name: Accessibility lint (eslint-plugin-react-native-a11y)
+              run: npm run lint:a11y
+
     e2e:
         name: E2E Tests
         runs-on: ubuntu-latest
