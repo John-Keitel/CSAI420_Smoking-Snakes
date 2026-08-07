@@ -34,9 +34,15 @@ const EMAIL_MAX_LENGTH = 128;
  * Callers are expected to trim the candidate before parsing — z.email()'s own format
  * check runs before any chained check, so untrimmed whitespace would fail it first.
  */
-export const EmailFieldSchema = z.email('That does not look like a valid email address.').max(EMAIL_MAX_LENGTH, 'That email address is too long.');
+export const EmailFieldSchema = z
+    .email('That does not look like a valid email address.')
+    .max(EMAIL_MAX_LENGTH, 'That email address is too long.');
 
 const DOB_MAX_AGE_YEARS = 120;
+
+// SCRUM-106: the ticket requires DOB input in this exact format, not any
+// date-like string the JS Date constructor happens to accept.
+const DOB_FORMAT_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 function yearsAgo(years: number): Date {
     const date = new Date();
@@ -49,12 +55,27 @@ function toIsoDate(date: Date): string {
 }
 
 /**
- * Guardrail for the COLLECT_DOB node (SCRUM-104). z.coerce.date() already rejects
- * unparseable input (Invalid Date); this adds future-date and implausible-age
- * bounds, then normalizes to an ISO 8601 date string for OnboardingState.collectedDob.
+ * Guardrail for the COLLECT_DOB node (SCRUM-104/106). Requires strict YYYY-MM-DD
+ * input, then adds future-date and implausible-age bounds, then normalizes to an
+ * ISO 8601 date string for OnboardingState.collectedDob.
+ *
+ * The regex alone doesn't catch invalid calendar days: `new Date('2024-02-30')`
+ * silently rolls over to March 1st instead of raising Invalid Date. Re-formatting
+ * the parsed date and comparing it back against the original string catches that
+ * rollover as a mismatch.
  */
-export const DobFieldSchema = z.coerce
-    .date()
+export const DobFieldSchema = z
+    .string()
+    .trim()
+    .regex(DOB_FORMAT_PATTERN, 'Please provide your date of birth in YYYY-MM-DD format.')
+    .transform((value, ctx) => {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime()) || toIsoDate(date) !== value) {
+            ctx.addIssue({ code: 'custom', message: 'That is not a real calendar date.' });
+            return z.NEVER;
+        }
+        return date;
+    })
     .refine((date) => date.getTime() <= Date.now(), 'That date of birth is in the future.')
     .refine((date) => date.getTime() >= yearsAgo(DOB_MAX_AGE_YEARS).getTime(), 'That date of birth seems implausibly long ago.')
     .transform(toIsoDate);
