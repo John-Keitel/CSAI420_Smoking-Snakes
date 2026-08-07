@@ -190,4 +190,39 @@ describe('collectEmailNode (SCRUM-103)', () => {
         expect(result.collectedEmail).toBeNull();
         expect(result.messages[result.messages.length - 1]?.content).toBeTruthy();
     });
+
+    describe('guardrails (SCRUM-108)', () => {
+        it('redirects a clinical-advice request without giving medical advice, without calling the model, and without consuming an attempt', async () => {
+            const { onboardingGraph, emailInvokeMock } = await loadGraphModule({ openAiApiKey: 'test-key' });
+            const threadConfig = { configurable: { thread_id: 'scrum-108-email-clinical' } };
+
+            const beforeDetour = await advanceToCollectEmail(onboardingGraph, threadConfig);
+            const afterDetour = await onboardingGraph.invoke(
+                new Command({ resume: 'what medication should I take for my rash?' }),
+                threadConfig
+            );
+
+            expect(emailInvokeMock).not.toHaveBeenCalled();
+            expect(afterDetour.collectedEmail).toBeNull();
+            expect(afterDetour.fieldAttempts).toBe(beforeDetour.fieldAttempts);
+            expect(isInterrupted(afterDetour)).toBe(true);
+            const lastMessage = String(afterDetour.messages[afterDetour.messages.length - 1]?.content ?? '');
+            expect(lastMessage.toLowerCase()).toContain('medical advice');
+        });
+
+        it('redirects an off-topic question back to the sign-up flow without consuming an attempt', async () => {
+            const { onboardingGraph, emailInvokeMock } = await loadGraphModule({ openAiApiKey: 'test-key' });
+            const threadConfig = { configurable: { thread_id: 'scrum-108-email-off-topic' } };
+
+            const beforeDetour = await advanceToCollectEmail(onboardingGraph, threadConfig);
+            const afterDetour = await onboardingGraph.invoke(new Command({ resume: 'why do you need my email anyway?' }), threadConfig);
+
+            expect(emailInvokeMock).not.toHaveBeenCalled();
+            expect(afterDetour.collectedEmail).toBeNull();
+            expect(afterDetour.fieldAttempts).toBe(beforeDetour.fieldAttempts);
+            expect(isInterrupted(afterDetour)).toBe(true);
+            const lastMessage = String(afterDetour.messages[afterDetour.messages.length - 1]?.content ?? '');
+            expect(lastMessage.toLowerCase()).toContain('signing up');
+        });
+    });
 });

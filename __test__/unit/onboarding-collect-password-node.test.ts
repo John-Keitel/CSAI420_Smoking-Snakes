@@ -236,6 +236,39 @@ describe('collectPasswordNode (SCRUM-105)', () => {
         expect(result.messages[result.messages.length - 1]?.content).toBeTruthy();
     });
 
+    describe('guardrails (SCRUM-108)', () => {
+        it('redirects a clinical-advice request without giving medical advice, without calling the model, and without consuming an attempt', async () => {
+            const { onboardingGraph, passwordInvokeMock } = await loadGraphModule({ openAiApiKey: 'test-key' });
+            const threadConfig = { configurable: { thread_id: 'scrum-108-password-clinical' } };
+
+            const beforeDetour = await advanceToCollectPassword(onboardingGraph, threadConfig);
+            const afterDetour = await onboardingGraph.invoke(new Command({ resume: 'I need advice on my medication dosage' }), threadConfig);
+
+            expect(passwordInvokeMock).not.toHaveBeenCalled();
+            expect(afterDetour.collectedPasswordHash).toBeNull();
+            expect(afterDetour.fieldAttempts).toBe(beforeDetour.fieldAttempts);
+            expect(isInterrupted(afterDetour)).toBe(true);
+            const lastMessage = String(afterDetour.messages[afterDetour.messages.length - 1]?.content ?? '');
+            expect(lastMessage.toLowerCase()).toContain('medical advice');
+        });
+
+        it('does not redirect a password containing "?" — it is a legitimate complexity character here', async () => {
+            const plaintext = 'Correct-Horse9?';
+            const { onboardingGraph } = await loadGraphModule({
+                openAiApiKey: 'test-key',
+                passwordExtraction: { extractedPassword: plaintext, looksLikeAPasswordAttempt: true },
+            });
+            const threadConfig = { configurable: { thread_id: 'scrum-108-password-question-mark' } };
+
+            await advanceToCollectPassword(onboardingGraph, threadConfig);
+            const result = await onboardingGraph.invoke(new Command({ resume: plaintext }), threadConfig);
+
+            expect(result.step).toBe('COMPLETE');
+            expect(result.collectedPasswordHash).toBeTruthy();
+            expect(isInterrupted(result)).toBe(false);
+        });
+    });
+
     describe('masking (SCRUM-105 — password must never leak into messages or logs)', () => {
         const SECRET = 'Extremely-Secret-Value9';
 

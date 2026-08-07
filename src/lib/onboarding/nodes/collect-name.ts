@@ -3,6 +3,7 @@ import { interrupt } from '@langchain/langgraph';
 import { z } from 'zod';
 
 import { getAppLogger } from '@/lib/logger';
+import { detectOffTopicOrClinicalRequest } from '@/lib/onboarding/guardrails';
 import { getOnboardingModel } from '@/lib/onboarding/model';
 import { NameFieldSchema } from '@/lib/onboarding/schemas';
 import { MAX_FIELD_ATTEMPTS, type OnboardingState } from '@/lib/onboarding/state';
@@ -55,6 +56,17 @@ function validateRawReplyOrRePrompt(state: OnboardingState, replyText: string): 
 }
 
 /**
+ * SCRUM-108: a detour (off-topic question or clinical-advice request) is not a failed
+ * attempt at providing a name — omitting fieldAttempts/lastValidationError from the
+ * returned state leaves them exactly as they were, so this never counts toward
+ * MAX_FIELD_ATTEMPTS. The redirect goes to `messages` (like ABANDON_MESSAGE), not
+ * `lastValidationError`, so the next question asked is unaffected.
+ */
+function redirectWithoutConsumingAttempt(message: string): Partial<OnboardingState> {
+    return { step: 'COLLECT_NAME', messages: [new AIMessage(message)] };
+}
+
+/**
  * SCRUM-102 — prompts for and validates the user's full name.
  * Loops back to itself (via graph.ts's conditional edge) on invalid input.
  */
@@ -62,6 +74,11 @@ export async function collectNameNode(state: OnboardingState): Promise<Partial<O
     const question = state.lastValidationError ? NAME_REPROMPT : NAME_QUESTION;
     const userReply = interrupt({ question });
     const replyText = String(userReply);
+
+    const redirect = detectOffTopicOrClinicalRequest(replyText);
+    if (redirect) {
+        return redirectWithoutConsumingAttempt(redirect.message);
+    }
 
     const model = getOnboardingModel();
     if (!model) {
