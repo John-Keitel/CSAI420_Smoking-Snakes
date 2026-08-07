@@ -23,7 +23,8 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:sync": "prisma migrate deploy",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "stress-test:onboarding": "tsx scripts/stress-test-onboarding.ts"
   },
   "engines": {
     "node": ">=24.0.0",
