@@ -214,6 +214,7 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
                     testID="chat-backdrop"
                     accessibilityRole="button"
                     accessibilityLabel="Dismiss the sign up assistant"
+                    accessibilityHint="Closes the sign up assistant without submitting"
                 />
 
                 <View style={styles.sheet} accessibilityViewIsModal testID="chat-sheet-surface">
@@ -227,6 +228,7 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
                             testID="chat-close-button"
                             accessibilityRole="button"
                             accessibilityLabel="Close the sign up assistant"
+                            accessibilityHint="Closes the sign up assistant"
                         >
                             <Text style={styles.closeButtonText} maxFontSizeMultiplier={MAX_FONT_SCALE}>
                                 Done
@@ -250,6 +252,7 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
                                 testID="chat-restart-button"
                                 accessibilityRole="button"
                                 accessibilityLabel="Start a new sign up chat"
+                                accessibilityHint="Starts a new sign-up conversation"
                             >
                                 <Text style={styles.buttonText} maxFontSizeMultiplier={MAX_FONT_SCALE}>
                                     Start over

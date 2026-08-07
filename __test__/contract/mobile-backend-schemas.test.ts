@@ -23,13 +23,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // expo-constants and react-native are both redirected via vitest.config.mts's
 // resolve.alias, not vi.mock() — see that file and __test__/contract/__mocks__/
 // for why (Vite parses/loads the real packages before vi.mock can intercept).
-
 import { ChatAssistedRegistrationSchema } from '@/lib/schemas/chat-assisted-registration.schema';
 import { ContinueSessionSchema } from '@/lib/schemas/continue-session.schema';
 
-// eslint-disable-next-line simple-import-sort/imports -- must load after the vi.mock calls above
-import { continueSession, registerChatAssisted } from '../../mobile/app/api/chatClient.js';
-// eslint-disable-next-line simple-import-sort/imports
+import { continueSession } from '../../mobile/app/api/chatClient.js';
 import { toUserData } from '../../mobile/app/lib/stepRules.js';
 
 function mockFetchOnce(responseBody: unknown, status = 200) {
