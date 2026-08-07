@@ -2,6 +2,7 @@
 .agents/
 .opencode/
 .specs/
+mobile/
 node_modules/
 src/generated/
 bruno_collection/

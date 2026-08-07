@@ -60,6 +60,32 @@ jobs:
             - name: Audit dependencies
               run: npm audit --omit=dev --audit-level=high
 
+    mobile:
+        name: Mobile Client
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: mobile
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v7
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v7
+              with:
+                  node-version-file: '.nvmrc'
+                  cache: 'npm'
+                  cache-dependency-path: mobile/package-lock.json
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Jest tests
+              run: npx jest --ci
+
+            - name: Accessibility lint (eslint-plugin-react-native-a11y)
+              run: npm run lint:a11y
+
     e2e:
         name: E2E Tests
         runs-on: ubuntu-latest

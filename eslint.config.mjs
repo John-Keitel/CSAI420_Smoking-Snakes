@@ -33,6 +33,8 @@ const eslintConfig = [
         ignores: [
             'node_modules/**',
             '.next/**',
+            // The Expo client has its own toolchain; the Next.js config cannot parse it.
+            'mobile/**',
             '.agents/**',
             '.specs/**',
             'out/**',
