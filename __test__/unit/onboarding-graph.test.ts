@@ -1,7 +1,7 @@
 import { isInterrupted, START } from '@langchain/langgraph';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const ONBOARDING_NODES = ['GREETING', 'COLLECT_NAME', 'COLLECT_EMAIL', 'COLLECT_DOB'];
+const ONBOARDING_NODES = ['GREETING', 'COLLECT_NAME', 'COLLECT_EMAIL', 'COLLECT_DOB', 'COLLECT_PASSWORD'];
 
 function mockEnvVarsWithoutOpenAiKey() {
     vi.doMock('@/lib/env-vars', () => ({
@@ -15,7 +15,7 @@ describe('onboarding LangGraph setup (SCRUM-100)', () => {
         mockEnvVarsWithoutOpenAiKey();
     });
 
-    it('compiles a StateGraph with the four onboarding nodes registered', async () => {
+    it('compiles a StateGraph with the five onboarding nodes registered', async () => {
         const { onboardingGraph } = await import('@/lib/onboarding/graph');
 
         expect(Object.keys(onboardingGraph.builder.nodes).sort()).toEqual([...ONBOARDING_NODES].sort());

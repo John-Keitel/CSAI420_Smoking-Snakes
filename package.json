@@ -24,6 +24,7 @@
     "db:push": "prisma db push",
     "db:sync": "prisma migrate deploy",
     "db:seed": "prisma db seed",
+    "stress-test:onboarding": "tsx scripts/stress-test-onboarding.ts",
     "db:cleanup-test-data": "tsx scripts/db-cleanup-test-data.ts"
   },
   "engines": {

@@ -23,3 +23,83 @@ export const NameFieldSchema = z
     .refine((value) => !SUSPICIOUS_NAME_PATTERN.test(value), 'That does not look like a name.')
     .refine((value) => PLAUSIBLE_NAME_PATTERN.test(value), 'That does not look like a first and last name.')
     .refine((value) => value.split(/\s+/).length <= NAME_MAX_WORDS, 'That name looks unusually long.');
+
+// Matches User.email's @db.VarChar(128) in prisma/schema.prisma, so a collected
+// address won't later fail to persist once EPIC 14 wires this up to registration.
+const EMAIL_MAX_LENGTH = 128;
+
+/**
+ * Guardrail for the COLLECT_EMAIL node (SCRUM-103). Used both to re-validate the
+ * model's structured extraction and as the sole check on the no-model fallback path.
+ * Callers are expected to trim the candidate before parsing — z.email()'s own format
+ * check runs before any chained check, so untrimmed whitespace would fail it first.
+ */
+export const EmailFieldSchema = z
+    .email('That does not look like a valid email address.')
+    .max(EMAIL_MAX_LENGTH, 'That email address is too long.');
+
+const DOB_MAX_AGE_YEARS = 120;
+
+// SCRUM-106: the ticket requires DOB input in this exact format, not any
+// date-like string the JS Date constructor happens to accept.
+const DOB_FORMAT_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function yearsAgo(years: number): Date {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() - years);
+    return date;
+}
+
+function toIsoDate(date: Date): string {
+    return date.toISOString().slice(0, 10);
+}
+
+/**
+ * Guardrail for the COLLECT_DOB node (SCRUM-104/106). Requires strict YYYY-MM-DD
+ * input, then adds future-date and implausible-age bounds, then normalizes to an
+ * ISO 8601 date string for OnboardingState.collectedDob.
+ *
+ * The regex alone doesn't catch invalid calendar days: `new Date('2024-02-30')`
+ * silently rolls over to March 1st instead of raising Invalid Date. Re-formatting
+ * the parsed date and comparing it back against the original string catches that
+ * rollover as a mismatch.
+ */
+export const DobFieldSchema = z
+    .string()
+    .trim()
+    .regex(DOB_FORMAT_PATTERN, 'Please provide your date of birth in YYYY-MM-DD format.')
+    .transform((value, ctx) => {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime()) || toIsoDate(date) !== value) {
+            ctx.addIssue({ code: 'custom', message: 'That is not a real calendar date.' });
+            return z.NEVER;
+        }
+        return date;
+    })
+    .refine((date) => date.getTime() <= Date.now(), 'That date of birth is in the future.')
+    .refine((date) => date.getTime() >= yearsAgo(DOB_MAX_AGE_YEARS).getTime(), 'That date of birth seems implausibly long ago.')
+    .transform(toIsoDate);
+
+const PASSWORD_MIN_LENGTH = 10;
+
+// bcrypt (src/lib/auth/password.ts's hashPassword) silently truncates input beyond 72 bytes —
+// without this cap, a user could set two different long passwords that hash identically because
+// they share the same 72-byte prefix. Also comfortably fits User.password's @db.VarChar(64) hash
+// column in prisma/schema.prisma (a bcrypt hash is 60 characters, independent of input length).
+const PASSWORD_MAX_LENGTH = 72;
+
+const PASSWORD_HAS_LETTER_PATTERN = /[A-Za-z]/;
+const PASSWORD_HAS_DIGIT_PATTERN = /\d/;
+
+/**
+ * Guardrail for the COLLECT_PASSWORD node (SCRUM-105). Used both to re-validate the
+ * model's structured extraction and as the sole check on the no-model fallback path.
+ * Deliberately does not trim: leading/trailing whitespace could be part of what the
+ * user actually intends as their password.
+ */
+export const PasswordFieldSchema = z
+    .string()
+    .min(PASSWORD_MIN_LENGTH, `Your password must be at least ${PASSWORD_MIN_LENGTH} characters long.`)
+    .max(PASSWORD_MAX_LENGTH, `Your password must be at most ${PASSWORD_MAX_LENGTH} characters long.`)
+    .refine((value) => PASSWORD_HAS_LETTER_PATTERN.test(value), 'Your password must include at least one letter.')
+    .refine((value) => PASSWORD_HAS_DIGIT_PATTERN.test(value), 'Your password must include at least one number.');
