@@ -64,6 +64,16 @@ Format:
 - **Date**: 2026-07-11
 - **Status**: active
 
+### AD-004
+
+- **Decision**: The EPIC 12 React Native client is an Expo app colocated at `mobile/` inside this repository, on an Expo SDK 54 / RN 0.81 / React 19 baseline, tested with `@testing-library/react-native` 13, reading its API base URL from `Constants.expoConfig.extra.apiBaseUrl`.
+- **Reason**: The spec-driven flow is anchored to one repository — `sdd-execute-jira` forks worktrees from a slice branch here and `sdd-pr-review` runs against a PR on this repo's remote. A separate mobile repo would split `.specs/` artifacts from the code they specify and break that chain. `mobile/` is not an npm workspace of the root package; it keeps its own `package.json`, lockfile, and Jest config.
+- **Trade-off**: The repo is no longer single-purpose and now carries two runtimes and two dependency trees. Root toolchain configs must permanently exclude `mobile/` (`tsconfig.json` `exclude`, `.prettierignore`, `eslint.config.mjs` `ignores`, `.dockerignore`) or `npm run typecheck` and the CI `prettier --check .` gate break. Root `npm audit --omit=dev` does not cover mobile dependencies; a separate CI job runs the mobile suite.
+- **Scope**: `mobile/**`, root toolchain configs, `.github/workflows/ci.yml`, SCRUM-140 / `.specs/features/onboarding-chat-ui/`.
+- **ADR**: `docs/engineering/adr/001-mobile-client-colocated-in-api-repo.md`
+- **Date**: 2026-08-02
+- **Status**: active
+
 ## Handoff
 
 <!--
@@ -80,6 +90,17 @@ Format:
 - **Uncommitted files**: [list or "none"]
 - **Branch**: [git branch name]
 -->
+
+- **Feature**: onboarding-chat-ui (EPIC 12 / SCRUM-140) / .specs/features/onboarding-chat-ui/
+- **Phase / Task**: Planning COMPLETE — spec.md, design.md, tasks.md drafted; ADR-001 + TDD written; Jira enriched. Awaiting human review.
+- **Completed**: ADR-001 (+ AD-004, docs/engineering/adr/README.md); TDD 2026-08-onboarding-chat-mobile-client; spec.md (45 requirement IDs, all mapped); design.md (normative step→field mapping); tasks.md (T1–T6); SCRUM-90..94 descriptions filled from the spec; SCRUM-145 created under SCRUM-140 for the T1 foundation gap
+- **In-progress**: (none)
+- **Next step**: Human reviews/edits the slice docs, then execution runs in a NEW session via `/sdd-execute-jira` on branch `feat/onboarding-chat-ui`, one task at a time starting with T1/SCRUM-145.
+- **Blockers**: none. Two open questions logged in the TDD, neither blocking: (1) scheduling the follow-up backend slice that redacts the plaintext password persisted into `ChatRegistrationSession.conversationContext` by `/chat/continue-session`; (2) whether SCRUM-99 is closed as superseded, since tests ship inside each task.
+- **Uncommitted files**: none — planning artifacts committed on `jira-scrum-140`
+- **Branch**: `jira-scrum-140` (planning artifacts only; no source code, per the two-session protocol)
+
+---
 
 - **Feature**: chat-assisted-registration / .specs/features/chat-assisted-registration/
 - **Phase / Task**: EXECUTION COMPLETE — T1-T6 committed (e6fc145, e4ba792, 66744c1, dc5d13a, d29f560, 3e414a3), T7 green
