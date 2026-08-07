@@ -24,7 +24,8 @@
     "db:push": "prisma db push",
     "db:sync": "prisma migrate deploy",
     "db:seed": "prisma db seed",
-    "stress-test:onboarding": "tsx scripts/stress-test-onboarding.ts"
+    "stress-test:onboarding": "tsx scripts/stress-test-onboarding.ts",
+    "db:cleanup-test-data": "tsx scripts/db-cleanup-test-data.ts"
   },
   "engines": {
     "node": ">=24.0.0",
@@ -32,45 +33,48 @@
   },
   "packageManager": "npm@11.13.0",
   "dependencies": {
-    "@langchain/core": "^1.2.3",
+    "@langchain/core": "^1.2.4",
     "@langchain/langgraph": "^1.4.8",
     "@langchain/openai": "^1.5.5",
-    "@prisma/adapter-pg": "^7.8.0",
-    "@prisma/client": "^7.8.0",
+    "@prisma/adapter-pg": "^7.9.1",
+    "@prisma/client": "^7.9.1",
     "bcrypt": "^6.0.0",
     "expo-server-sdk": "^6.1.0",
-    "jose": "^6.2.3",
-    "langchain": "^1.5.3",
-    "next": "^16.2.10",
+    "jose": "^6.2.6",
+    "langchain": "^1.5.4",
+    "next": "^16.2.11",
     "nodemailer": "^9.0.3",
     "pg": "^8.22.0",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "winston": "^3.19.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@playwright/test": "^1.61.1",
+    "@playwright/test": "^1.62.1",
     "@types/bcrypt": "^6.0.0",
-    "@types/node": "^26.1.1",
+    "@types/node": "^26.1.2",
     "@types/nodemailer": "^8.0.1",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "dotenv": "^17.4.2",
-    "eslint": "^10.7.0",
-    "eslint-config-next": "^16.2.10",
+    "eslint": "9.39.5",
+    "eslint-config-next": "^16.2.12",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-simple-import-sort": "^13.0.0",
-    "prettier": "^3.9.5",
-    "prisma": "^7.8.0",
-    "tsx": "^4.23.0",
+    "eslint-plugin-simple-import-sort": "^14.0.0",
+    "prettier": "^3.9.6",
+    "prisma": "^7.9.1",
+    "tsx": "^4.23.1",
     "typescript": "6.0.3",
     "vitest": "^4.1.10"
   },
   "overrides": {
     "@prisma/dev": {
-      "@hono/node-server": "1.19.13"
+      "@hono/node-server": "^2.0.5",
+      "valibot": "^1.4.2"
     },
-    "postcss": "8.5.16"
+    "postcss": "^8.5.23",
+    "sharp": "^0.35.3",
+    "fast-uri": "^3.1.4"
   }
 }

@@ -175,6 +175,22 @@ describe('collectNameNode (SCRUM-102)', () => {
         expect(result.messages[result.messages.length - 1]?.content).toBeTruthy();
     });
 
+    it('tracks the name retry cap alongside field abandonment', async () => {
+        const { onboardingGraph } = await loadGraphModule({
+            openAiApiKey: 'test-key',
+            nameExtraction: { extractedName: '', looksLikeAValidFullName: false },
+        });
+        const threadConfig = { configurable: { thread_id: 'scrum-102-name-attempt-cap' } };
+
+        await onboardingGraph.invoke({}, threadConfig);
+        await onboardingGraph.invoke(new Command({ resume: 'asdf 123' }), threadConfig);
+        await onboardingGraph.invoke(new Command({ resume: 'asdf 123' }), threadConfig);
+        const result = await onboardingGraph.invoke(new Command({ resume: 'asdf 123' }), threadConfig);
+
+        expect(result.nameAttempts).toBe(3);
+        expect(result.step).toBe('ABANDONED');
+    });
+
     describe('guardrails (SCRUM-108)', () => {
         it('redirects a clinical-advice request without giving medical advice, and without calling the model', async () => {
             const { onboardingGraph, nameInvokeMock } = await loadGraphModule({ openAiApiKey: 'test-key' });

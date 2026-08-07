@@ -64,6 +64,16 @@ Format:
 - **Date**: 2026-07-11
 - **Status**: active
 
+### AD-004
+
+- **Decision**: The EPIC 12 React Native client is an Expo app colocated at `mobile/` inside this repository, on an Expo SDK 54 / RN 0.81 / React 19 baseline, tested with `@testing-library/react-native` 13, reading its API base URL from `Constants.expoConfig.extra.apiBaseUrl`.
+- **Reason**: The spec-driven flow is anchored to one repository — `sdd-execute-jira` forks worktrees from a slice branch here and `sdd-pr-review` runs against a PR on this repo's remote. A separate mobile repo would split `.specs/` artifacts from the code they specify and break that chain. `mobile/` is not an npm workspace of the root package; it keeps its own `package.json`, lockfile, and Jest config.
+- **Trade-off**: The repo is no longer single-purpose and now carries two runtimes and two dependency trees. Root toolchain configs must permanently exclude `mobile/` (`tsconfig.json` `exclude`, `.prettierignore`, `eslint.config.mjs` `ignores`, `.dockerignore`) or `npm run typecheck` and the CI `prettier --check .` gate break. Root `npm audit --omit=dev` does not cover mobile dependencies; a separate CI job runs the mobile suite.
+- **Scope**: `mobile/**`, root toolchain configs, `.github/workflows/ci.yml`, SCRUM-140 / `.specs/features/onboarding-chat-ui/`.
+- **ADR**: `docs/engineering/adr/001-mobile-client-colocated-in-api-repo.md`
+- **Date**: 2026-08-02
+- **Status**: active
+
 ## Handoff
 
 <!--
@@ -81,11 +91,33 @@ Format:
 - **Branch**: [git branch name]
 -->
 
-- **Feature**: realtime-data-path / .specs/features/realtime-data-path/
-- **Phase / Task**: Planning closed — tasks published to SCRUM-18…22
-- **Completed**: spec.md, design.md, tasks.md, epic brief, Jira rewrite
+- **Feature**: onboarding-chat-ui (EPIC 12 / SCRUM-140) / .specs/features/onboarding-chat-ui/
+- **Phase / Task**: EXECUTION COMPLETE — T1–T6 implemented and committed on `feat/onboarding-chat-ui`. Awaiting review/PR.
+- **Completed**: Planning (ADR-001 + AD-004, TDD, spec.md 45 reqs, design.md, tasks.md; SCRUM-90..94 enriched; SCRUM-145 created). Execution: T1 Expo scaffold + chatClient + stepRules + 5 toolchain fences + CI job (527eadb); T2 Need Help entry point (cf5a90b); T3 ChatSheet session owner (9629d8c); T4 MessageList (5266e2a); T5 InputBar + validation + registration (d0c1155); T6 accessibility (a75eefd). **149 mobile tests pass; root format/lint/typecheck/205 unit tests/build all green.**
 - **In-progress**: (none)
-- **Next step**: Start a new session with `/sdd-execute-jira` on SCRUM-17 / branch `jira-scrum-17`.
+- **Next step**: Open a PR for `feat/onboarding-chat-ui` and run `/sdd-execute-jira`'s Verifier or `sdd-pr-review`. Then do the manual device pass the spec's Success Criteria require — it is the only unverified part (see Blockers).
+- **Blockers**: none blocking, but three things are explicitly NOT yet verified: (1) **no manual device run** — the flow has never been exercised against a live API, only against mocked transports, so `extra.apiBaseUrl` must be pointed at a LAN address or the deployed host and walked end to end; (2) VoiceOver/TalkBack and max-font-size passes are unautomatable and outstanding (A11Y-03/04 have unit coverage only); (3) the plaintext-password defect in `/chat/continue-session` is unfixed by design — the client masks and withholds it, but the server still persists it, and a follow-up backend slice is needed. Also open: whether SCRUM-99 is closed as superseded.
+- **Uncommitted files**: none
+- **Branch**: `feat/onboarding-chat-ui` (branched from `jira-scrum-140`; note the repo's two-session protocol was explicitly waived by the user for this slice)
+
+---
+
+- **Feature**: chat-assisted-registration / .specs/features/chat-assisted-registration/
+- **Phase / Task**: EXECUTION COMPLETE — T1-T6 committed (e6fc145, e4ba792, 66744c1, dc5d13a, d29f560, 3e414a3), T7 green
+- **Completed**: T1 schemas+formatter; T2 ChatRegistrationSession model+migration (hand-written, matches prisma output); T3 POST /user/chat-assisted (phone optional, 'N/A' default — suite matrix omits phone); T4 POST /escalate-registration (issueType SLA map, technical_difficulties → "15-30 minutes"); T5 POST /chat/continue-session (rule-based state machine, DB-persisted); T6 DELETE /user/[userId]; T7 official week5 suite **17/17 PASS** against deployed https://cs420-api.asf0.dev (server root@192.168.0.234, docker compose); Verifier PASS 21/21 ACs, no surviving mutants; EPIC 14 register-chat untouched
+- **In-progress**: (none)
+- **Next step**: none — slice delivered. Follow-up note: pending escalation work from prior session was landed as chore 515808f (deploy dependency of T4); prod DB migrated via compose migrate service.
 - **Blockers**: none
-- **Uncommitted files**: planning artifacts committed on slice branch only
-- **Branch**: jira-scrum-17
+- **Uncommitted files**: `.claude/`, `weekly-assignment-answers.md` (personal, left out of commits)
+- **Branch**: main (pushed to origin)
+
+---
+
+- **Feature**: session-token-expiry-distinction / .specs/features/session-token-expiry-distinction/
+- **Phase / Task**: Planning — spec.md + tasks.md drafted, awaiting human review
+- **Completed**: spec.md, tasks.md (source: PR #64 review comment by ljm234)
+- **In-progress**: (none)
+- **Next step**: Human reviews/edits slice docs, then runs `/sdd-tasks-jira` to publish task issues; execution later in a separate `/sdd-execute-jira` session on branch `fix/session-token-expiry-distinction`.
+- **Blockers**: none
+- **Uncommitted files**: `.specs/features/session-token-expiry-distinction/{spec.md,tasks.md}` (+ this STATE.md edit) — planning session, not committed
+- **Branch**: main (no code branch created during planning)

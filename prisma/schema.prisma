@@ -20,7 +20,7 @@ enum UserType {
 }
 
 model User {
-    id   String   @id @default(cuid())
+    id   String   @id @default(uuid())
     type UserType @default(standard)
 
     // Auth
@@ -30,9 +30,11 @@ model User {
     password      String    @db.VarChar(64)
 
     // Profile
+    name        String?  @db.VarChar(128)
     firstName   String   @map("first_name") @db.VarChar(64)
     lastName    String   @map("last_name") @db.VarChar(64)
     displayName String?  @map("display_name") @db.VarChar(128)
+    dob         DateTime? @db.Date
     dateOfBirth DateTime @map("date_of_birth") @db.Date
     image       String?  @db.Text
     timezone    String?  @db.VarChar(32)
@@ -99,8 +101,8 @@ model FlaggedSession {
     aiRecommendation String?            @map("ai_recommendation") @db.Text
     humanOverride    String?            @map("human_override") @db.Text
     reviewerNotes    String?            @map("reviewer_notes") @db.Text
-    reviewedByUserId String?            @map("reviewed_by_user_id") @db.VarChar(32)
-    resolvedByUserId String?            @map("resolved_by_user_id") @db.VarChar(32)
+    reviewedByUserId String?            @map("reviewed_by_user_id") @db.VarChar(36)
+    resolvedByUserId String?            @map("resolved_by_user_id") @db.VarChar(36)
     flaggedAt        DateTime           @default(now()) @map("flagged_at")
     reviewedAt       DateTime?          @map("reviewed_at")
     resolvedAt       DateTime?          @map("resolved_at")
@@ -128,9 +130,24 @@ model ChatMessage {
     @@map("chat_messages")
 }
 
+// Anonymous chat-registration sessions keyed by the opaque string ids the chat
+// flow mints (e.g. `session_1234567890`). Deliberately separate from ChatSession,
+// which is UUID-keyed and FK-bound to a registered User.
+model ChatRegistrationSession {
+    id                  String   @id @default(uuid()) @db.Uuid
+    chatSessionId       String   @unique @map("chat_session_id") @db.VarChar(128)
+    conversationContext Json     @map("conversation_context")
+    currentStep         String   @map("current_step") @db.VarChar(64)
+    lastActivity        DateTime @default(now()) @map("last_activity")
+    createdAt           DateTime @default(now()) @map("created_at")
+    updatedAt           DateTime @updatedAt @map("updated_at")
+
+    @@map("chat_registration_sessions")
+}
+
 model Session {
     id     String @id @default(cuid())
-    userId String @map("user_id") @db.VarChar(32)
+    userId String @map("user_id") @db.VarChar(36)
 
     // Audit
     createdAt DateTime @default(now()) @map("created_at")
@@ -160,7 +177,7 @@ model Device {
 
 model Assessment {
     id       String    @id @default(cuid())
-    userId   String    @map("user_id") @db.VarChar(32)
+    userId   String    @map("user_id") @db.VarChar(36)
     deviceId String    @map("device_id") @db.VarChar(32)
     started  DateTime? @default(now())
     ended    DateTime?
@@ -181,7 +198,7 @@ model Step {
     id           String  @id @default(cuid())
     deviceId     String  @map("device_id") @db.VarChar(32)
     assessmentId String? @map("assessment_id") @db.VarChar(32)
-    userId       String? @map("user_id") @db.VarChar(32)
+    userId       String? @map("user_id") @db.VarChar(36)
 
     points Json
 
@@ -230,7 +247,7 @@ model CustomerConsent {
 
 model ExpoPushToken {
     id     String @id @default(cuid())
-    userId String @map("user_id") @db.VarChar(32)
+    userId String @map("user_id") @db.VarChar(36)
 
     // Token
     token      String    @unique @db.VarChar(255)
@@ -248,4 +265,62 @@ model ExpoPushToken {
 
     @@index([userId])
     @@map("expo_push_tokens")
+}
+
+enum EscalationPriority {
+    LOW
+    MEDIUM
+    HIGH
+}
+
+enum EscalationCategory {
+    GENERAL
+    MEDICAL
+    TECHNICAL
+}
+
+enum EscalationStatus {
+    PENDING
+    ASSIGNED
+    RESOLVED
+}
+
+enum EscalationResponsePreference {
+    CALL
+    TEXT
+    CHAT
+}
+
+model Escalation {
+    id           String @id @default(uuid()) @db.Uuid
+    escalationId String @unique @map("escalation_id") @db.VarChar(64)
+
+    // Chatbot context (opaque identifiers supplied by the caller, not foreign keys)
+    userId    String? @map("user_id") @db.VarChar(128)
+    sessionId String? @map("session_id") @db.VarChar(128)
+
+    // Escalated content
+    phoneNumber        String                       @map("phone_number") @db.VarChar(20)
+    originalQuestion   String                       @map("original_question") @db.Text
+    aiResponse         String                       @map("ai_response") @db.Text
+    responsePreference EscalationResponsePreference @map("response_preference")
+    waitingForResponse Boolean                      @default(true) @map("waiting_for_response")
+
+    // Triage
+    priority EscalationPriority @default(MEDIUM)
+    category EscalationCategory @default(GENERAL)
+    status   EscalationStatus   @default(PENDING)
+    coachId  String?            @map("coach_id") @db.VarChar(128)
+
+    // Timeline
+    questionTimestamp   DateTime  @map("question_timestamp")
+    escalationTimestamp DateTime  @default(now()) @map("escalation_timestamp")
+    resolutionTimestamp DateTime? @map("resolution_timestamp")
+
+    // Audit
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    @@index([status, priority, escalationTimestamp])
+    @@map("escalations")
 }

@@ -35,10 +35,11 @@ const nameExtractionSchema = z.object({
  */
 function rePromptOrAbandon(state: OnboardingState, reason: string): Partial<OnboardingState> {
     const fieldAttempts = state.fieldAttempts + 1;
+    const nameAttempts = state.nameAttempts + 1;
     if (fieldAttempts >= MAX_FIELD_ATTEMPTS) {
-        return { step: 'ABANDONED', fieldAttempts, lastValidationError: reason, messages: [new AIMessage(ABANDON_MESSAGE)] };
+        return { step: 'ABANDONED', fieldAttempts, nameAttempts, lastValidationError: reason, messages: [new AIMessage(ABANDON_MESSAGE)] };
     }
-    return { step: 'COLLECT_NAME', fieldAttempts, lastValidationError: reason };
+    return { step: 'COLLECT_NAME', fieldAttempts, nameAttempts, lastValidationError: reason };
 }
 
 /**
@@ -50,7 +51,7 @@ function rePromptOrAbandon(state: OnboardingState, reason: string): Partial<Onbo
 function validateRawReplyOrRePrompt(state: OnboardingState, replyText: string): Partial<OnboardingState> {
     const parsed = NameFieldSchema.safeParse(replyText);
     if (parsed.success) {
-        return { step: 'COLLECT_NAME', collectedName: parsed.data, lastValidationError: null, fieldAttempts: 0 };
+        return { step: 'COLLECT_NAME', collectedName: parsed.data, lastValidationError: null, fieldAttempts: 0, nameAttempts: 0 };
     }
     return rePromptOrAbandon(state, FALLBACK_REPROMPT);
 }
@@ -99,7 +100,7 @@ export async function collectNameNode(state: OnboardingState): Promise<Partial<O
             return rePromptOrAbandon(state, parsed.error.issues[0]?.message ?? NAME_REPROMPT);
         }
 
-        return { step: 'COLLECT_NAME', collectedName: parsed.data, lastValidationError: null, fieldAttempts: 0 };
+        return { step: 'COLLECT_NAME', collectedName: parsed.data, lastValidationError: null, fieldAttempts: 0, nameAttempts: 0 };
     } catch (error) {
         logger.error('collect-name fallback activated: %s', error);
         return validateRawReplyOrRePrompt(state, replyText);

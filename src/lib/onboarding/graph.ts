@@ -5,7 +5,9 @@ import { collectEmailNode } from '@/lib/onboarding/nodes/collect-email';
 import { collectNameNode } from '@/lib/onboarding/nodes/collect-name';
 import { collectPasswordNode } from '@/lib/onboarding/nodes/collect-password';
 import { greetingNode } from '@/lib/onboarding/nodes/greeting';
-import { OnboardingStateAnnotation, type OnboardingState } from '@/lib/onboarding/state';
+import { type OnboardingState, OnboardingStateAnnotation } from '@/lib/onboarding/state';
+
+const MAX_NAME_ATTEMPTS = 3;
 
 /**
  * SCRUM-102: advance once a name has been collected, otherwise loop back for a
@@ -14,7 +16,7 @@ import { OnboardingStateAnnotation, type OnboardingState } from '@/lib/onboardin
  */
 function routeAfterCollectName(state: OnboardingState): typeof END | 'COLLECT_EMAIL' | 'COLLECT_NAME' {
     if (state.collectedName) return 'COLLECT_EMAIL';
-    return state.step === 'ABANDONED' ? END : 'COLLECT_NAME';
+    return state.step === 'ABANDONED' || state.nameAttempts >= MAX_NAME_ATTEMPTS ? END : 'COLLECT_NAME';
 }
 
 /** SCRUM-103: advance once an email has been collected, otherwise loop back for a retry (see routeAfterCollectName). */

@@ -103,7 +103,7 @@ export async function saveUserMessage(sessionId: string, content: string): Promi
     }
 }
 
-export async function saveAiResponse(sessionId: string, content: string, metadata: any): Promise<ChatMessage> {
+export async function saveAiResponse(sessionId: string, content: string, metadata: Prisma.InputJsonValue): Promise<ChatMessage> {
     try {
         const encryptedContent = encryptText(content);
 
@@ -112,7 +112,7 @@ export async function saveAiResponse(sessionId: string, content: string, metadat
                 sessionId,
                 content: encryptedContent,
                 sender: ChatMessageSender.ai,
-                metadata: metadata as Prisma.InputJsonValue,
+                metadata,
             },
         });
     } catch (error) {
