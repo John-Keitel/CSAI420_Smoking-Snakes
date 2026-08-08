@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useState } from 'react';
 
+import { FeedbackAffordance } from '@/components/feedback-affordance';
 import { SiteHeader } from '@/components/site-header';
 import { TypingIndicator } from '@/components/typing-indicator';
 import { clearSession, loadSession, saveSession } from '@/lib/use-session-restore';
@@ -83,7 +84,7 @@ function errorMessage(payload: Record<string, unknown>): string {
 }
 
 export default function ChatAssistant() {
-    const sessionIdRef = useRef<string>(makeSessionId());
+    const [chatSessionId, setChatSessionId] = useState<string>(makeSessionId());
     const [messages, setMessages] = useState<ChatMessage[]>([{ role: 'assistant', message: INITIAL_MESSAGE }]);
     const [currentStep, setCurrentStep] = useState<ChatStep>('name_provided');
     const [collected, setCollected] = useState<CollectedFields>({});
@@ -101,7 +102,7 @@ export default function ChatAssistant() {
         const persisted = loadSession();
         if (!persisted) return;
 
-        sessionIdRef.current = persisted.chatSessionId;
+        setChatSessionId(persisted.chatSessionId);
         setMessages(persisted.messages);
         setCurrentStep(persisted.currentStep);
         // The password was stripped before persistence (WEBRESTORE-03); if the
@@ -122,7 +123,7 @@ export default function ChatAssistant() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 userData: fields,
-                chatSessionId: sessionIdRef.current,
+                chatSessionId,
                 conversationLog: transcript,
                 lastActivity: new Date().toISOString(),
                 locale: 'en-US',
@@ -160,7 +161,7 @@ export default function ChatAssistant() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    chatSessionId: sessionIdRef.current,
+                    chatSessionId,
                     message: value,
                     context: submittedStep,
                 }),
@@ -191,7 +192,7 @@ export default function ChatAssistant() {
                     messages: nextTranscript,
                     currentStep: nextStep,
                     collected: nextFields,
-                    chatSessionId: sessionIdRef.current,
+                    chatSessionId,
                 });
             }
         } catch (error) {
@@ -264,7 +265,9 @@ export default function ChatAssistant() {
                                 Sign in →
                             </Link>
                         </div>
-                    ) : (
+                    ) : null}
+                    {complete ? <FeedbackAffordance chatSessionId={chatSessionId} /> : null}
+                    {!complete ? (
                         <form className="chat-composer" onSubmit={handleSubmit}>
                             <label className="field" htmlFor="chat-draft">
                                 <span className="field-label">{stepInfo.label}</span>
@@ -287,7 +290,7 @@ export default function ChatAssistant() {
                                 <span aria-hidden="true">↗</span>
                             </button>
                         </form>
-                    )}
+                    ) : null}
                 </section>
             </div>
             <footer className="site-footer shell">

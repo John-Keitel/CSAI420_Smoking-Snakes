@@ -844,6 +844,27 @@ input:focus-visible {
     }
 }
 
+.feedback-affordance {
+    margin-top: 12px;
+    padding: 14px 16px;
+    border-top: 1px solid var(--line);
+}
+
+.feedback-question {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+}
+
+.feedback-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.feedback-button {
+    min-width: 64px;
+}
+
 .chat-composer {
     padding-top: 20px;
     border-top: 1px solid var(--line);
