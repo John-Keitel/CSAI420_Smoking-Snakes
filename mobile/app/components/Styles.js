@@ -255,6 +255,22 @@ export function useThemeStyles() {
             marginTop: 8,
             flexShrink: 1,
         },
+        readAloudButton: {
+            marginTop: 6,
+            alignSelf: 'flex-start',
+            paddingVertical: 4,
+            paddingHorizontal: 10,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: colors.border,
+            minHeight: MIN_TOUCH_TARGET,
+            justifyContent: 'center',
+        },
+        readAloudButtonText: {
+            color: colors.primary,
+            fontSize: 13,
+            fontWeight: '600',
+        },
     });
 
     return { styles, colors };

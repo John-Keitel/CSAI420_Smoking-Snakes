@@ -3,6 +3,7 @@ import { Modal, Text, TouchableOpacity, View } from 'react-native';
 
 import { continueSession, registerChatAssisted } from '../../api/chatClient';
 import { fieldForStep, FINAL_CHAT_STEP, INITIAL_CHAT_STEP, toUserData } from '../../lib/stepRules';
+import * as voiceController from '../../lib/voiceController';
 import { MAX_FONT_SCALE, useThemeStyles } from '../Styles';
 import InputBar from './InputBar';
 import MessageList from './MessageList';
@@ -41,6 +42,37 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
     const { styles } = useThemeStyles();
     const [session, setSession] = useState(initialState);
     const [pending, setPending] = useState(false);
+    const [ttsSupported, setTtsSupported] = useState(false);
+
+    // Check TTS support once when the sheet first becomes visible (VOICE-03).
+    // The affordance is hidden entirely on unsupported devices rather than
+    // failing at runtime.
+    useEffect(() => {
+        if (!visible) {
+            return undefined;
+        }
+
+        let cancelled = false;
+        voiceController.isSupported().then((supported) => {
+            if (!cancelled) {
+                setTtsSupported(supported);
+            }
+        });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [visible]);
+
+    // Stop any in-flight speech when the sheet dismisses or unmounts, so a
+    // reply started in a dismissed sheet does not keep talking into the next.
+    useEffect(() => {
+        if (visible) {
+            return undefined;
+        }
+        voiceController.stop();
+        return () => voiceController.stop();
+    }, [visible]);
 
     const applyFailure = useCallback((result) => {
         const message = result.kind === 'invalid' && result.errors?.length > 0 ? result.errors.join('\n') : GENERIC_FAILURE;
@@ -236,7 +268,7 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
                         </TouchableOpacity>
                     </View>
 
-                    <MessageList entries={session.transcript} maskedIndexes={maskedIndexes} />
+                    <MessageList entries={session.transcript} maskedIndexes={maskedIndexes} ttsSupported={ttsSupported} />
 
                     {session.error === null ? null : (
                         <Text style={styles.errorText} testID="chat-error" maxFontSizeMultiplier={MAX_FONT_SCALE}>
