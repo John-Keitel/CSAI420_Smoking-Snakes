@@ -20,12 +20,18 @@ export default defineConfig({
     },
     test: {
         environment: 'node',
+        environmentMatch: {
+            // Component tests render React into a DOM, so they need jsdom.
+            // The rest of the suite (API routes, schemas, libs) stays on node.
+            'src/**/*.test.tsx': 'jsdom',
+        },
         include: [
             '__test__/contract/**/*.test.ts',
             '__test__/e2e/**/*.test.ts',
             '__test__/integration/**/*.test.ts',
             '__test__/integration_tests/**/*.test.ts',
             '__test__/unit/**/*.test.ts',
+            'src/**/*.test.tsx',
         ],
         hookTimeout: 30_000,
         testTimeout: 30_000,
