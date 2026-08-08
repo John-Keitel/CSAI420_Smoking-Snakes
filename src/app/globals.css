@@ -801,6 +801,49 @@ input:focus-visible {
     font-style: italic;
 }
 
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+    font-style: italic;
+    padding: 4px 0;
+}
+
+.typing-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: var(--ink-soft);
+    animation: typing-pulse 1.2s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+.typing-indicator-text {
+    margin-left: 6px;
+}
+
+@keyframes typing-pulse {
+    0%,
+    60%,
+    100% {
+        opacity: 0.25;
+        transform: translateY(0);
+    }
+    30% {
+        opacity: 1;
+        transform: translateY(-4px);
+    }
+}
+
 .chat-composer {
     padding-top: 20px;
     border-top: 1px solid var(--line);

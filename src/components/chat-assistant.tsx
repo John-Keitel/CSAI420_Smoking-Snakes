@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { type FormEvent, useMemo, useRef, useState } from 'react';
 
 import { SiteHeader } from '@/components/site-header';
+import { TypingIndicator } from '@/components/typing-indicator';
 
 type ChatStep =
     | 'initial_greeting'
@@ -204,11 +205,7 @@ export default function ChatAssistant() {
                                 <p>{message.message}</p>
                             </div>
                         ))}
-                        {pending ? (
-                            <div className="chat-pending" aria-label="STEDI is thinking">
-                                STEDI is thinking<span aria-hidden="true">…</span>
-                            </div>
-                        ) : null}
+                        {pending ? <TypingIndicator /> : null}
                     </div>
 
                     {feedback ? (
