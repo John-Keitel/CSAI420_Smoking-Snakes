@@ -102,6 +102,9 @@ jobs:
             - name: Install dependencies
               run: npm ci
 
+            - name: Install Playwright browsers
+              run: npx playwright install --with-deps chromium
+
             - name: Start local infrastructure
               run: docker compose up -d --wait --wait-timeout 60 postgres minio mailpit
 
