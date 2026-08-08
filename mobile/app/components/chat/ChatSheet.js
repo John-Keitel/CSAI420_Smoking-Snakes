@@ -6,6 +6,7 @@ import { fieldForStep, FINAL_CHAT_STEP, INITIAL_CHAT_STEP, toUserData } from '..
 import * as sessionStore from '../../lib/sessionStore';
 import * as voiceController from '../../lib/voiceController';
 import { MAX_FONT_SCALE, useThemeStyles } from '../Styles';
+import FeedbackModal from './FeedbackModal';
 import InputBar from './InputBar';
 import MessageList from './MessageList';
 import TypingIndicator from './TypingIndicator';
@@ -48,6 +49,10 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
     // RESTORE-04: when a restored session was at the password step, the password
     // was stripped and the user must re-enter it.
     const [passwordRePrompt, setPasswordRePrompt] = useState(false);
+    // FEEDBACK-01: show the feedback modal after registration completes, before
+    // the sheet closes. The registered user is held so the parent's onRegistered
+    // fires only when the user dismisses the feedback.
+    const [registeredUser, setRegisteredUser] = useState(null);
 
     // Check TTS support once when the sheet first becomes visible (VOICE-03).
     // The affordance is hidden entirely on unsupported devices rather than
@@ -207,7 +212,9 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
                 // RESTORE-05: the conversation is done; clear the persisted
                 // session so it does not resurrect on the next open.
                 sessionStore.clear();
-                onRegistered?.(result.user);
+                // FEEDBACK-01: hold the user and show the feedback modal; the
+                // parent's onRegistered fires when the user dismisses it.
+                setRegisteredUser(result.user);
                 return;
             }
 
@@ -365,6 +372,15 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
                     )}
                 </View>
             </View>
+            <FeedbackModal
+                visible={registeredUser !== null}
+                chatSessionId={chatSessionId}
+                onDismiss={() => {
+                    const user = registeredUser;
+                    setRegisteredUser(null);
+                    onRegistered?.(user);
+                }}
+            />
         </Modal>
     );
 }

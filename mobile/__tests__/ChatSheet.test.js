@@ -423,6 +423,10 @@ describe('completing registration (INPUT-11, INPUT-15)', () => {
 
         const { onRegistered } = await walkToCompletion();
 
+        // T10: onRegistered now fires when the user dismisses the feedback modal.
+        await screen.findByTestId('feedback-modal');
+        fireEvent.press(screen.getByTestId('feedback-dismiss'));
+
         await waitFor(() => expect(onRegistered).toHaveBeenCalledWith({ id: 'u1', email: 'alex@example.com' }));
     });
 
@@ -529,5 +533,30 @@ describe('invalid registration payload (INPUT-14)', () => {
         await walkToCompletion();
 
         expect(await screen.findByText('userData.phone: phone must be a valid phone number')).toBeTruthy();
+    });
+});
+
+describe('post-chat feedback (FEEDBACK-01 → FEEDBACK-04)', () => {
+    it('shows the feedback modal after registration completes', async () => {
+        registerChatAssisted.mockResolvedValue({ ok: true, user: { id: 'u1', email: 'alex@example.com' } });
+
+        await walkToCompletion();
+
+        expect(await screen.findByTestId('feedback-modal')).toBeTruthy();
+        expect(screen.getByText('Was this onboarding helpful?')).toBeTruthy();
+    });
+
+    it('does not call onRegistered until the user dismisses the feedback', async () => {
+        registerChatAssisted.mockResolvedValue({ ok: true, user: { id: 'u1', email: 'alex@example.com' } });
+        const onRegistered = jest.fn();
+
+        await walkToCompletion({ onRegistered });
+
+        await screen.findByTestId('feedback-modal');
+        expect(onRegistered).not.toHaveBeenCalled();
+
+        fireEvent.press(screen.getByTestId('feedback-dismiss'));
+
+        await waitFor(() => expect(onRegistered).toHaveBeenCalledWith({ id: 'u1', email: 'alex@example.com' }));
     });
 });

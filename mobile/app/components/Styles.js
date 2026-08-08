@@ -284,6 +284,28 @@ export function useThemeStyles() {
             backgroundColor: colors.mutedText,
             marginHorizontal: 3,
         },
+        feedbackSheet: {
+            backgroundColor: colors.background,
+            borderRadius: 16,
+            padding: 24,
+            marginHorizontal: 24,
+            alignItems: 'stretch',
+        },
+        feedbackActions: {
+            flexDirection: 'row',
+            justifyContent: 'space-around',
+            marginVertical: 16,
+        },
+        feedbackButton: {
+            backgroundColor: colors.primary,
+            borderRadius: 8,
+            paddingVertical: 12,
+            paddingHorizontal: 28,
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: MIN_TOUCH_TARGET,
+            minWidth: 88,
+        },
     });
 
     return { styles, colors };
