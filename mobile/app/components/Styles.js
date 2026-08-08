@@ -271,6 +271,19 @@ export function useThemeStyles() {
             fontSize: 13,
             fontWeight: '600',
         },
+        typingIndicator: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: 16,
+            paddingVertical: 8,
+        },
+        typingDot: {
+            width: 8,
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: colors.mutedText,
+            marginHorizontal: 3,
+        },
     });
 
     return { styles, colors };

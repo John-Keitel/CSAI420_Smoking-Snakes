@@ -7,6 +7,7 @@ import * as voiceController from '../../lib/voiceController';
 import { MAX_FONT_SCALE, useThemeStyles } from '../Styles';
 import InputBar from './InputBar';
 import MessageList from './MessageList';
+import TypingIndicator from './TypingIndicator';
 
 /**
  * `message` is required (min 1), so the first prompt cannot be obtained without
@@ -292,7 +293,10 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
                             </TouchableOpacity>
                         </View>
                     ) : (
-                        <InputBar currentStep={effectiveStep} pending={pending} onSubmit={sendTurn} />
+                        <>
+                            <TypingIndicator visible={pending} />
+                            <InputBar currentStep={effectiveStep} pending={pending} onSubmit={sendTurn} />
+                        </>
                     )}
                 </View>
             </View>

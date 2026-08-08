@@ -215,6 +215,27 @@ describe('failure handling', () => {
     });
 });
 
+describe('typing indicator (LOAD-01 → LOAD-03)', () => {
+    it('shows the typing indicator while a turn is pending', () => {
+        // A never-resolving promise keeps pending true.
+        continueSession.mockReturnValue(new Promise(() => {}));
+
+        renderSheet();
+
+        expect(screen.getByTestId('typing-indicator')).toBeTruthy();
+    });
+
+    it('removes the typing indicator once the turn completes', async () => {
+        continueSession.mockResolvedValue(openerTurn());
+
+        renderSheet();
+
+        await screen.findByText(FIRST_PROMPT);
+
+        expect(screen.queryByTestId('typing-indicator')).toBeNull();
+    });
+});
+
 describe('reopening (SHEET-07)', () => {
     it('starts a fresh conversation when a new session id arrives', async () => {
         continueSession.mockResolvedValue(openerTurn());
