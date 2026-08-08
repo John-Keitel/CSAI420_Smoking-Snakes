@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { type FormEvent, useMemo, useRef, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 import { SiteHeader } from '@/components/site-header';
 import { TypingIndicator } from '@/components/typing-indicator';
+import { clearSession, loadSession, saveSession } from '@/lib/use-session-restore';
 
 type ChatStep =
     | 'initial_greeting'
@@ -90,6 +91,26 @@ export default function ChatAssistant() {
     const [pending, setPending] = useState(false);
     const [feedback, setFeedback] = useState<string | null>(null);
     const [complete, setComplete] = useState(false);
+    const [passwordRePrompt, setPasswordRePrompt] = useState(false);
+
+    // WEBRESTORE-02: restore a persisted session on mount so a tab refresh
+    // resumes the conversation instead of dropping it. The synchronous
+    // setState is intentional — it restores from storage before first paint.
+    /* eslint-disable react-hooks/set-state-in-effect */
+    useEffect(() => {
+        const persisted = loadSession();
+        if (!persisted) return;
+
+        sessionIdRef.current = persisted.chatSessionId;
+        setMessages(persisted.messages);
+        setCurrentStep(persisted.currentStep);
+        // The password was stripped before persistence (WEBRESTORE-03); if the
+        // restored step is password_collection, the user must re-enter it.
+        if (persisted.currentStep === 'password_collection') {
+            setPasswordRePrompt(true);
+        }
+    }, []);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     const stepInfo = STEP_COPY[currentStep];
     const stepNumber = Math.min(Math.max(STEP_ORDER.indexOf(currentStep), 1), STEP_ORDER.length - 2);
@@ -160,6 +181,18 @@ export default function ChatAssistant() {
             if (nextStep === 'completion') {
                 await submitRegistration(nextFields, nextTranscript);
                 setComplete(true);
+                // WEBRESTORE-04: the conversation is done; clear the persisted
+                // session so it does not resurrect on refresh.
+                clearSession();
+            } else {
+                // WEBRESTORE-01: persist after each successful turn so a refresh
+                // restores here. The password is stripped inside saveSession.
+                saveSession({
+                    messages: nextTranscript,
+                    currentStep: nextStep,
+                    collected: nextFields,
+                    chatSessionId: sessionIdRef.current,
+                });
             }
         } catch (error) {
             setFeedback(error instanceof Error ? error.message : 'Something went wrong. Please try again.');
@@ -211,6 +244,11 @@ export default function ChatAssistant() {
                     {feedback ? (
                         <div className="status-message status-error" role="alert">
                             {feedback}
+                        </div>
+                    ) : null}
+                    {passwordRePrompt ? (
+                        <div className="status-message status-note" role="status">
+                            Your session was restored. Please re-enter your password to continue.
                         </div>
                     ) : null}
                     {complete ? (
