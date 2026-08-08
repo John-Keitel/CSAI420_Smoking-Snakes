@@ -17,7 +17,7 @@ test.describe('home page (WEBTEST-04)', () => {
 
         await expect(page.getByRole('link', { name: /STEDI home/i })).toBeVisible();
         await expect(page.getByRole('link', { name: /how it works/i })).toBeVisible();
-        await expect(page.getByRole('link', { name: /guided signup/i })).toBeVisible();
+        await expect(page.getByRole('navigation', { name: /primary navigation/i }).getByRole('link', { name: /guided signup/i })).toBeVisible();
     });
 
     test('renders the sign in and start here header actions', async ({ page }) => {
