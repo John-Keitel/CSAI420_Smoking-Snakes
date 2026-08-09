@@ -57,6 +57,7 @@ export default function SignUpScreen() {
                     autoCapitalize="none"
                     autoCorrect={false}
                     textContentType="emailAddress"
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
                     testID="signup-email"
                     accessibilityLabel="Email address"
                     accessibilityHint="Enter the email address for your account"
@@ -73,6 +74,7 @@ export default function SignUpScreen() {
                     autoCapitalize="none"
                     autoCorrect={false}
                     textContentType="newPassword"
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
                     testID="signup-password"
                     accessibilityLabel="Password"
                     accessibilityHint="Enter a password for your account"

@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { FlatList, StyleSheet } from 'react-native';
+import { FlatList, StyleSheet, Text } from 'react-native';
 
 import MessageList, { MASKED_MESSAGE } from '../app/components/chat/MessageList';
+import { MAX_FONT_SCALE } from '../app/components/Styles';
 
 const transcript = [
     { role: 'assistant', message: "I'd be happy to help! What's your name?" },
@@ -136,5 +137,18 @@ describe('overflow (MSG-05)', () => {
         render(<MessageList entries={transcript} />);
 
         expect(screen.getByTestId('chat-transcript').props.horizontal).toBeFalsy();
+    });
+});
+
+describe('font scaling coverage (A11Y-14)', () => {
+    it('caps every rendered bubble at MAX_FONT_SCALE', () => {
+        render(<MessageList entries={transcript} />);
+
+        // Walks every Text actually in the tree rather than asserting on a
+        // hand-picked list, so a bubble added later without the multiplier
+        // fails this test instead of silently shipping.
+        screen.UNSAFE_getAllByType(Text).forEach((node) => {
+            expect(node.props.maxFontSizeMultiplier).toBe(MAX_FONT_SCALE);
+        });
     });
 });

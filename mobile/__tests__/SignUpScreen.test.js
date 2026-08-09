@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Text, TextInput } from 'react-native';
 
+import { MAX_FONT_SCALE } from '../app/components/Styles';
 import { createChatSessionId, MAX_CHAT_SESSION_ID_LENGTH } from '../app/lib/session';
 import SignUpScreen from '../app/screens/SignUpScreen';
 
@@ -97,5 +98,19 @@ describe('Need Help? entry point', () => {
         expect(control.props.accessibilityRole).toBe('button');
         expect(control.props.accessibilityLabel).toEqual(expect.any(String));
         expect(control.props.accessibilityLabel.length).toBeGreaterThan(0);
+    });
+});
+
+describe('font scaling coverage (A11Y-14)', () => {
+    it('caps every Text and TextInput at MAX_FONT_SCALE', () => {
+        render(<SignUpScreen />);
+
+        // Does not reach signup-success: this file's chatClient mock never
+        // resolves continueSession, so registration can never complete here.
+        // That element is exercised (but not asserted on) by accessibility.test.js's
+        // completeViaOneTurn flow.
+        [...screen.UNSAFE_getAllByType(Text), ...screen.UNSAFE_getAllByType(TextInput)].forEach((node) => {
+            expect(node.props.maxFontSizeMultiplier).toBe(MAX_FONT_SCALE);
+        });
     });
 });
