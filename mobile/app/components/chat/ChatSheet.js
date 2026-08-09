@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, findNodeHandle, Modal, Text, TouchableOpacity, View } from 'react-native';
 
 import { continueSession, registerChatAssisted } from '../../api/chatClient';
+import { announce } from '../../lib/accessibility';
 import { fieldForStep, FINAL_CHAT_STEP, INITIAL_CHAT_STEP, toUserData } from '../../lib/stepRules';
 import { MAX_FONT_SCALE, useThemeStyles } from '../Styles';
 import InputBar from './InputBar';
@@ -57,6 +58,16 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
             AccessibilityInfo.setAccessibilityFocus(tag);
         }
     }, [visible]);
+
+    // Speaks a failure the moment it appears (A11Y-11). MessageList already
+    // announces assistant replies, but errors are rendered directly by this
+    // component, so without this a screen reader user who submits a bad
+    // answer hears nothing until they go looking for the error text.
+    useEffect(() => {
+        if (session.error) {
+            announce(session.error);
+        }
+    }, [session.error]);
 
     const applyFailure = useCallback((result) => {
         const message = result.kind === 'invalid' && result.errors?.length > 0 ? result.errors.join('\n') : GENERIC_FAILURE;

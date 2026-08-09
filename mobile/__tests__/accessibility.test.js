@@ -295,3 +295,28 @@ describe('hiding the background from TalkBack while the sheet is open (A11Y-10)'
         expect(screen.getByTestId('signup-scroll').props.importantForAccessibility).toBe('auto');
     });
 });
+
+describe('announcing errors (A11Y-11)', () => {
+    it('announces a chat-level failure', async () => {
+        await openSheet();
+
+        continueSession.mockResolvedValueOnce({ ok: false, kind: 'failed', status: null });
+        fireEvent.changeText(screen.getByTestId('chat-input'), 'Alex Johnson');
+        fireEvent.press(screen.getByTestId('chat-send-button'));
+
+        await screen.findByTestId('chat-error');
+        expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledWith(
+            expect.stringContaining('Something went wrong')
+        );
+    });
+
+    it('announces an inline input validation failure', async () => {
+        await openSheet();
+
+        fireEvent.changeText(screen.getByTestId('chat-input'), '<script>alert(1)</script>');
+        fireEvent.press(screen.getByTestId('chat-send-button'));
+
+        await screen.findByTestId('chat-input-error');
+        expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledWith(expect.stringContaining('cannot contain'));
+    });
+});
