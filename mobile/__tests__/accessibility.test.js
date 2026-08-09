@@ -12,6 +12,19 @@ jest.mock('../app/api/chatClient', () => ({
     registerChatAssisted: jest.fn(),
 }));
 
+// react-test-renderer has no real native view hierarchy, so the actual
+// findNodeHandle always resolves undefined here even though it resolves a
+// real tag on device. `react-native`'s own `findNodeHandle` export is a
+// getter that re-requires this leaf module on every access, so mocking it
+// here (rather than the whole `react-native` package, which would also drag
+// in native-only modules like DevMenu) reaches every caller, including
+// ChatSheet, without disturbing anything else react-native provides.
+jest.mock('react-native/Libraries/ReactNative/RendererProxy', () => {
+    const actual = jest.requireActual('react-native/Libraries/ReactNative/RendererProxy');
+
+    return { ...actual, findNodeHandle: jest.fn(() => 1) };
+});
+
 const FIRST_PROMPT = "I'd be happy to help! What's your name?";
 
 const openerTurn = () => ({
@@ -29,6 +42,7 @@ beforeEach(() => {
     registerChatAssisted.mockResolvedValue({ ok: true, user: { id: 'u1' } });
     jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => {});
     jest.spyOn(AccessibilityInfo, 'isScreenReaderEnabled').mockResolvedValue(false);
+    jest.spyOn(AccessibilityInfo, 'setAccessibilityFocus').mockImplementation(() => {});
 });
 
 afterEach(() => {
@@ -219,5 +233,19 @@ describe('reporting accessibility mode (A11Y-07)', () => {
         });
 
         expect(registerChatAssisted.mock.calls[0][0].accessibilityMode).toBe('screen-reader');
+    });
+});
+
+describe('moving focus into the sheet on open (A11Y-08)', () => {
+    it('moves screen reader focus once the sheet opens', async () => {
+        await openSheet();
+
+        expect(AccessibilityInfo.setAccessibilityFocus).toHaveBeenCalled();
+    });
+
+    it('does not move focus while the sheet is hidden', () => {
+        render(<SignUpScreen />);
+
+        expect(AccessibilityInfo.setAccessibilityFocus).not.toHaveBeenCalled();
     });
 });

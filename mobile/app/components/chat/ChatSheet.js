@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Modal, Text, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AccessibilityInfo, findNodeHandle, Modal, Text, TouchableOpacity, View } from 'react-native';
 
 import { continueSession, registerChatAssisted } from '../../api/chatClient';
 import { fieldForStep, FINAL_CHAT_STEP, INITIAL_CHAT_STEP, toUserData } from '../../lib/stepRules';
@@ -41,6 +41,22 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
     const { styles } = useThemeStyles();
     const [session, setSession] = useState(initialState);
     const [pending, setPending] = useState(false);
+    const titleRef = useRef(null);
+
+    // Moves screen reader focus onto the sheet title as soon as it opens
+    // (A11Y-08), so VoiceOver/TalkBack users land somewhere meaningful instead
+    // of having to explore the whole screen to discover the modal appeared.
+    useEffect(() => {
+        if (!visible) {
+            return;
+        }
+
+        const tag = findNodeHandle(titleRef.current);
+
+        if (tag) {
+            AccessibilityInfo.setAccessibilityFocus(tag);
+        }
+    }, [visible]);
 
     const applyFailure = useCallback((result) => {
         const message = result.kind === 'invalid' && result.errors?.length > 0 ? result.errors.join('\n') : GENERIC_FAILURE;
@@ -219,7 +235,7 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
 
                 <View style={styles.sheet} accessibilityViewIsModal testID="chat-sheet-surface">
                     <View style={styles.sheetHeader}>
-                        <Text style={styles.sheetTitle} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+                        <Text ref={titleRef} accessible style={styles.sheetTitle} maxFontSizeMultiplier={MAX_FONT_SCALE}>
                             Sign up assistant
                         </Text>
                         <TouchableOpacity
