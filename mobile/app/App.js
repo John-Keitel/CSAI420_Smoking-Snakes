@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView, StyleSheet } from 'react-native';
 
+import NetworkBanner from './components/NetworkBanner';
 import SignUpScreen from './screens/SignUpScreen';
 
 const styles = StyleSheet.create({
@@ -18,6 +19,9 @@ export default function App() {
     return (
         <SafeAreaView style={styles.root}>
             <StatusBar style="auto" />
+            {/* Mounted above SignUpScreen so it stays visible whether or not
+                the chat sheet is open. */}
+            <NetworkBanner />
             <SignUpScreen />
         </SafeAreaView>
     );
