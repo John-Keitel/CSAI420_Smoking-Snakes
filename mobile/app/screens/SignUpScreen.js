@@ -47,9 +47,20 @@ export default function SignUpScreen() {
         setChatSessionId(null);
     }, []);
 
+    // accessibilityViewIsModal on the sheet (ChatSheet.js) only constrains
+    // VoiceOver; Android has no equivalent, so TalkBack can otherwise swipe
+    // past the open modal into this form. Hiding it explicitly while the
+    // sheet is open (A11Y-10) keeps both platforms behaving the same way.
+    const chatOpen = chatSessionId !== null;
+
     return (
         <View style={styles.screenRoot}>
-            <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
+            <ScrollView
+                testID="signup-scroll"
+                contentContainerStyle={styles.screen}
+                keyboardShouldPersistTaps="handled"
+                importantForAccessibility={chatOpen ? 'no-hide-descendants' : 'auto'}
+            >
                 <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_SCALE}>
                     Create your account
                 </Text>

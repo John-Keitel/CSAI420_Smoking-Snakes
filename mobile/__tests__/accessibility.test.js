@@ -269,3 +269,29 @@ describe('restoring focus to the trigger on dismiss (A11Y-09)', () => {
         expect(AccessibilityInfo.setAccessibilityFocus).toHaveBeenCalled();
     });
 });
+
+describe('hiding the background from TalkBack while the sheet is open (A11Y-10)', () => {
+    it('leaves the form reachable before the sheet opens', () => {
+        render(<SignUpScreen />);
+
+        expect(screen.getByTestId('signup-scroll').props.importantForAccessibility).toBe('auto');
+    });
+
+    it('hides the form from TalkBack once the sheet opens', async () => {
+        await openSheet();
+
+        // `no-hide-descendants` takes the whole subtree out of the accessibility
+        // tree, so RNTL treats it the same as a hidden element.
+        expect(screen.getByTestId('signup-scroll', { includeHiddenElements: true }).props.importantForAccessibility).toBe(
+            'no-hide-descendants'
+        );
+    });
+
+    it('makes the form reachable again once the sheet is dismissed', async () => {
+        await openSheet();
+
+        fireEvent.press(screen.getByTestId('chat-close-button'));
+
+        expect(screen.getByTestId('signup-scroll').props.importantForAccessibility).toBe('auto');
+    });
+});
