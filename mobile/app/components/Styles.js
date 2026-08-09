@@ -116,6 +116,13 @@ export function useThemeStyles() {
             justifyContent: 'center',
             minHeight: MIN_TOUCH_TARGET,
         },
+        // `onPrimary` against a `primary`-filled button: verified at 8.55:1
+        // (light) / 6.75:1 (dark), so the ring reads clearly against the
+        // button's own background instead of disappearing into it.
+        buttonFocused: {
+            borderWidth: 2,
+            borderColor: colors.onPrimary,
+        },
         buttonText: {
             color: colors.onPrimary,
             fontSize: 16,
@@ -131,6 +138,12 @@ export function useThemeStyles() {
             justifyContent: 'center',
             minHeight: MIN_TOUCH_TARGET,
             minWidth: MIN_TOUCH_TARGET,
+        },
+        // Already has a 1px primary border at rest; focus just thickens it -
+        // changing the color too would be redundant since it is already the
+        // resting-state color.
+        secondaryButtonFocused: {
+            borderWidth: 3,
         },
         secondaryButtonText: {
             color: colors.primary,
@@ -173,6 +186,12 @@ export function useThemeStyles() {
             minHeight: MIN_TOUCH_TARGET,
             alignItems: 'center',
             justifyContent: 'center',
+        },
+        // Has no border at rest, unlike secondaryButton, so focus needs to add
+        // one rather than just thicken it.
+        closeButtonFocused: {
+            borderWidth: 2,
+            borderColor: colors.primary,
         },
         closeButtonText: {
             fontSize: 17,
@@ -247,6 +266,10 @@ export function useThemeStyles() {
             justifyContent: 'center',
             minHeight: MIN_TOUCH_TARGET,
             minWidth: MIN_TOUCH_TARGET,
+        },
+        sendButtonFocused: {
+            borderWidth: 2,
+            borderColor: colors.onPrimary,
         },
         sendButtonDisabled: {
             opacity: 0.5,

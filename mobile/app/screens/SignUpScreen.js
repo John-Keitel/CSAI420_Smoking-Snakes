@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import ChatSheet from '../components/chat/ChatSheet';
 import { MAX_FONT_SCALE, useThemeStyles } from '../components/Styles';
@@ -16,6 +16,8 @@ export default function SignUpScreen() {
     const [password, setPassword] = useState('');
     const [emailFocused, setEmailFocused] = useState(false);
     const [passwordFocused, setPasswordFocused] = useState(false);
+    const [submitFocused, setSubmitFocused] = useState(false);
+    const [needHelpFocused, setNeedHelpFocused] = useState(false);
     const [chatSessionId, setChatSessionId] = useState(null);
     const [registeredUser, setRegisteredUser] = useState(null);
     const screenReaderEnabled = useScreenReaderEnabled();
@@ -84,8 +86,10 @@ export default function SignUpScreen() {
                     accessibilityHint="Enter a password for your account"
                 />
 
-                <TouchableOpacity
-                    style={styles.button}
+                <Pressable
+                    style={[styles.button, submitFocused && styles.buttonFocused]}
+                    onFocus={() => setSubmitFocused(true)}
+                    onBlur={() => setSubmitFocused(false)}
                     testID="signup-submit"
                     accessibilityRole="button"
                     accessibilityLabel="Sign up"
@@ -94,7 +98,7 @@ export default function SignUpScreen() {
                     <Text style={styles.buttonText} maxFontSizeMultiplier={MAX_FONT_SCALE}>
                         Sign up
                     </Text>
-                </TouchableOpacity>
+                </Pressable>
 
                 {registeredUser === null ? null : (
                     <Text
@@ -108,9 +112,11 @@ export default function SignUpScreen() {
                 )}
 
                 <View style={styles.helpRow}>
-                    <TouchableOpacity
-                        style={styles.secondaryButton}
+                    <Pressable
+                        style={[styles.secondaryButton, needHelpFocused && styles.secondaryButtonFocused]}
                         onPress={openChat}
+                        onFocus={() => setNeedHelpFocused(true)}
+                        onBlur={() => setNeedHelpFocused(false)}
                         testID="need-help-button"
                         accessibilityRole="button"
                         accessibilityLabel="Need help? Sign up by chat instead"
@@ -119,7 +125,7 @@ export default function SignUpScreen() {
                         <Text style={styles.secondaryButtonText} maxFontSizeMultiplier={MAX_FONT_SCALE}>
                             Need Help?
                         </Text>
-                    </TouchableOpacity>
+                    </Pressable>
                 </View>
             </ScrollView>
 

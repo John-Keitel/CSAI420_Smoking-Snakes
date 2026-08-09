@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Modal, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
 
 import { continueSession, registerChatAssisted } from '../../api/chatClient';
 import { fieldForStep, FINAL_CHAT_STEP, INITIAL_CHAT_STEP, toUserData } from '../../lib/stepRules';
@@ -41,6 +41,8 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
     const { styles } = useThemeStyles();
     const [session, setSession] = useState(initialState);
     const [pending, setPending] = useState(false);
+    const [closeFocused, setCloseFocused] = useState(false);
+    const [restartFocused, setRestartFocused] = useState(false);
 
     const applyFailure = useCallback((result) => {
         const message = result.kind === 'invalid' && result.errors?.length > 0 ? result.errors.join('\n') : GENERIC_FAILURE;
@@ -222,9 +224,11 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
                         <Text style={styles.sheetTitle} maxFontSizeMultiplier={MAX_FONT_SCALE}>
                             Sign up assistant
                         </Text>
-                        <TouchableOpacity
-                            style={styles.closeButton}
+                        <Pressable
+                            style={[styles.closeButton, closeFocused && styles.closeButtonFocused]}
                             onPress={onDismiss}
+                            onFocus={() => setCloseFocused(true)}
+                            onBlur={() => setCloseFocused(false)}
                             testID="chat-close-button"
                             accessibilityRole="button"
                             accessibilityLabel="Close the sign up assistant"
@@ -233,7 +237,7 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
                             <Text style={styles.closeButtonText} maxFontSizeMultiplier={MAX_FONT_SCALE}>
                                 Done
                             </Text>
-                        </TouchableOpacity>
+                        </Pressable>
                     </View>
 
                     <MessageList entries={session.transcript} maskedIndexes={maskedIndexes} />
@@ -246,9 +250,11 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
 
                     {session.expired ? (
                         <View style={styles.inputBar}>
-                            <TouchableOpacity
-                                style={styles.button}
+                            <Pressable
+                                style={[styles.button, restartFocused && styles.buttonFocused]}
                                 onPress={onRestart ?? onDismiss}
+                                onFocus={() => setRestartFocused(true)}
+                                onBlur={() => setRestartFocused(false)}
                                 testID="chat-restart-button"
                                 accessibilityRole="button"
                                 accessibilityLabel="Start a new sign up chat"
@@ -257,7 +263,7 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
                                 <Text style={styles.buttonText} maxFontSizeMultiplier={MAX_FONT_SCALE}>
                                     Start over
                                 </Text>
-                            </TouchableOpacity>
+                            </Pressable>
                         </View>
                     ) : (
                         <InputBar currentStep={effectiveStep} pending={pending} onSubmit={sendTurn} />

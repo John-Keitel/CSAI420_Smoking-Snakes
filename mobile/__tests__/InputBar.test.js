@@ -168,7 +168,7 @@ describe('per-step validation blocks advance (INPUT-06 to INPUT-10)', () => {
     });
 });
 
-describe('focus indicator (A11Y-13)', () => {
+describe('focus indicator on the input field (A11Y-13)', () => {
     it('shows a visibly thicker border once the field is focused', () => {
         renderBar();
         const restingStyle = StyleSheet.flatten(screen.getByTestId('chat-input').props.style);
@@ -188,5 +188,37 @@ describe('focus indicator (A11Y-13)', () => {
         fireEvent(screen.getByTestId('chat-input'), 'blur');
 
         expect(StyleSheet.flatten(screen.getByTestId('chat-input').props.style)).toEqual(restingStyle);
+    });
+});
+
+describe('focus indicator on the send button (A11Y-13)', () => {
+    it('adds a visible border once focused, where none exists at rest', () => {
+        renderBar();
+        const restingStyle = StyleSheet.flatten(screen.getByTestId('chat-send-button').props.style);
+        expect(restingStyle.borderWidth).toBeFalsy();
+
+        fireEvent(screen.getByTestId('chat-send-button'), 'focus');
+
+        const focusedStyle = StyleSheet.flatten(screen.getByTestId('chat-send-button').props.style);
+        expect(focusedStyle.borderWidth).toBeGreaterThan(0);
+        expect(focusedStyle.borderColor).toBeTruthy();
+    });
+
+    it('reverts to the resting style once focus is lost', () => {
+        renderBar();
+        const restingStyle = StyleSheet.flatten(screen.getByTestId('chat-send-button').props.style);
+
+        fireEvent(screen.getByTestId('chat-send-button'), 'focus');
+        fireEvent(screen.getByTestId('chat-send-button'), 'blur');
+
+        expect(StyleSheet.flatten(screen.getByTestId('chat-send-button').props.style)).toEqual(restingStyle);
+    });
+
+    it('still disables the button while pending, even if it was focused first', () => {
+        renderBar({ pending: true });
+
+        fireEvent(screen.getByTestId('chat-send-button'), 'focus');
+
+        expect(screen.getByTestId('chat-send-button').props.accessibilityState.disabled).toBe(true);
     });
 });

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
 
 import { inputPropsForStep, validate } from '../../lib/stepRules';
 import { MAX_FONT_SCALE, useThemeStyles } from '../Styles';
@@ -23,6 +23,7 @@ export default function InputBar({ currentStep, pending, onSubmit }) {
     const [draft, setDraft] = useState('');
     const [error, setError] = useState(null);
     const [focused, setFocused] = useState(false);
+    const [sendFocused, setSendFocused] = useState(false);
 
     const inputProps = inputPropsForStep(currentStep);
     const isSecure = inputProps.secureTextEntry === true;
@@ -74,9 +75,11 @@ export default function InputBar({ currentStep, pending, onSubmit }) {
                     accessibilityLabel="Your reply"
                     accessibilityHint="Enter your answer to the current question"
                 />
-                <TouchableOpacity
-                    style={[styles.sendButton, pending ? styles.sendButtonDisabled : null]}
+                <Pressable
+                    style={[styles.sendButton, sendFocused && styles.sendButtonFocused, pending ? styles.sendButtonDisabled : null]}
                     onPress={handleSubmit}
+                    onFocus={() => setSendFocused(true)}
+                    onBlur={() => setSendFocused(false)}
                     disabled={pending}
                     testID="chat-send-button"
                     accessibilityRole="button"
@@ -86,7 +89,7 @@ export default function InputBar({ currentStep, pending, onSubmit }) {
                     <Text style={styles.sendButtonText} maxFontSizeMultiplier={MAX_FONT_SCALE}>
                         {pending ? '...' : 'Send'}
                     </Text>
-                </TouchableOpacity>
+                </Pressable>
             </View>
 
             {error === null ? null : (
