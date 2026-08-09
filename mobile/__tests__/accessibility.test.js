@@ -249,3 +249,23 @@ describe('moving focus into the sheet on open (A11Y-08)', () => {
         expect(AccessibilityInfo.setAccessibilityFocus).not.toHaveBeenCalled();
     });
 });
+
+describe('restoring focus to the trigger on dismiss (A11Y-09)', () => {
+    it('returns screen reader focus to the Need Help control after the close button is used', async () => {
+        await openSheet();
+        AccessibilityInfo.setAccessibilityFocus.mockClear(); // discard the A11Y-08 call from opening
+
+        fireEvent.press(screen.getByTestId('chat-close-button'));
+
+        expect(AccessibilityInfo.setAccessibilityFocus).toHaveBeenCalled();
+    });
+
+    it('returns screen reader focus to the Need Help control after the backdrop is used', async () => {
+        await openSheet();
+        AccessibilityInfo.setAccessibilityFocus.mockClear();
+
+        fireEvent.press(screen.getByTestId('chat-backdrop', { includeHiddenElements: true }));
+
+        expect(AccessibilityInfo.setAccessibilityFocus).toHaveBeenCalled();
+    });
+});

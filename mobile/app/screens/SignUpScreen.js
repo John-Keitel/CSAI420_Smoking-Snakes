@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { AccessibilityInfo, findNodeHandle, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import ChatSheet from '../components/chat/ChatSheet';
 import { MAX_FONT_SCALE, useThemeStyles } from '../components/Styles';
@@ -17,6 +17,7 @@ export default function SignUpScreen() {
     const [chatSessionId, setChatSessionId] = useState(null);
     const [registeredUser, setRegisteredUser] = useState(null);
     const screenReaderEnabled = useScreenReaderEnabled();
+    const needHelpRef = useRef(null);
 
     // A session id is minted per opening rather than per mount: dismissing the
     // sheet ends that conversation, and reopening starts a fresh one (SHEET-07).
@@ -25,8 +26,18 @@ export default function SignUpScreen() {
         setChatSessionId(createChatSessionId());
     }, []);
 
+    // Returns screen reader focus to the control that opened the sheet
+    // (A11Y-09). Without this, dismissing without completing registration
+    // strands VoiceOver/TalkBack wherever focus last was inside the now-closed
+    // modal instead of back on the screen the user is looking at.
     const closeChat = useCallback(() => {
         setChatSessionId(null);
+
+        const tag = findNodeHandle(needHelpRef.current);
+
+        if (tag) {
+            AccessibilityInfo.setAccessibilityFocus(tag);
+        }
     }, []);
 
     // The confirmation belongs on the screen rather than inside the sheet, so it
@@ -103,6 +114,7 @@ export default function SignUpScreen() {
 
                 <View style={styles.helpRow}>
                     <TouchableOpacity
+                        ref={needHelpRef}
                         style={styles.secondaryButton}
                         onPress={openChat}
                         testID="need-help-button"
