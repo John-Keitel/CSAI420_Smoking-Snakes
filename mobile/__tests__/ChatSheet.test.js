@@ -2,10 +2,20 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 
 import { continueSession, registerChatAssisted } from '../app/api/chatClient';
 import ChatSheet, { OPENER_MESSAGE } from '../app/components/chat/ChatSheet';
+import { errorOccurred } from '../app/lib/hapticController';
 
 jest.mock('../app/api/chatClient', () => ({
     continueSession: jest.fn(),
     registerChatAssisted: jest.fn(),
+}));
+
+// InputBar (rendered as a child) also imports messageSent from this module,
+// so both exports need a mock here even though this file only asserts on
+// errorOccurred - otherwise any test that sends a message crashes with
+// "messageSent is not a function" instead of the module being untouched.
+jest.mock('../app/lib/hapticController', () => ({
+    errorOccurred: jest.fn(),
+    messageSent: jest.fn(),
 }));
 
 const FIRST_PROMPT = "I'd be happy to help! What's your name?";
@@ -414,5 +424,25 @@ describe('invalid registration payload (INPUT-14)', () => {
         await walkToCompletion();
 
         expect(await screen.findByText('userData.phone: phone must be a valid phone number')).toBeTruthy();
+    });
+});
+
+describe('haptic feedback on error (HAPTIC-02)', () => {
+    it('fires once a failure surfaces', async () => {
+        continueSession.mockResolvedValue({ ok: false, kind: 'failed', status: null });
+
+        renderSheet();
+
+        await screen.findByTestId('chat-error');
+        expect(errorOccurred).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not fire while there is no error', async () => {
+        continueSession.mockResolvedValue(openerTurn());
+
+        renderSheet();
+        await screen.findByText(FIRST_PROMPT);
+
+        expect(errorOccurred).not.toHaveBeenCalled();
     });
 });

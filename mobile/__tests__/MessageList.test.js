@@ -2,6 +2,11 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { FlatList, StyleSheet } from 'react-native';
 
 import MessageList, { MASKED_MESSAGE } from '../app/components/chat/MessageList';
+import { speak } from '../app/lib/voiceController';
+
+jest.mock('../app/lib/voiceController', () => ({
+    speak: jest.fn(),
+}));
 
 const transcript = [
     { role: 'assistant', message: "I'd be happy to help! What's your name?" },
@@ -11,6 +16,7 @@ const transcript = [
 
 afterEach(() => {
     jest.restoreAllMocks();
+    speak.mockClear();
 });
 
 describe('rendering the transcript (MSG-01)', () => {
@@ -136,5 +142,36 @@ describe('overflow (MSG-05)', () => {
         render(<MessageList entries={transcript} />);
 
         expect(screen.getByTestId('chat-transcript').props.horizontal).toBeFalsy();
+    });
+});
+
+describe('audio cue for new assistant replies', () => {
+    it('speaks a new assistant reply', () => {
+        render(<MessageList entries={[{ role: 'assistant', message: 'Hello there' }]} />);
+
+        expect(speak).toHaveBeenCalledWith('Hello there');
+    });
+
+    it('does not speak the same reply twice across rerenders', () => {
+        const entries = [{ role: 'assistant', message: 'Hello there' }];
+        const { rerender } = render(<MessageList entries={entries} />);
+        speak.mockClear();
+
+        rerender(<MessageList entries={entries} />);
+
+        expect(speak).not.toHaveBeenCalled();
+    });
+
+    it('does not speak the user echoing their own turn', () => {
+        render(
+            <MessageList
+                entries={[
+                    { role: 'assistant', message: 'Hello there' },
+                    { role: 'user', message: 'Alex Johnson' },
+                ]}
+            />
+        );
+
+        expect(speak).not.toHaveBeenCalledWith('Alex Johnson');
     });
 });

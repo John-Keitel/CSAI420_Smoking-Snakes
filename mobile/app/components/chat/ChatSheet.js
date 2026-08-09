@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Modal, Text, TouchableOpacity, View } from 'react-native';
 
 import { continueSession, registerChatAssisted } from '../../api/chatClient';
+import { errorOccurred } from '../../lib/hapticController';
 import { fieldForStep, FINAL_CHAT_STEP, INITIAL_CHAT_STEP, toUserData } from '../../lib/stepRules';
 import { MAX_FONT_SCALE, useThemeStyles } from '../Styles';
 import InputBar from './InputBar';
@@ -41,6 +42,15 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
     const { styles } = useThemeStyles();
     const [session, setSession] = useState(initialState);
     const [pending, setPending] = useState(false);
+
+    // Fires on every path that sets session.error - applyFailure below, plus
+    // the duplicate-email and expired-session branches in submitRegistration -
+    // rather than duplicating a haptic call at each of those sites.
+    useEffect(() => {
+        if (session.error) {
+            errorOccurred();
+        }
+    }, [session.error]);
 
     const applyFailure = useCallback((result) => {
         const message = result.kind === 'invalid' && result.errors?.length > 0 ? result.errors.join('\n') : GENERIC_FAILURE;

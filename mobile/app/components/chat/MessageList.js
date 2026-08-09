@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { FlatList, Text, View } from 'react-native';
 
 import { announce } from '../../lib/accessibility';
+import { speak } from '../../lib/voiceController';
 import { MAX_FONT_SCALE, useThemeStyles } from '../Styles';
 
 /** Stand-in for a credential turn. The typed characters never reach a Text node. */
@@ -27,7 +28,9 @@ export default function MessageList({ entries, maskedIndexes = NO_MASKED_INDEXES
     const announcedRef = useRef(null);
 
     // A new reply arrives below the fold, so a screen reader user would otherwise
-    // have to go looking for it.
+    // have to go looking for it. The same guard also gates the audio cue
+    // (HAPTIC/VOICE wiring) below, so a re-render never re-speaks or re-announces
+    // a message this effect already handled.
     useEffect(() => {
         const latest = entries[entries.length - 1];
 
@@ -37,6 +40,9 @@ export default function MessageList({ entries, maskedIndexes = NO_MASKED_INDEXES
 
         announcedRef.current = latest.message;
         announce(latest.message);
+        // speak() stops any in-flight utterance itself before starting the next
+        // one, so turns never overlap even if replies arrive close together.
+        speak(latest.message);
     }, [entries]);
 
     const scrollToEnd = useCallback(() => {

@@ -2,6 +2,11 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { Platform } from 'react-native';
 
 import InputBar, { KEYBOARD_BEHAVIOR } from '../app/components/chat/InputBar';
+import { messageSent } from '../app/lib/hapticController';
+
+jest.mock('../app/lib/hapticController', () => ({
+    messageSent: jest.fn(),
+}));
 
 /** The error Text holds a single string child. */
 const errorText = () => screen.getByTestId('chat-input-error').props.children;
@@ -165,5 +170,41 @@ describe('per-step validation blocks advance (INPUT-06 to INPUT-10)', () => {
         send();
 
         expect(onSubmit).toHaveBeenCalledWith('Alex');
+    });
+});
+
+describe('haptic feedback on send (HAPTIC-01)', () => {
+    // beforeEach, not afterEach: earlier describes in this file also call
+    // send(), which now also fires messageSent - clearing only after this
+    // block's own tests would leave those earlier calls counted here too.
+    beforeEach(() => {
+        messageSent.mockClear();
+    });
+
+    it('fires once a message actually sends', () => {
+        renderBar();
+
+        type('Alex Johnson');
+        send();
+
+        expect(messageSent).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not fire when validation rejects the input', () => {
+        renderBar({ currentStep: 'email_collection' });
+
+        type('invalid-email');
+        send();
+
+        expect(messageSent).not.toHaveBeenCalled();
+    });
+
+    it('does not fire for an empty draft', () => {
+        renderBar();
+
+        type('   ');
+        send();
+
+        expect(messageSent).not.toHaveBeenCalled();
     });
 });

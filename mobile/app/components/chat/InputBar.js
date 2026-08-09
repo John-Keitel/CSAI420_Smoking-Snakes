@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
+import { messageSent } from '../../lib/hapticController';
 import { inputPropsForStep, validate } from '../../lib/stepRules';
 import { MAX_FONT_SCALE, useThemeStyles } from '../Styles';
 
@@ -53,6 +54,9 @@ export default function InputBar({ currentStep, pending, onSubmit }) {
         setError(null);
         setDraft('');
         onSubmit(value);
+        // Fires only on an actual send - not on a validation failure or an
+        // empty draft above - matching what "sending a message" means.
+        messageSent();
     }, [currentStep, draft, isSecure, onSubmit, pending]);
 
     return (
