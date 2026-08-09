@@ -22,6 +22,7 @@ export default function InputBar({ currentStep, pending, onSubmit }) {
     const { styles } = useThemeStyles();
     const [draft, setDraft] = useState('');
     const [error, setError] = useState(null);
+    const [focused, setFocused] = useState(false);
 
     const inputProps = inputPropsForStep(currentStep);
     const isSecure = inputProps.secureTextEntry === true;
@@ -60,10 +61,12 @@ export default function InputBar({ currentStep, pending, onSubmit }) {
             <View style={styles.inputRow}>
                 <TextInput
                     {...inputProps}
-                    style={styles.chatInput}
+                    style={[styles.chatInput, focused && styles.chatInputFocused]}
                     value={draft}
                     onChangeText={handleChange}
                     onSubmitEditing={handleSubmit}
+                    onFocus={() => setFocused(true)}
+                    onBlur={() => setFocused(false)}
                     editable={!pending}
                     multiline={!isSecure}
                     maxFontSizeMultiplier={MAX_FONT_SCALE}

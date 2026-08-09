@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { Platform } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 
 import InputBar, { KEYBOARD_BEHAVIOR } from '../app/components/chat/InputBar';
 
@@ -165,5 +165,28 @@ describe('per-step validation blocks advance (INPUT-06 to INPUT-10)', () => {
         send();
 
         expect(onSubmit).toHaveBeenCalledWith('Alex');
+    });
+});
+
+describe('focus indicator (A11Y-13)', () => {
+    it('shows a visibly thicker border once the field is focused', () => {
+        renderBar();
+        const restingStyle = StyleSheet.flatten(screen.getByTestId('chat-input').props.style);
+
+        fireEvent(screen.getByTestId('chat-input'), 'focus');
+        const focusedStyle = StyleSheet.flatten(screen.getByTestId('chat-input').props.style);
+
+        expect(focusedStyle.borderWidth).toBeGreaterThan(restingStyle.borderWidth);
+        expect(focusedStyle.borderColor).not.toBe(restingStyle.borderColor);
+    });
+
+    it('reverts to the resting border once the field loses focus', () => {
+        renderBar();
+        const restingStyle = StyleSheet.flatten(screen.getByTestId('chat-input').props.style);
+
+        fireEvent(screen.getByTestId('chat-input'), 'focus');
+        fireEvent(screen.getByTestId('chat-input'), 'blur');
+
+        expect(StyleSheet.flatten(screen.getByTestId('chat-input').props.style)).toEqual(restingStyle);
     });
 });

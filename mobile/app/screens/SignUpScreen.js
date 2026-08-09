@@ -14,6 +14,8 @@ export default function SignUpScreen() {
     const { styles } = useThemeStyles();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [emailFocused, setEmailFocused] = useState(false);
+    const [passwordFocused, setPasswordFocused] = useState(false);
     const [chatSessionId, setChatSessionId] = useState(null);
     const [registeredUser, setRegisteredUser] = useState(null);
     const screenReaderEnabled = useScreenReaderEnabled();
@@ -50,9 +52,11 @@ export default function SignUpScreen() {
                     Email
                 </Text>
                 <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, emailFocused && styles.textInputFocused]}
                     value={email}
                     onChangeText={setEmail}
+                    onFocus={() => setEmailFocused(true)}
+                    onBlur={() => setEmailFocused(false)}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -66,9 +70,11 @@ export default function SignUpScreen() {
                     Password
                 </Text>
                 <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, passwordFocused && styles.textInputFocused]}
                     value={password}
                     onChangeText={setPassword}
+                    onFocus={() => setPasswordFocused(true)}
+                    onBlur={() => setPasswordFocused(false)}
                     secureTextEntry
                     autoCapitalize="none"
                     autoCorrect={false}

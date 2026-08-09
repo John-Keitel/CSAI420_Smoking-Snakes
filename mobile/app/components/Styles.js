@@ -100,6 +100,13 @@ export function useThemeStyles() {
             backgroundColor: colors.surface,
             marginBottom: 16,
         },
+        // RN has no CSS :focus; onFocus/onBlur + a conditional style is the
+        // mechanism (A11Y-13). `primary` already clears 3:1 against both
+        // `background` and `surface`, so it doubles as the focus ring color.
+        textInputFocused: {
+            borderColor: colors.primary,
+            borderWidth: 2,
+        },
         button: {
             backgroundColor: colors.primary,
             borderRadius: 8,
@@ -227,6 +234,10 @@ export function useThemeStyles() {
             marginRight: 8,
             maxHeight: 120,
             minHeight: MIN_TOUCH_TARGET,
+        },
+        chatInputFocused: {
+            borderColor: colors.primary,
+            borderWidth: 2,
         },
         sendButton: {
             backgroundColor: colors.primary,

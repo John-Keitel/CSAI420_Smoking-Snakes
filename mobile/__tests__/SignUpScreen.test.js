@@ -99,3 +99,33 @@ describe('Need Help? entry point', () => {
         expect(control.props.accessibilityLabel.length).toBeGreaterThan(0);
     });
 });
+
+describe('focus indicator on the email and password fields (A11Y-13)', () => {
+    it.each([
+        ['email', 'signup-email'],
+        ['password', 'signup-password'],
+    ])('shows a visibly thicker border on the %s field once focused', (_label, testID) => {
+        render(<SignUpScreen />);
+        const field = screen.getByTestId(testID);
+        const restingStyle = StyleSheet.flatten(field.props.style);
+
+        fireEvent(field, 'focus');
+        const focusedStyle = StyleSheet.flatten(screen.getByTestId(testID).props.style);
+
+        expect(focusedStyle.borderWidth).toBeGreaterThan(restingStyle.borderWidth);
+        expect(focusedStyle.borderColor).not.toBe(restingStyle.borderColor);
+    });
+
+    it.each([
+        ['email', 'signup-email'],
+        ['password', 'signup-password'],
+    ])('reverts the %s field to its resting border once it loses focus', (_label, testID) => {
+        render(<SignUpScreen />);
+        const restingStyle = StyleSheet.flatten(screen.getByTestId(testID).props.style);
+
+        fireEvent(screen.getByTestId(testID), 'focus');
+        fireEvent(screen.getByTestId(testID), 'blur');
+
+        expect(StyleSheet.flatten(screen.getByTestId(testID).props.style)).toEqual(restingStyle);
+    });
+});
