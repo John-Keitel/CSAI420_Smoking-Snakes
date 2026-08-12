@@ -21,6 +21,11 @@ jest.mock('expo-crypto', () => {
     };
 });
 
+// The package ships its own mock rather than a hand-rolled one; it already
+// mirrors the real NetInfoState shape (isConnected/isInternetReachable) and
+// defaults to "online" so existing tests are unaffected unless they opt in.
+jest.mock('@react-native-community/netinfo', () => require('@react-native-community/netinfo/jest/netinfo-mock'));
+
 // AsyncStorage's native module is unavailable under jest-expo; mock the JS
 // surface with an in-memory store so sessionStore and any importer of
 // ChatSheet render without the native bridge. Individual tests that need to
