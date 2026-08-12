@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, AppState, findNodeHandle, Modal, Text, TouchableOpacity, View } from 'react-native';
+import { AccessibilityInfo, AppState, findNodeHandle, Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
 
 import { continueSession, registerChatAssisted } from '../../api/chatClient';
 import { announce } from '../../lib/accessibility';
@@ -46,6 +46,8 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
     const { styles } = useThemeStyles();
     const [session, setSession] = useState(initialState);
     const [pending, setPending] = useState(false);
+const [closeFocused, setCloseFocused] = useState(false);
+    const [restartFocused, setRestartFocused] = useState(false);
     const titleRef = useRef(null);
 
     // Moves screen reader focus onto the sheet title as soon as it opens
@@ -349,9 +351,11 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
                         <Text ref={titleRef} accessible style={styles.sheetTitle} maxFontSizeMultiplier={MAX_FONT_SCALE}>
                             Sign up assistant
                         </Text>
-                        <TouchableOpacity
-                            style={styles.closeButton}
+                        <Pressable
+                            style={[styles.closeButton, closeFocused && styles.closeButtonFocused]}
                             onPress={onDismiss}
+                            onFocus={() => setCloseFocused(true)}
+                            onBlur={() => setCloseFocused(false)}
                             testID="chat-close-button"
                             accessibilityRole="button"
                             accessibilityLabel="Close the sign up assistant"
@@ -360,7 +364,7 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
                             <Text style={styles.closeButtonText} maxFontSizeMultiplier={MAX_FONT_SCALE}>
                                 Done
                             </Text>
-                        </TouchableOpacity>
+                        </Pressable>
                     </View>
 
                     <MessageList entries={session.transcript} maskedIndexes={maskedIndexes} ttsSupported={ttsSupported} />
@@ -379,9 +383,11 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
 
                     {session.expired ? (
                         <View style={styles.inputBar}>
-                            <TouchableOpacity
-                                style={styles.button}
+                            <Pressable
+                                style={[styles.button, restartFocused && styles.buttonFocused]}
                                 onPress={onRestart ?? onDismiss}
+                                onFocus={() => setRestartFocused(true)}
+                                onBlur={() => setRestartFocused(false)}
                                 testID="chat-restart-button"
                                 accessibilityRole="button"
                                 accessibilityLabel="Start a new sign up chat"
@@ -390,7 +396,7 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
                                 <Text style={styles.buttonText} maxFontSizeMultiplier={MAX_FONT_SCALE}>
                                     Start over
                                 </Text>
-                            </TouchableOpacity>
+                            </Pressable>
                         </View>
                     ) : (
                         <>

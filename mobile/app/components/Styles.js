@@ -1,5 +1,11 @@
 import { StyleSheet, useColorScheme } from 'react-native';
 
+// `border` is WCAG 1.4.11 territory, not 1.4.3: it is the only visual cue for
+// where textInput/chatInput start and end (their `surface` fill barely differs
+// from `background` - about 1.1:1), so it needs the 3:1 non-text minimum, not
+// just "looks fine on a white background". The values below are the original
+// border hue at the lightest/darkest point that still clears 3:1 against
+// `background` (verified: 3.21:1 both themes), not an arbitrary darker gray.
 const palette = {
     light: {
         background: '#ffffff',
@@ -8,7 +14,7 @@ const palette = {
         mutedText: '#5c6b73',
         primary: '#2141b1',
         onPrimary: '#ffffff',
-        border: '#d9dde2',
+        border: '#8491a1',
         danger: '#b3261e',
         assistantBubble: '#e8ebf3',
         userBubble: '#2141b1',
@@ -22,7 +28,7 @@ const palette = {
         mutedText: '#a3b1b8',
         primary: '#7d97ea',
         onPrimary: '#0b1020',
-        border: '#2f3a40',
+        border: '#566b76',
         danger: '#f2b8b5',
         assistantBubble: '#26313a',
         userBubble: '#3a5bd9',
@@ -30,6 +36,9 @@ const palette = {
         backdrop: 'rgba(0, 0, 0, 0.65)',
     },
 };
+
+/** Exported for direct contrast-ratio testing (A11Y-12); not used elsewhere. */
+export { palette };
 
 /** Minimum touch target required by HELP-05 and the platform guidelines. */
 export const MIN_TOUCH_TARGET = 44;
@@ -91,6 +100,13 @@ export function useThemeStyles() {
             backgroundColor: colors.surface,
             marginBottom: 16,
         },
+        // RN has no CSS :focus; onFocus/onBlur + a conditional style is the
+        // mechanism (A11Y-13). `primary` already clears 3:1 against both
+        // `background` and `surface`, so it doubles as the focus ring color.
+        textInputFocused: {
+            borderColor: colors.primary,
+            borderWidth: 2,
+        },
         button: {
             backgroundColor: colors.primary,
             borderRadius: 8,
@@ -99,6 +115,13 @@ export function useThemeStyles() {
             alignItems: 'center',
             justifyContent: 'center',
             minHeight: MIN_TOUCH_TARGET,
+        },
+        // `onPrimary` against a `primary`-filled button: verified at 8.55:1
+        // (light) / 6.75:1 (dark), so the ring reads clearly against the
+        // button's own background instead of disappearing into it.
+        buttonFocused: {
+            borderWidth: 2,
+            borderColor: colors.onPrimary,
         },
         buttonText: {
             color: colors.onPrimary,
@@ -115,6 +138,12 @@ export function useThemeStyles() {
             justifyContent: 'center',
             minHeight: MIN_TOUCH_TARGET,
             minWidth: MIN_TOUCH_TARGET,
+        },
+        // Already has a 1px primary border at rest; focus just thickens it -
+        // changing the color too would be redundant since it is already the
+        // resting-state color.
+        secondaryButtonFocused: {
+            borderWidth: 3,
         },
         secondaryButtonText: {
             color: colors.primary,
@@ -157,6 +186,12 @@ export function useThemeStyles() {
             minHeight: MIN_TOUCH_TARGET,
             alignItems: 'center',
             justifyContent: 'center',
+        },
+        // Has no border at rest, unlike secondaryButton, so focus needs to add
+        // one rather than just thicken it.
+        closeButtonFocused: {
+            borderWidth: 2,
+            borderColor: colors.primary,
         },
         closeButtonText: {
             fontSize: 17,
@@ -219,6 +254,10 @@ export function useThemeStyles() {
             maxHeight: 120,
             minHeight: MIN_TOUCH_TARGET,
         },
+        chatInputFocused: {
+            borderColor: colors.primary,
+            borderWidth: 2,
+        },
         sendButton: {
             backgroundColor: colors.primary,
             borderRadius: 20,
@@ -227,6 +266,10 @@ export function useThemeStyles() {
             justifyContent: 'center',
             minHeight: MIN_TOUCH_TARGET,
             minWidth: MIN_TOUCH_TARGET,
+        },
+        sendButtonFocused: {
+            borderWidth: 2,
+            borderColor: colors.onPrimary,
         },
         sendButtonDisabled: {
             opacity: 0.5,

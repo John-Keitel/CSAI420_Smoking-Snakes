@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 
 import { continueSession, registerChatAssisted } from '../app/api/chatClient';
 import ChatSheet, { OPENER_MESSAGE } from '../app/components/chat/ChatSheet';
@@ -533,6 +534,50 @@ describe('invalid registration payload (INPUT-14)', () => {
         await walkToCompletion();
 
         expect(await screen.findByText('userData.phone: phone must be a valid phone number')).toBeTruthy();
+    });
+});
+
+describe('focus indicator on buttons (A11Y-13)', () => {
+    it('adds a visible border to the close control once focused, where none exists at rest', () => {
+        continueSession.mockReturnValue(new Promise(() => {}));
+        renderSheet();
+
+        const restingStyle = StyleSheet.flatten(screen.getByTestId('chat-close-button', { includeHiddenElements: true }).props.style);
+        expect(restingStyle.borderWidth).toBeFalsy();
+
+        fireEvent(screen.getByTestId('chat-close-button', { includeHiddenElements: true }), 'focus');
+
+        const focusedStyle = StyleSheet.flatten(screen.getByTestId('chat-close-button', { includeHiddenElements: true }).props.style);
+        expect(focusedStyle.borderWidth).toBeGreaterThan(0);
+        expect(focusedStyle.borderColor).toBeTruthy();
+    });
+
+    it('reverts the close control to its resting style once focus is lost', () => {
+        continueSession.mockReturnValue(new Promise(() => {}));
+        renderSheet();
+        const restingStyle = StyleSheet.flatten(screen.getByTestId('chat-close-button', { includeHiddenElements: true }).props.style);
+
+        fireEvent(screen.getByTestId('chat-close-button', { includeHiddenElements: true }), 'focus');
+        fireEvent(screen.getByTestId('chat-close-button', { includeHiddenElements: true }), 'blur');
+
+        expect(StyleSheet.flatten(screen.getByTestId('chat-close-button', { includeHiddenElements: true }).props.style)).toEqual(
+            restingStyle
+        );
+    });
+
+    it('adds a visible border to the restart control once focused', async () => {
+        registerChatAssisted.mockResolvedValue({ ok: false, kind: 'expired', message: 'Chat session has expired' });
+
+        await walkToCompletion();
+        const restartButton = await screen.findByTestId('chat-restart-button');
+        const restingStyle = StyleSheet.flatten(restartButton.props.style);
+        expect(restingStyle.borderWidth).toBeFalsy();
+
+        fireEvent(screen.getByTestId('chat-restart-button'), 'focus');
+
+        const focusedStyle = StyleSheet.flatten(screen.getByTestId('chat-restart-button').props.style);
+        expect(focusedStyle.borderWidth).toBeGreaterThan(0);
+        expect(focusedStyle.borderColor).toBeTruthy();
     });
 });
 
