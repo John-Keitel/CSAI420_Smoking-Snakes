@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, Text, TextInput } from 'react-native';
 
 import InputBar, { KEYBOARD_BEHAVIOR } from '../app/components/chat/InputBar';
+import { MAX_FONT_SCALE } from '../app/components/Styles';
 
 /** The error Text holds a single string child. */
 const errorText = () => screen.getByTestId('chat-input-error').props.children;
@@ -165,6 +166,21 @@ describe('per-step validation blocks advance (INPUT-06 to INPUT-10)', () => {
         send();
 
         expect(onSubmit).toHaveBeenCalledWith('Alex');
+    });
+});
+
+describe('font scaling coverage (A11Y-14)', () => {
+    it('caps every Text and TextInput at MAX_FONT_SCALE, including the validation error', () => {
+        renderBar({ currentStep: 'email_collection' });
+        type('invalid-email');
+        send();
+        // Sanity check that the error branch is actually mounted below, so this
+        // test cannot silently pass by never reaching chat-input-error.
+        expect(screen.getByTestId('chat-input-error')).toBeTruthy();
+
+        [...screen.UNSAFE_getAllByType(Text), ...screen.UNSAFE_getAllByType(TextInput)].forEach((node) => {
+            expect(node.props.maxFontSizeMultiplier).toBe(MAX_FONT_SCALE);
+        });
     });
 });
 

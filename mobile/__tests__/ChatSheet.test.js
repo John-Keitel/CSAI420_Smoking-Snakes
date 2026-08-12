@@ -1,8 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
 import { continueSession, registerChatAssisted } from '../app/api/chatClient';
 import ChatSheet, { OPENER_MESSAGE } from '../app/components/chat/ChatSheet';
+import { MAX_FONT_SCALE } from '../app/components/Styles';
 import * as sessionStore from '../app/lib/sessionStore';
 
 jest.mock('../app/api/chatClient', () => ({
@@ -534,6 +535,24 @@ describe('invalid registration payload (INPUT-14)', () => {
         await walkToCompletion();
 
         expect(await screen.findByText('userData.phone: phone must be a valid phone number')).toBeTruthy();
+    });
+});
+
+describe('font scaling coverage (A11Y-14)', () => {
+    it('caps every Text at MAX_FONT_SCALE, including the error and restart states', async () => {
+        // The expired-session path is the single scenario that mounts the
+        // widest set of ChatSheet's own conditional Text at once: sheetTitle,
+        // closeButtonText, chat-error, and chat-restart-button together.
+        // InputBar's own font-scaling coverage (including chat-input-error) is
+        // asserted separately in InputBar.test.js.
+        registerChatAssisted.mockResolvedValue({ ok: false, kind: 'expired', message: 'Chat session has expired' });
+
+        await walkToCompletion();
+        await screen.findByTestId('chat-restart-button');
+
+        screen.UNSAFE_getAllByType(Text).forEach((node) => {
+            expect(node.props.maxFontSizeMultiplier).toBe(MAX_FONT_SCALE);
+        });
     });
 });
 
