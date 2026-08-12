@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AppState, Modal, Text, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AccessibilityInfo, AppState, findNodeHandle, Modal, Text, TouchableOpacity, View } from 'react-native';
 
 import { continueSession, registerChatAssisted } from '../../api/chatClient';
+import { announce } from '../../lib/accessibility';
 import { fieldForStep, FINAL_CHAT_STEP, INITIAL_CHAT_STEP, toUserData } from '../../lib/stepRules';
 import * as sessionStore from '../../lib/sessionStore';
 import * as voiceController from '../../lib/voiceController';
@@ -45,6 +46,33 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
     const { styles } = useThemeStyles();
     const [session, setSession] = useState(initialState);
     const [pending, setPending] = useState(false);
+    const titleRef = useRef(null);
+
+    // Moves screen reader focus onto the sheet title as soon as it opens
+    // (A11Y-08), so VoiceOver/TalkBack users land somewhere meaningful instead
+    // of having to explore the whole screen to discover the modal appeared.
+    useEffect(() => {
+        if (!visible) {
+            return;
+        }
+
+        const tag = findNodeHandle(titleRef.current);
+
+        if (tag) {
+            AccessibilityInfo.setAccessibilityFocus(tag);
+        }
+    }, [visible]);
+
+    // Speaks a failure the moment it appears (A11Y-11). MessageList already
+    // announces assistant replies, but errors are rendered directly by this
+    // component, so without this a screen reader user who submits a bad
+    // answer hears nothing until they go looking for the error text.
+    useEffect(() => {
+        if (session.error) {
+            announce(session.error);
+        }
+    }, [session.error]);
+
     const [ttsSupported, setTtsSupported] = useState(false);
     // RESTORE-04: when a restored session was at the password step, the password
     // was stripped and the user must re-enter it.
@@ -318,7 +346,7 @@ export default function ChatSheet({ visible, chatSessionId, onDismiss, onRegiste
 
                 <View style={styles.sheet} accessibilityViewIsModal testID="chat-sheet-surface">
                     <View style={styles.sheetHeader}>
-                        <Text style={styles.sheetTitle} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+                        <Text ref={titleRef} accessible style={styles.sheetTitle} maxFontSizeMultiplier={MAX_FONT_SCALE}>
                             Sign up assistant
                         </Text>
                         <TouchableOpacity
