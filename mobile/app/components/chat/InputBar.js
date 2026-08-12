@@ -1,6 +1,7 @@
-import { useCallback, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
 
+import { announce } from '../../lib/accessibility';
 import { inputPropsForStep, validate } from '../../lib/stepRules';
 import { MAX_FONT_SCALE, useThemeStyles } from '../Styles';
 
@@ -22,9 +23,20 @@ export default function InputBar({ currentStep, pending, onSubmit }) {
     const { styles } = useThemeStyles();
     const [draft, setDraft] = useState('');
     const [error, setError] = useState(null);
+    const [focused, setFocused] = useState(false);
+    const [sendFocused, setSendFocused] = useState(false);
 
     const inputProps = inputPropsForStep(currentStep);
     const isSecure = inputProps.secureTextEntry === true;
+
+    // Speaks a validation failure the moment it appears (A11Y-11), matching
+    // ChatSheet's announcement of chat-level failures - otherwise a screen
+    // reader user gets silence until they go looking for the inline error.
+    useEffect(() => {
+        if (error) {
+            announce(error);
+        }
+    }, [error]);
 
     const handleChange = useCallback((next) => {
         setDraft(next);
@@ -60,10 +72,12 @@ export default function InputBar({ currentStep, pending, onSubmit }) {
             <View style={styles.inputRow}>
                 <TextInput
                     {...inputProps}
-                    style={styles.chatInput}
+                    style={[styles.chatInput, focused && styles.chatInputFocused]}
                     value={draft}
                     onChangeText={handleChange}
                     onSubmitEditing={handleSubmit}
+                    onFocus={() => setFocused(true)}
+                    onBlur={() => setFocused(false)}
                     editable={!pending}
                     multiline={!isSecure}
                     maxFontSizeMultiplier={MAX_FONT_SCALE}
@@ -71,9 +85,11 @@ export default function InputBar({ currentStep, pending, onSubmit }) {
                     accessibilityLabel="Your reply"
                     accessibilityHint="Enter your answer to the current question"
                 />
-                <TouchableOpacity
-                    style={[styles.sendButton, pending ? styles.sendButtonDisabled : null]}
+                <Pressable
+                    style={[styles.sendButton, sendFocused && styles.sendButtonFocused, pending ? styles.sendButtonDisabled : null]}
                     onPress={handleSubmit}
+                    onFocus={() => setSendFocused(true)}
+                    onBlur={() => setSendFocused(false)}
                     disabled={pending}
                     testID="chat-send-button"
                     accessibilityRole="button"
@@ -83,7 +99,7 @@ export default function InputBar({ currentStep, pending, onSubmit }) {
                     <Text style={styles.sendButtonText} maxFontSizeMultiplier={MAX_FONT_SCALE}>
                         {pending ? '...' : 'Send'}
                     </Text>
-                </TouchableOpacity>
+                </Pressable>
             </View>
 
             {error === null ? null : (

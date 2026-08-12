@@ -20,3 +20,22 @@ jest.mock('expo-crypto', () => {
         randomUUID: jest.fn(() => `test-session-${++counter}`),
     };
 });
+
+// AsyncStorage's native module is unavailable under jest-expo; mock the JS
+// surface with an in-memory store so sessionStore and any importer of
+// ChatSheet render without the native bridge. Individual tests that need to
+// assert on persistence override these per-case.
+jest.mock('@react-native-async-storage/async-storage', () => {
+    const store = new Map();
+
+    return {
+        setItem: jest.fn(async (key, value) => {
+            store.set(key, value);
+        }),
+        getItem: jest.fn(async (key) => store.get(key) ?? null),
+        removeItem: jest.fn(async (key) => {
+            store.delete(key);
+        }),
+        __store: store,
+    };
+});

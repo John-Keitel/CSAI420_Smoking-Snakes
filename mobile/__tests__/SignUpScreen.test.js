@@ -114,3 +114,72 @@ describe('font scaling coverage (A11Y-14)', () => {
         });
     });
 });
+
+describe('focus indicator on the email and password fields (A11Y-13)', () => {
+    it.each([
+        ['email', 'signup-email'],
+        ['password', 'signup-password'],
+    ])('shows a visibly thicker border on the %s field once focused', (_label, testID) => {
+        render(<SignUpScreen />);
+        const field = screen.getByTestId(testID);
+        const restingStyle = StyleSheet.flatten(field.props.style);
+
+        fireEvent(field, 'focus');
+        const focusedStyle = StyleSheet.flatten(screen.getByTestId(testID).props.style);
+
+        expect(focusedStyle.borderWidth).toBeGreaterThan(restingStyle.borderWidth);
+        expect(focusedStyle.borderColor).not.toBe(restingStyle.borderColor);
+    });
+
+    it.each([
+        ['email', 'signup-email'],
+        ['password', 'signup-password'],
+    ])('reverts the %s field to its resting border once it loses focus', (_label, testID) => {
+        render(<SignUpScreen />);
+        const restingStyle = StyleSheet.flatten(screen.getByTestId(testID).props.style);
+
+        fireEvent(screen.getByTestId(testID), 'focus');
+        fireEvent(screen.getByTestId(testID), 'blur');
+
+        expect(StyleSheet.flatten(screen.getByTestId(testID).props.style)).toEqual(restingStyle);
+    });
+});
+
+describe('focus indicator on buttons (A11Y-13)', () => {
+    it('adds a visible border to the Sign up button once focused, where none exists at rest', () => {
+        render(<SignUpScreen />);
+        const restingStyle = StyleSheet.flatten(screen.getByTestId('signup-submit').props.style);
+        expect(restingStyle.borderWidth).toBeFalsy();
+
+        fireEvent(screen.getByTestId('signup-submit'), 'focus');
+
+        const focusedStyle = StyleSheet.flatten(screen.getByTestId('signup-submit').props.style);
+        expect(focusedStyle.borderWidth).toBeGreaterThan(0);
+        expect(focusedStyle.borderColor).toBeTruthy();
+    });
+
+    it('thickens the Need Help border once focused, without needing a color change since it already has one at rest', () => {
+        render(<SignUpScreen />);
+        const restingStyle = StyleSheet.flatten(screen.getByTestId('need-help-button').props.style);
+        expect(restingStyle.borderWidth).toBeGreaterThan(0);
+
+        fireEvent(screen.getByTestId('need-help-button'), 'focus');
+
+        const focusedStyle = StyleSheet.flatten(screen.getByTestId('need-help-button').props.style);
+        expect(focusedStyle.borderWidth).toBeGreaterThan(restingStyle.borderWidth);
+    });
+
+    it('reverts both buttons to their resting style once focus is lost', () => {
+        render(<SignUpScreen />);
+        const submitResting = StyleSheet.flatten(screen.getByTestId('signup-submit').props.style);
+        const needHelpResting = StyleSheet.flatten(screen.getByTestId('need-help-button').props.style);
+
+        fireEvent(screen.getByTestId('signup-submit'), 'focus');
+        fireEvent(screen.getByTestId('need-help-button'), 'focus');
+        fireEvent(screen.getByTestId('signup-submit'), 'blur');
+        fireEvent(screen.getByTestId('need-help-button'), 'blur');
+
+        expect(StyleSheet.flatten(screen.getByTestId('signup-submit').props.style)).toEqual(submitResting);
+        expect(StyleSheet.flatten(screen.getByTestId('need-help-button').props.style)).toEqual(needHelpResting);
+    });
+});

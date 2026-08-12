@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { Platform, Text, TextInput } from 'react-native';
+import { Platform, StyleSheet, Text, TextInput } from 'react-native';
 
 import InputBar, { KEYBOARD_BEHAVIOR } from '../app/components/chat/InputBar';
 import { MAX_FONT_SCALE } from '../app/components/Styles';
@@ -181,5 +181,60 @@ describe('font scaling coverage (A11Y-14)', () => {
         [...screen.UNSAFE_getAllByType(Text), ...screen.UNSAFE_getAllByType(TextInput)].forEach((node) => {
             expect(node.props.maxFontSizeMultiplier).toBe(MAX_FONT_SCALE);
         });
+    });
+});
+
+describe('focus indicator on the input field (A11Y-13)', () => {
+    it('shows a visibly thicker border once the field is focused', () => {
+        renderBar();
+        const restingStyle = StyleSheet.flatten(screen.getByTestId('chat-input').props.style);
+
+        fireEvent(screen.getByTestId('chat-input'), 'focus');
+        const focusedStyle = StyleSheet.flatten(screen.getByTestId('chat-input').props.style);
+
+        expect(focusedStyle.borderWidth).toBeGreaterThan(restingStyle.borderWidth);
+        expect(focusedStyle.borderColor).not.toBe(restingStyle.borderColor);
+    });
+
+    it('reverts to the resting border once the field loses focus', () => {
+        renderBar();
+        const restingStyle = StyleSheet.flatten(screen.getByTestId('chat-input').props.style);
+
+        fireEvent(screen.getByTestId('chat-input'), 'focus');
+        fireEvent(screen.getByTestId('chat-input'), 'blur');
+
+        expect(StyleSheet.flatten(screen.getByTestId('chat-input').props.style)).toEqual(restingStyle);
+    });
+});
+
+describe('focus indicator on the send button (A11Y-13)', () => {
+    it('adds a visible border once focused, where none exists at rest', () => {
+        renderBar();
+        const restingStyle = StyleSheet.flatten(screen.getByTestId('chat-send-button').props.style);
+        expect(restingStyle.borderWidth).toBeFalsy();
+
+        fireEvent(screen.getByTestId('chat-send-button'), 'focus');
+
+        const focusedStyle = StyleSheet.flatten(screen.getByTestId('chat-send-button').props.style);
+        expect(focusedStyle.borderWidth).toBeGreaterThan(0);
+        expect(focusedStyle.borderColor).toBeTruthy();
+    });
+
+    it('reverts to the resting style once focus is lost', () => {
+        renderBar();
+        const restingStyle = StyleSheet.flatten(screen.getByTestId('chat-send-button').props.style);
+
+        fireEvent(screen.getByTestId('chat-send-button'), 'focus');
+        fireEvent(screen.getByTestId('chat-send-button'), 'blur');
+
+        expect(StyleSheet.flatten(screen.getByTestId('chat-send-button').props.style)).toEqual(restingStyle);
+    });
+
+    it('still disables the button while pending, even if it was focused first', () => {
+        renderBar({ pending: true });
+
+        fireEvent(screen.getByTestId('chat-send-button'), 'focus');
+
+        expect(screen.getByTestId('chat-send-button').props.accessibilityState.disabled).toBe(true);
     });
 });
