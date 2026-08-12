@@ -7,8 +7,7 @@ afterEach(() => {
 });
 
 describe('FeedbackModal (FEEDBACK-01 → FEEDBACK-04)', () => {
-    const renderModal = (props = {}) =>
-        render(<FeedbackModal visible chatSessionId="session-1" onDismiss={jest.fn()} {...props} />);
+    const renderModal = (props = {}) => render(<FeedbackModal visible chatSessionId="session-1" onDismiss={jest.fn()} {...props} />);
 
     it('renders the helpfulness question when visible (FEEDBACK-01)', () => {
         renderModal();

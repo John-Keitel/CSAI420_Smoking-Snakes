@@ -3,6 +3,7 @@ import { FlatList, StyleSheet, Text } from 'react-native';
 
 import MessageList, { MASKED_MESSAGE } from '../app/components/chat/MessageList';
 import { MAX_FONT_SCALE } from '../app/components/Styles';
+import { speak } from '../app/lib/voiceController';
 import * as voiceController from '../app/lib/voiceController';
 
 jest.mock('../app/lib/voiceController', () => ({
@@ -21,6 +22,7 @@ const transcript = [
 
 afterEach(() => {
     jest.restoreAllMocks();
+    speak.mockClear();
 });
 
 describe('rendering the transcript (MSG-01)', () => {
@@ -149,6 +151,37 @@ describe('overflow (MSG-05)', () => {
     });
 });
 
+describe('audio cue for new assistant replies', () => {
+    it('speaks a new assistant reply', () => {
+        render(<MessageList entries={[{ role: 'assistant', message: 'Hello there' }]} />);
+
+        expect(speak).toHaveBeenCalledWith('Hello there');
+    });
+
+    it('does not speak the same reply twice across rerenders', () => {
+        const entries = [{ role: 'assistant', message: 'Hello there' }];
+        const { rerender } = render(<MessageList entries={entries} />);
+        speak.mockClear();
+
+        rerender(<MessageList entries={entries} />);
+
+        expect(speak).not.toHaveBeenCalled();
+    });
+
+    it('does not speak the user echoing their own turn', () => {
+        render(
+            <MessageList
+                entries={[
+                    { role: 'assistant', message: 'Hello there' },
+                    { role: 'user', message: 'Alex Johnson' },
+                ]}
+            />
+        );
+
+        expect(speak).not.toHaveBeenCalledWith('Alex Johnson');
+    });
+});
+
 describe('font scaling coverage (A11Y-14)', () => {
     it('caps every rendered bubble at MAX_FONT_SCALE', () => {
         render(<MessageList entries={transcript} />);
@@ -205,11 +238,14 @@ describe('read aloud affordance (VOICE-01 → VOICE-04)', () => {
 
         fireEvent.press(screen.getAllByTestId('read-aloud')[0]);
 
-        expect(voiceController.speak).toHaveBeenCalledWith(transcript[0].message, expect.objectContaining({
-            onDone: expect.any(Function),
-            onStopped: expect.any(Function),
-            onError: expect.any(Function),
-        }));
+        expect(voiceController.speak).toHaveBeenCalledWith(
+            transcript[0].message,
+            expect.objectContaining({
+                onDone: expect.any(Function),
+                onStopped: expect.any(Function),
+                onError: expect.any(Function),
+            })
+        );
     });
 
     it('swaps to a Stop control while speaking (VOICE-02)', () => {

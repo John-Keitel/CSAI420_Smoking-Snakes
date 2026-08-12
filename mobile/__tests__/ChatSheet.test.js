@@ -4,11 +4,21 @@ import { StyleSheet, Text } from 'react-native';
 import { continueSession, registerChatAssisted } from '../app/api/chatClient';
 import ChatSheet, { OPENER_MESSAGE } from '../app/components/chat/ChatSheet';
 import { MAX_FONT_SCALE } from '../app/components/Styles';
+import { errorOccurred } from '../app/lib/hapticController';
 import * as sessionStore from '../app/lib/sessionStore';
 
 jest.mock('../app/api/chatClient', () => ({
     continueSession: jest.fn(),
     registerChatAssisted: jest.fn(),
+}));
+
+// InputBar (rendered as a child) also imports messageSent from this module,
+// so both exports need a mock here even though this file only asserts on
+// errorOccurred - otherwise any test that sends a message crashes with
+// "messageSent is not a function" instead of the module being untouched.
+jest.mock('../app/lib/hapticController', () => ({
+    errorOccurred: jest.fn(),
+    messageSent: jest.fn(),
 }));
 
 jest.mock('../app/lib/sessionStore', () => ({
@@ -28,18 +38,13 @@ const textOf = (testID) => screen.getByTestId(testID).props.children;
 const turn = (userMessage, assistantMessage, nextStep, history = []) => ({
     ok: true,
     response: assistantMessage,
-    conversationContext: [
-        ...history,
-        { role: 'user', message: userMessage },
-        { role: 'assistant', message: assistantMessage },
-    ],
+    conversationContext: [...history, { role: 'user', message: userMessage }, { role: 'assistant', message: assistantMessage }],
     nextStep,
 });
 
 const openerTurn = () => turn(OPENER_MESSAGE, FIRST_PROMPT, 'name_provided');
 
-const renderSheet = (props = {}) =>
-    render(<ChatSheet visible chatSessionId="session-1" onDismiss={jest.fn()} {...props} />);
+const renderSheet = (props = {}) => render(<ChatSheet visible chatSessionId="session-1" onDismiss={jest.fn()} {...props} />);
 
 beforeEach(() => {
     registerChatAssisted.mockResolvedValue({ ok: true, user: { id: 'default-user' } });
@@ -174,9 +179,7 @@ describe('advancing a turn (SHEET-04)', () => {
         renderSheet();
         await screen.findByText('Almost done! Please choose a password.');
 
-        continueSession.mockResolvedValueOnce(
-            turn('Str0ngP@ssw0rd!', 'Ready to finish? Let me create your account.', 'completion', history)
-        );
+        continueSession.mockResolvedValueOnce(turn('Str0ngP@ssw0rd!', 'Ready to finish? Let me create your account.', 'completion', history));
 
         fireEvent.changeText(screen.getByTestId('chat-input'), 'Str0ngP@ssw0rd!');
         fireEvent.press(screen.getByTestId('chat-send-button'));
@@ -339,9 +342,7 @@ describe('reopening (SHEET-07)', () => {
         const { rerender } = renderSheet();
         await screen.findByText(FIRST_PROMPT);
 
-        continueSession.mockResolvedValue(
-            turn(OPENER_MESSAGE, FIRST_PROMPT, 'name_provided')
-        );
+        continueSession.mockResolvedValue(turn(OPENER_MESSAGE, FIRST_PROMPT, 'name_provided'));
 
         rerender(<ChatSheet visible chatSessionId="session-2" onDismiss={jest.fn()} />);
 
@@ -538,6 +539,26 @@ describe('invalid registration payload (INPUT-14)', () => {
     });
 });
 
+describe('haptic feedback on error (HAPTIC-02)', () => {
+    it('fires once a failure surfaces', async () => {
+        continueSession.mockResolvedValue({ ok: false, kind: 'failed', status: null });
+
+        renderSheet();
+
+        await screen.findByTestId('chat-error');
+        expect(errorOccurred).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not fire while there is no error', async () => {
+        continueSession.mockResolvedValue(openerTurn());
+
+        renderSheet();
+        await screen.findByText(FIRST_PROMPT);
+
+        expect(errorOccurred).not.toHaveBeenCalled();
+    });
+});
+
 describe('font scaling coverage (A11Y-14)', () => {
     it('caps every Text at MAX_FONT_SCALE, including the error and restart states', async () => {
         // The expired-session path is the single scenario that mounts the
@@ -579,9 +600,7 @@ describe('focus indicator on buttons (A11Y-13)', () => {
         fireEvent(screen.getByTestId('chat-close-button', { includeHiddenElements: true }), 'focus');
         fireEvent(screen.getByTestId('chat-close-button', { includeHiddenElements: true }), 'blur');
 
-        expect(StyleSheet.flatten(screen.getByTestId('chat-close-button', { includeHiddenElements: true }).props.style)).toEqual(
-            restingStyle
-        );
+        expect(StyleSheet.flatten(screen.getByTestId('chat-close-button', { includeHiddenElements: true }).props.style)).toEqual(restingStyle);
     });
 
     it('adds a visible border to the restart control once focused', async () => {

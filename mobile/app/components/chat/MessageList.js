@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 
 import { announce } from '../../lib/accessibility';
+import { speak as speakCue } from '../../lib/voiceController';
 import * as voiceController from '../../lib/voiceController';
 import { MAX_FONT_SCALE, useThemeStyles } from '../Styles';
 
@@ -55,7 +56,9 @@ export default function MessageList({ entries, maskedIndexes = NO_MASKED_INDEXES
     const [speakingIndex, setSpeakingIndex] = useState(null);
 
     // A new reply arrives below the fold, so a screen reader user would otherwise
-    // have to go looking for it.
+    // have to go looking for it. The same guard also gates the audio cue
+    // (HAPTIC/VOICE wiring) below, so a re-render never re-speaks or re-announces
+    // a message this effect already handled.
     useEffect(() => {
         const latest = entries[entries.length - 1];
 
@@ -65,6 +68,9 @@ export default function MessageList({ entries, maskedIndexes = NO_MASKED_INDEXES
 
         announcedRef.current = latest.message;
         announce(latest.message);
+        // speak() stops any in-flight utterance itself before starting the next
+        // one, so turns never overlap even if replies arrive close together.
+        speakCue(latest.message);
     }, [entries]);
 
     // Stop any in-flight speech when the transcript unmounts or the surface

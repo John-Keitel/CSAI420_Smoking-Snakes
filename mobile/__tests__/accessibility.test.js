@@ -63,11 +63,7 @@ describe('every control is labelled (A11Y-01)', () => {
         expect(screen.getByLabelText('Need help? Sign up by chat instead')).toBeTruthy();
     });
 
-    it.each([
-        ['Close the sign up assistant'],
-        ['Your reply'],
-        ['Send reply'],
-    ])('labels %s inside the sheet', async (label) => {
+    it.each([['Close the sign up assistant'], ['Your reply'], ['Send reply']])('labels %s inside the sheet', async (label) => {
         await openSheet();
 
         expect(screen.getByLabelText(label, { includeHiddenElements: true })).toBeTruthy();
@@ -305,9 +301,7 @@ describe('announcing errors (A11Y-11)', () => {
         fireEvent.press(screen.getByTestId('chat-send-button'));
 
         await screen.findByTestId('chat-error');
-        expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledWith(
-            expect.stringContaining('Something went wrong')
-        );
+        expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledWith(expect.stringContaining('Something went wrong'));
     });
 
     it('announces an inline input validation failure', async () => {
