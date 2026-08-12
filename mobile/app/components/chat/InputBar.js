@@ -1,6 +1,7 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
 
+import { announce } from '../../lib/accessibility';
 import { inputPropsForStep, validate } from '../../lib/stepRules';
 import { MAX_FONT_SCALE, useThemeStyles } from '../Styles';
 
@@ -27,6 +28,15 @@ export default function InputBar({ currentStep, pending, onSubmit }) {
 
     const inputProps = inputPropsForStep(currentStep);
     const isSecure = inputProps.secureTextEntry === true;
+
+    // Speaks a validation failure the moment it appears (A11Y-11), matching
+    // ChatSheet's announcement of chat-level failures - otherwise a screen
+    // reader user gets silence until they go looking for the inline error.
+    useEffect(() => {
+        if (error) {
+            announce(error);
+        }
+    }, [error]);
 
     const handleChange = useCallback((next) => {
         setDraft(next);

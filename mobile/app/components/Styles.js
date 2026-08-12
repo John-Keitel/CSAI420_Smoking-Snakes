@@ -298,6 +298,57 @@ export function useThemeStyles() {
             marginTop: 8,
             flexShrink: 1,
         },
+        readAloudButton: {
+            marginTop: 6,
+            alignSelf: 'flex-start',
+            paddingVertical: 4,
+            paddingHorizontal: 10,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: colors.border,
+            minHeight: MIN_TOUCH_TARGET,
+            justifyContent: 'center',
+        },
+        readAloudButtonText: {
+            color: colors.primary,
+            fontSize: 13,
+            fontWeight: '600',
+        },
+        typingIndicator: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: 16,
+            paddingVertical: 8,
+        },
+        typingDot: {
+            width: 8,
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: colors.mutedText,
+            marginHorizontal: 3,
+        },
+        feedbackSheet: {
+            backgroundColor: colors.background,
+            borderRadius: 16,
+            padding: 24,
+            marginHorizontal: 24,
+            alignItems: 'stretch',
+        },
+        feedbackActions: {
+            flexDirection: 'row',
+            justifyContent: 'space-around',
+            marginVertical: 16,
+        },
+        feedbackButton: {
+            backgroundColor: colors.primary,
+            borderRadius: 8,
+            paddingVertical: 12,
+            paddingHorizontal: 28,
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: MIN_TOUCH_TARGET,
+            minWidth: 88,
+        },
     });
 
     return { styles, colors };
