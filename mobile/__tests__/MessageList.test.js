@@ -1,11 +1,17 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { FlatList, StyleSheet } from 'react-native';
+import { FlatList, StyleSheet, Text } from 'react-native';
 
 import MessageList, { MASKED_MESSAGE } from '../app/components/chat/MessageList';
+import { MAX_FONT_SCALE } from '../app/components/Styles';
 import { speak } from '../app/lib/voiceController';
+import * as voiceController from '../app/lib/voiceController';
 
 jest.mock('../app/lib/voiceController', () => ({
     speak: jest.fn(),
+    stop: jest.fn(),
+    isSpeaking: jest.fn(() => false),
+    isSupported: jest.fn(async () => true),
+    _resetSupportCache: jest.fn(),
 }));
 
 const transcript = [
@@ -173,5 +179,104 @@ describe('audio cue for new assistant replies', () => {
         );
 
         expect(speak).not.toHaveBeenCalledWith('Alex Johnson');
+    });
+});
+
+describe('font scaling coverage (A11Y-14)', () => {
+    it('caps every rendered bubble at MAX_FONT_SCALE', () => {
+        render(<MessageList entries={transcript} />);
+
+        // Walks every Text actually in the tree rather than asserting on a
+        // hand-picked list, so a bubble added later without the multiplier
+        // fails this test instead of silently shipping.
+        screen.UNSAFE_getAllByType(Text).forEach((node) => {
+            expect(node.props.maxFontSizeMultiplier).toBe(MAX_FONT_SCALE);
+        });
+    });
+});
+
+describe('read aloud affordance (VOICE-01 → VOICE-04)', () => {
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('renders a Read aloud control on assistant bubbles when TTS is supported (VOICE-01)', () => {
+        render(<MessageList entries={transcript} ttsSupported />);
+
+        expect(screen.getAllByTestId('read-aloud')).toHaveLength(2);
+    });
+
+    it('does not render the affordance when TTS is unsupported (VOICE-03)', () => {
+        render(<MessageList entries={transcript} ttsSupported={false} />);
+
+        expect(screen.queryByTestId('read-aloud')).toBeNull();
+        expect(screen.queryByTestId('read-aloud-stop')).toBeNull();
+    });
+
+    it('does not render the affordance on user bubbles', () => {
+        render(<MessageList entries={transcript} ttsSupported />);
+
+        // Only one assistant bubble has the affordance in this 3-entry transcript
+        // (two assistant entries → two read-aloud controls).
+        expect(screen.getAllByTestId('read-aloud')).toHaveLength(2);
+    });
+
+    it('does not render the affordance on masked credential bubbles (password never spoken)', () => {
+        const withPassword = [
+            { role: 'assistant', message: 'Almost done! Please choose a password.' },
+            { role: 'user', message: 'Str0ngP@ssw0rd!' },
+        ];
+
+        render(<MessageList entries={withPassword} maskedIndexes={[1]} ttsSupported />);
+
+        // The assistant prompt gets one; the masked user credential bubble does not.
+        expect(screen.getAllByTestId('read-aloud')).toHaveLength(1);
+    });
+
+    it('calls voiceController.speak with the message text on press', () => {
+        render(<MessageList entries={transcript} ttsSupported />);
+
+        fireEvent.press(screen.getAllByTestId('read-aloud')[0]);
+
+        expect(voiceController.speak).toHaveBeenCalledWith(
+            transcript[0].message,
+            expect.objectContaining({
+                onDone: expect.any(Function),
+                onStopped: expect.any(Function),
+                onError: expect.any(Function),
+            })
+        );
+    });
+
+    it('swaps to a Stop control while speaking (VOICE-02)', () => {
+        const { rerender } = render(<MessageList entries={transcript} ttsSupported />);
+
+        // Simulate speaking the first assistant bubble by pressing, which flips
+        // the local speaking index. The control becomes Stop.
+        fireEvent.press(screen.getAllByTestId('read-aloud')[0]);
+
+        expect(screen.getByTestId('read-aloud-stop')).toBeTruthy();
+        expect(screen.queryAllByTestId('read-aloud')).toHaveLength(1);
+
+        // Pressing Stop halts speech.
+        fireEvent.press(screen.getByTestId('read-aloud-stop'));
+
+        expect(voiceController.stop).toHaveBeenCalled();
+    });
+
+    it('exposes a non-empty accessibilityLabel on the affordance (A11Y-01 carries forward)', () => {
+        render(<MessageList entries={transcript} ttsSupported />);
+
+        const affordance = screen.getAllByTestId('read-aloud')[0];
+        expect(affordance.props.accessibilityLabel).toBe('Read this message aloud');
+        expect(affordance.props.accessibilityRole).toBe('button');
+    });
+
+    it('calls voiceController.stop when the transcript unmounts (edge case: TTS interrupted by navigation)', () => {
+        const { unmount } = render(<MessageList entries={transcript} ttsSupported />);
+
+        unmount();
+
+        expect(voiceController.stop).toHaveBeenCalled();
     });
 });

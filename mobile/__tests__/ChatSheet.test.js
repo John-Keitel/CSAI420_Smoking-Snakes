@@ -1,8 +1,11 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { StyleSheet, Text } from 'react-native';
 
 import { continueSession, registerChatAssisted } from '../app/api/chatClient';
 import ChatSheet, { OPENER_MESSAGE } from '../app/components/chat/ChatSheet';
+import { MAX_FONT_SCALE } from '../app/components/Styles';
 import { errorOccurred } from '../app/lib/hapticController';
+import * as sessionStore from '../app/lib/sessionStore';
 
 jest.mock('../app/api/chatClient', () => ({
     continueSession: jest.fn(),
@@ -18,6 +21,14 @@ jest.mock('../app/lib/hapticController', () => ({
     messageSent: jest.fn(),
 }));
 
+jest.mock('../app/lib/sessionStore', () => ({
+    save: jest.fn(async () => undefined),
+    load: jest.fn(async () => null),
+    clear: jest.fn(async () => undefined),
+    isExpired: jest.fn(() => false),
+    SESSION_TTL_MS: 30 * 60 * 1000,
+}));
+
 const FIRST_PROMPT = "I'd be happy to help! What's your name?";
 
 // RNTL's toHaveTextContent is an exact match for strings, so partial assertions
@@ -27,18 +38,13 @@ const textOf = (testID) => screen.getByTestId(testID).props.children;
 const turn = (userMessage, assistantMessage, nextStep, history = []) => ({
     ok: true,
     response: assistantMessage,
-    conversationContext: [
-        ...history,
-        { role: 'user', message: userMessage },
-        { role: 'assistant', message: assistantMessage },
-    ],
+    conversationContext: [...history, { role: 'user', message: userMessage }, { role: 'assistant', message: assistantMessage }],
     nextStep,
 });
 
 const openerTurn = () => turn(OPENER_MESSAGE, FIRST_PROMPT, 'name_provided');
 
-const renderSheet = (props = {}) =>
-    render(<ChatSheet visible chatSessionId="session-1" onDismiss={jest.fn()} {...props} />);
+const renderSheet = (props = {}) => render(<ChatSheet visible chatSessionId="session-1" onDismiss={jest.fn()} {...props} />);
 
 beforeEach(() => {
     registerChatAssisted.mockResolvedValue({ ok: true, user: { id: 'default-user' } });
@@ -173,9 +179,7 @@ describe('advancing a turn (SHEET-04)', () => {
         renderSheet();
         await screen.findByText('Almost done! Please choose a password.');
 
-        continueSession.mockResolvedValueOnce(
-            turn('Str0ngP@ssw0rd!', 'Ready to finish? Let me create your account.', 'completion', history)
-        );
+        continueSession.mockResolvedValueOnce(turn('Str0ngP@ssw0rd!', 'Ready to finish? Let me create your account.', 'completion', history));
 
         fireEvent.changeText(screen.getByTestId('chat-input'), 'Str0ngP@ssw0rd!');
         fireEvent.press(screen.getByTestId('chat-send-button'));
@@ -225,6 +229,112 @@ describe('failure handling', () => {
     });
 });
 
+describe('typing indicator (LOAD-01 → LOAD-03)', () => {
+    it('shows the typing indicator while a turn is pending', () => {
+        // A never-resolving promise keeps pending true.
+        continueSession.mockReturnValue(new Promise(() => {}));
+
+        renderSheet();
+
+        expect(screen.getByTestId('typing-indicator')).toBeTruthy();
+    });
+
+    it('removes the typing indicator once the turn completes', async () => {
+        continueSession.mockResolvedValue(openerTurn());
+
+        renderSheet();
+
+        await screen.findByText(FIRST_PROMPT);
+
+        expect(screen.queryByTestId('typing-indicator')).toBeNull();
+    });
+});
+
+describe('session restore (RESTORE-01 → RESTORE-05)', () => {
+    beforeEach(() => {
+        sessionStore.load.mockResolvedValue(null);
+        sessionStore.save.mockClear();
+        sessionStore.clear.mockClear();
+    });
+
+    it('opens fresh when no persisted session exists (RESTORE-02)', async () => {
+        continueSession.mockResolvedValue(openerTurn());
+
+        renderSheet();
+
+        expect(await screen.findByText(FIRST_PROMPT)).toBeTruthy();
+        expect(continueSession).toHaveBeenCalledWith(expect.objectContaining({ message: OPENER_MESSAGE }));
+    });
+
+    it('resumes at the persisted step with the persisted transcript when within TTL (RESTORE-02)', async () => {
+        const persisted = {
+            currentStep: 'email_collection',
+            transcript: [
+                { role: 'assistant', message: FIRST_PROMPT },
+                { role: 'user', message: 'Alex Johnson' },
+                { role: 'assistant', message: 'Great! What is your email address?' },
+            ],
+            collected: { name: 'Alex Johnson' },
+            credentialTurnIndex: null,
+            lastActivity: '2026-08-08T00:00:00.000Z',
+            chatSessionId: 'session-1',
+        };
+        sessionStore.load.mockResolvedValue(persisted);
+
+        renderSheet();
+
+        // The opener is NOT called — the session resumes.
+        await screen.findByText('Great! What is your email address?');
+        expect(continueSession).not.toHaveBeenCalled();
+        expect(screen.getByText('Alex Johnson')).toBeTruthy();
+    });
+
+    it('only resumes if the persisted chatSessionId matches (no cross-session bleed)', async () => {
+        const persisted = {
+            currentStep: 'email_collection',
+            transcript: [{ role: 'assistant', message: 'stale' }],
+            collected: {},
+            chatSessionId: 'different-session',
+            lastActivity: '2026-08-08T00:00:00.000Z',
+        };
+        sessionStore.load.mockResolvedValue(persisted);
+        continueSession.mockResolvedValue(openerTurn());
+
+        renderSheet();
+
+        // No match → fresh open.
+        expect(await screen.findByText(FIRST_PROMPT)).toBeTruthy();
+        expect(screen.queryByText('stale')).toBeNull();
+    });
+
+    it('re-prompts for password when restored at the password step (RESTORE-04)', async () => {
+        const persisted = {
+            currentStep: 'password_collection',
+            transcript: [{ role: 'assistant', message: 'Almost done! Please choose a password.' }],
+            collected: { name: 'Alex', email: 'alex@example.com' },
+            credentialTurnIndex: null,
+            chatSessionId: 'session-1',
+            lastActivity: '2026-08-08T00:00:00.000Z',
+        };
+        sessionStore.load.mockResolvedValue(persisted);
+
+        renderSheet();
+
+        expect(await screen.findByTestId('password-reprompt')).toBeTruthy();
+        // The password field is not in the collected state.
+        expect(screen.getByTestId('password-reprompt').props.children).toContain('re-enter your password');
+    });
+
+    it('clears the persisted session after successful registration (RESTORE-05)', async () => {
+        registerChatAssisted.mockResolvedValue({ ok: true, user: { id: 'u1', email: 'alex@example.com' } });
+
+        await walkToCompletion();
+
+        await waitFor(() => expect(registerChatAssisted).toHaveBeenCalled());
+        expect(sessionStore.clear).toHaveBeenCalled();
+    });
+});
+
 describe('reopening (SHEET-07)', () => {
     it('starts a fresh conversation when a new session id arrives', async () => {
         continueSession.mockResolvedValue(openerTurn());
@@ -232,9 +342,7 @@ describe('reopening (SHEET-07)', () => {
         const { rerender } = renderSheet();
         await screen.findByText(FIRST_PROMPT);
 
-        continueSession.mockResolvedValue(
-            turn(OPENER_MESSAGE, FIRST_PROMPT, 'name_provided')
-        );
+        continueSession.mockResolvedValue(turn(OPENER_MESSAGE, FIRST_PROMPT, 'name_provided'));
 
         rerender(<ChatSheet visible chatSessionId="session-2" onDismiss={jest.fn()} />);
 
@@ -317,6 +425,10 @@ describe('completing registration (INPUT-11, INPUT-15)', () => {
         registerChatAssisted.mockResolvedValue({ ok: true, user: { id: 'u1', email: 'alex@example.com' } });
 
         const { onRegistered } = await walkToCompletion();
+
+        // T10: onRegistered now fires when the user dismisses the feedback modal.
+        await screen.findByTestId('feedback-modal');
+        fireEvent.press(screen.getByTestId('feedback-dismiss'));
 
         await waitFor(() => expect(onRegistered).toHaveBeenCalledWith({ id: 'u1', email: 'alex@example.com' }));
     });
@@ -444,5 +556,90 @@ describe('haptic feedback on error (HAPTIC-02)', () => {
         await screen.findByText(FIRST_PROMPT);
 
         expect(errorOccurred).not.toHaveBeenCalled();
+    });
+});
+
+describe('font scaling coverage (A11Y-14)', () => {
+    it('caps every Text at MAX_FONT_SCALE, including the error and restart states', async () => {
+        // The expired-session path is the single scenario that mounts the
+        // widest set of ChatSheet's own conditional Text at once: sheetTitle,
+        // closeButtonText, chat-error, and chat-restart-button together.
+        // InputBar's own font-scaling coverage (including chat-input-error) is
+        // asserted separately in InputBar.test.js.
+        registerChatAssisted.mockResolvedValue({ ok: false, kind: 'expired', message: 'Chat session has expired' });
+
+        await walkToCompletion();
+        await screen.findByTestId('chat-restart-button');
+
+        screen.UNSAFE_getAllByType(Text).forEach((node) => {
+            expect(node.props.maxFontSizeMultiplier).toBe(MAX_FONT_SCALE);
+        });
+    });
+});
+
+describe('focus indicator on buttons (A11Y-13)', () => {
+    it('adds a visible border to the close control once focused, where none exists at rest', () => {
+        continueSession.mockReturnValue(new Promise(() => {}));
+        renderSheet();
+
+        const restingStyle = StyleSheet.flatten(screen.getByTestId('chat-close-button', { includeHiddenElements: true }).props.style);
+        expect(restingStyle.borderWidth).toBeFalsy();
+
+        fireEvent(screen.getByTestId('chat-close-button', { includeHiddenElements: true }), 'focus');
+
+        const focusedStyle = StyleSheet.flatten(screen.getByTestId('chat-close-button', { includeHiddenElements: true }).props.style);
+        expect(focusedStyle.borderWidth).toBeGreaterThan(0);
+        expect(focusedStyle.borderColor).toBeTruthy();
+    });
+
+    it('reverts the close control to its resting style once focus is lost', () => {
+        continueSession.mockReturnValue(new Promise(() => {}));
+        renderSheet();
+        const restingStyle = StyleSheet.flatten(screen.getByTestId('chat-close-button', { includeHiddenElements: true }).props.style);
+
+        fireEvent(screen.getByTestId('chat-close-button', { includeHiddenElements: true }), 'focus');
+        fireEvent(screen.getByTestId('chat-close-button', { includeHiddenElements: true }), 'blur');
+
+        expect(StyleSheet.flatten(screen.getByTestId('chat-close-button', { includeHiddenElements: true }).props.style)).toEqual(restingStyle);
+    });
+
+    it('adds a visible border to the restart control once focused', async () => {
+        registerChatAssisted.mockResolvedValue({ ok: false, kind: 'expired', message: 'Chat session has expired' });
+
+        await walkToCompletion();
+        const restartButton = await screen.findByTestId('chat-restart-button');
+        const restingStyle = StyleSheet.flatten(restartButton.props.style);
+        expect(restingStyle.borderWidth).toBeFalsy();
+
+        fireEvent(screen.getByTestId('chat-restart-button'), 'focus');
+
+        const focusedStyle = StyleSheet.flatten(screen.getByTestId('chat-restart-button').props.style);
+        expect(focusedStyle.borderWidth).toBeGreaterThan(0);
+        expect(focusedStyle.borderColor).toBeTruthy();
+    });
+});
+
+describe('post-chat feedback (FEEDBACK-01 → FEEDBACK-04)', () => {
+    it('shows the feedback modal after registration completes', async () => {
+        registerChatAssisted.mockResolvedValue({ ok: true, user: { id: 'u1', email: 'alex@example.com' } });
+
+        await walkToCompletion();
+
+        expect(await screen.findByTestId('feedback-modal')).toBeTruthy();
+        expect(screen.getByText('Was this onboarding helpful?')).toBeTruthy();
+    });
+
+    it('does not call onRegistered until the user dismisses the feedback', async () => {
+        registerChatAssisted.mockResolvedValue({ ok: true, user: { id: 'u1', email: 'alex@example.com' } });
+        const onRegistered = jest.fn();
+
+        await walkToCompletion({ onRegistered });
+
+        await screen.findByTestId('feedback-modal');
+        expect(onRegistered).not.toHaveBeenCalled();
+
+        fireEvent.press(screen.getByTestId('feedback-dismiss'));
+
+        await waitFor(() => expect(onRegistered).toHaveBeenCalledWith({ id: 'u1', email: 'alex@example.com' }));
     });
 });

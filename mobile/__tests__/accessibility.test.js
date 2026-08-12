@@ -12,6 +12,19 @@ jest.mock('../app/api/chatClient', () => ({
     registerChatAssisted: jest.fn(),
 }));
 
+// react-test-renderer has no real native view hierarchy, so the actual
+// findNodeHandle always resolves undefined here even though it resolves a
+// real tag on device. `react-native`'s own `findNodeHandle` export is a
+// getter that re-requires this leaf module on every access, so mocking it
+// here (rather than the whole `react-native` package, which would also drag
+// in native-only modules like DevMenu) reaches every caller, including
+// ChatSheet, without disturbing anything else react-native provides.
+jest.mock('react-native/Libraries/ReactNative/RendererProxy', () => {
+    const actual = jest.requireActual('react-native/Libraries/ReactNative/RendererProxy');
+
+    return { ...actual, findNodeHandle: jest.fn(() => 1) };
+});
+
 const FIRST_PROMPT = "I'd be happy to help! What's your name?";
 
 const openerTurn = () => ({
@@ -29,6 +42,7 @@ beforeEach(() => {
     registerChatAssisted.mockResolvedValue({ ok: true, user: { id: 'u1' } });
     jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => {});
     jest.spyOn(AccessibilityInfo, 'isScreenReaderEnabled').mockResolvedValue(false);
+    jest.spyOn(AccessibilityInfo, 'setAccessibilityFocus').mockImplementation(() => {});
 });
 
 afterEach(() => {
@@ -49,11 +63,7 @@ describe('every control is labelled (A11Y-01)', () => {
         expect(screen.getByLabelText('Need help? Sign up by chat instead')).toBeTruthy();
     });
 
-    it.each([
-        ['Close the sign up assistant'],
-        ['Your reply'],
-        ['Send reply'],
-    ])('labels %s inside the sheet', async (label) => {
+    it.each([['Close the sign up assistant'], ['Your reply'], ['Send reply']])('labels %s inside the sheet', async (label) => {
         await openSheet();
 
         expect(screen.getByLabelText(label, { includeHiddenElements: true })).toBeTruthy();
@@ -219,5 +229,88 @@ describe('reporting accessibility mode (A11Y-07)', () => {
         });
 
         expect(registerChatAssisted.mock.calls[0][0].accessibilityMode).toBe('screen-reader');
+    });
+});
+
+describe('moving focus into the sheet on open (A11Y-08)', () => {
+    it('moves screen reader focus once the sheet opens', async () => {
+        await openSheet();
+
+        expect(AccessibilityInfo.setAccessibilityFocus).toHaveBeenCalled();
+    });
+
+    it('does not move focus while the sheet is hidden', () => {
+        render(<SignUpScreen />);
+
+        expect(AccessibilityInfo.setAccessibilityFocus).not.toHaveBeenCalled();
+    });
+});
+
+describe('restoring focus to the trigger on dismiss (A11Y-09)', () => {
+    it('returns screen reader focus to the Need Help control after the close button is used', async () => {
+        await openSheet();
+        AccessibilityInfo.setAccessibilityFocus.mockClear(); // discard the A11Y-08 call from opening
+
+        fireEvent.press(screen.getByTestId('chat-close-button'));
+
+        expect(AccessibilityInfo.setAccessibilityFocus).toHaveBeenCalled();
+    });
+
+    it('returns screen reader focus to the Need Help control after the backdrop is used', async () => {
+        await openSheet();
+        AccessibilityInfo.setAccessibilityFocus.mockClear();
+
+        fireEvent.press(screen.getByTestId('chat-backdrop', { includeHiddenElements: true }));
+
+        expect(AccessibilityInfo.setAccessibilityFocus).toHaveBeenCalled();
+    });
+});
+
+describe('hiding the background from TalkBack while the sheet is open (A11Y-10)', () => {
+    it('leaves the form reachable before the sheet opens', () => {
+        render(<SignUpScreen />);
+
+        expect(screen.getByTestId('signup-scroll').props.importantForAccessibility).toBe('auto');
+    });
+
+    it('hides the form from TalkBack once the sheet opens', async () => {
+        await openSheet();
+
+        // `no-hide-descendants` takes the whole subtree out of the accessibility
+        // tree, so RNTL treats it the same as a hidden element.
+        expect(screen.getByTestId('signup-scroll', { includeHiddenElements: true }).props.importantForAccessibility).toBe(
+            'no-hide-descendants'
+        );
+    });
+
+    it('makes the form reachable again once the sheet is dismissed', async () => {
+        await openSheet();
+
+        fireEvent.press(screen.getByTestId('chat-close-button'));
+
+        expect(screen.getByTestId('signup-scroll').props.importantForAccessibility).toBe('auto');
+    });
+});
+
+describe('announcing errors (A11Y-11)', () => {
+    it('announces a chat-level failure', async () => {
+        await openSheet();
+
+        continueSession.mockResolvedValueOnce({ ok: false, kind: 'failed', status: null });
+        fireEvent.changeText(screen.getByTestId('chat-input'), 'Alex Johnson');
+        fireEvent.press(screen.getByTestId('chat-send-button'));
+
+        await screen.findByTestId('chat-error');
+        expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledWith(expect.stringContaining('Something went wrong'));
+    });
+
+    it('announces an inline input validation failure', async () => {
+        await openSheet();
+
+        fireEvent.changeText(screen.getByTestId('chat-input'), '<script>alert(1)</script>');
+        fireEvent.press(screen.getByTestId('chat-send-button'));
+
+        await screen.findByTestId('chat-input-error');
+        expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledWith(expect.stringContaining('cannot contain'));
     });
 });

@@ -1,11 +1,4 @@
-const {
-    CHAT_STEPS,
-    fieldForStep,
-    inputPropsForStep,
-    splitName,
-    toUserData,
-    validate,
-} = require('../app/lib/stepRules');
+const { CHAT_STEPS, fieldForStep, inputPropsForStep, splitName, toUserData, validate } = require('../app/lib/stepRules');
 
 describe('fieldForStep - the step-to-field mapping', () => {
     it('matches the server step order', () => {
@@ -51,12 +44,9 @@ describe('validate - mirrors ChatAssistedRegistrationSchema', () => {
             expect(validate('email_collection', 'valid.email@example.com').valid).toBe(true);
         });
 
-        it.each(['invalid-email', 'missing-at-symbol.com', '@missing-local-part.com', 'spaces in@email.com'])(
-            'rejects %s',
-            (value) => {
-                expect(validate('email_collection', value).valid).toBe(false);
-            }
-        );
+        it.each(['invalid-email', 'missing-at-symbol.com', '@missing-local-part.com', 'spaces in@email.com'])('rejects %s', (value) => {
+            expect(validate('email_collection', value).valid).toBe(false);
+        });
     });
 
     describe('password (INPUT-07)', () => {

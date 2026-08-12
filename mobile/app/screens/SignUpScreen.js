@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { AccessibilityInfo, findNodeHandle, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import ChatSheet from '../components/chat/ChatSheet';
 import { MAX_FONT_SCALE, useThemeStyles } from '../components/Styles';
@@ -14,9 +14,14 @@ export default function SignUpScreen() {
     const { styles } = useThemeStyles();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [emailFocused, setEmailFocused] = useState(false);
+    const [passwordFocused, setPasswordFocused] = useState(false);
+    const [submitFocused, setSubmitFocused] = useState(false);
+    const [needHelpFocused, setNeedHelpFocused] = useState(false);
     const [chatSessionId, setChatSessionId] = useState(null);
     const [registeredUser, setRegisteredUser] = useState(null);
     const screenReaderEnabled = useScreenReaderEnabled();
+    const needHelpRef = useRef(null);
 
     // A session id is minted per opening rather than per mount: dismissing the
     // sheet ends that conversation, and reopening starts a fresh one (SHEET-07).
@@ -25,8 +30,18 @@ export default function SignUpScreen() {
         setChatSessionId(createChatSessionId());
     }, []);
 
+    // Returns screen reader focus to the control that opened the sheet
+    // (A11Y-09). Without this, dismissing without completing registration
+    // strands VoiceOver/TalkBack wherever focus last was inside the now-closed
+    // modal instead of back on the screen the user is looking at.
     const closeChat = useCallback(() => {
         setChatSessionId(null);
+
+        const tag = findNodeHandle(needHelpRef.current);
+
+        if (tag) {
+            AccessibilityInfo.setAccessibilityFocus(tag);
+        }
     }, []);
 
     // The confirmation belongs on the screen rather than inside the sheet, so it
@@ -36,9 +51,20 @@ export default function SignUpScreen() {
         setChatSessionId(null);
     }, []);
 
+    // accessibilityViewIsModal on the sheet (ChatSheet.js) only constrains
+    // VoiceOver; Android has no equivalent, so TalkBack can otherwise swipe
+    // past the open modal into this form. Hiding it explicitly while the
+    // sheet is open (A11Y-10) keeps both platforms behaving the same way.
+    const chatOpen = chatSessionId !== null;
+
     return (
         <View style={styles.screenRoot}>
-            <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
+            <ScrollView
+                testID="signup-scroll"
+                contentContainerStyle={styles.screen}
+                keyboardShouldPersistTaps="handled"
+                importantForAccessibility={chatOpen ? 'no-hide-descendants' : 'auto'}
+            >
                 <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_SCALE}>
                     Create your account
                 </Text>
@@ -50,13 +76,16 @@ export default function SignUpScreen() {
                     Email
                 </Text>
                 <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, emailFocused && styles.textInputFocused]}
                     value={email}
                     onChangeText={setEmail}
+                    onFocus={() => setEmailFocused(true)}
+                    onBlur={() => setEmailFocused(false)}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoCorrect={false}
                     textContentType="emailAddress"
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
                     testID="signup-email"
                     accessibilityLabel="Email address"
                     accessibilityHint="Enter the email address for your account"
@@ -66,20 +95,25 @@ export default function SignUpScreen() {
                     Password
                 </Text>
                 <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, passwordFocused && styles.textInputFocused]}
                     value={password}
                     onChangeText={setPassword}
+                    onFocus={() => setPasswordFocused(true)}
+                    onBlur={() => setPasswordFocused(false)}
                     secureTextEntry
                     autoCapitalize="none"
                     autoCorrect={false}
                     textContentType="newPassword"
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
                     testID="signup-password"
                     accessibilityLabel="Password"
                     accessibilityHint="Enter a password for your account"
                 />
 
-                <TouchableOpacity
-                    style={styles.button}
+                <Pressable
+                    style={[styles.button, submitFocused && styles.buttonFocused]}
+                    onFocus={() => setSubmitFocused(true)}
+                    onBlur={() => setSubmitFocused(false)}
                     testID="signup-submit"
                     accessibilityRole="button"
                     accessibilityLabel="Sign up"
@@ -88,7 +122,7 @@ export default function SignUpScreen() {
                     <Text style={styles.buttonText} maxFontSizeMultiplier={MAX_FONT_SCALE}>
                         Sign up
                     </Text>
-                </TouchableOpacity>
+                </Pressable>
 
                 {registeredUser === null ? null : (
                     <Text
@@ -102,9 +136,12 @@ export default function SignUpScreen() {
                 )}
 
                 <View style={styles.helpRow}>
-                    <TouchableOpacity
-                        style={styles.secondaryButton}
+                    <Pressable
+                        ref={needHelpRef}
+                        style={[styles.secondaryButton, needHelpFocused && styles.secondaryButtonFocused]}
                         onPress={openChat}
+                        onFocus={() => setNeedHelpFocused(true)}
+                        onBlur={() => setNeedHelpFocused(false)}
                         testID="need-help-button"
                         accessibilityRole="button"
                         accessibilityLabel="Need help? Sign up by chat instead"
@@ -113,7 +150,7 @@ export default function SignUpScreen() {
                         <Text style={styles.secondaryButtonText} maxFontSizeMultiplier={MAX_FONT_SCALE}>
                             Need Help?
                         </Text>
-                    </TouchableOpacity>
+                    </Pressable>
                 </View>
             </ScrollView>
 

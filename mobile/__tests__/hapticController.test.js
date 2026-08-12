@@ -1,9 +1,4 @@
-import {
-    _resetSupportCache,
-    errorOccurred,
-    isSupported,
-    messageSent,
-} from '../app/lib/hapticController';
+import { _resetSupportCache, errorOccurred, isSupported, messageSent } from '../app/lib/hapticController';
 
 // jest-expo auto-mocks native modules with plain functions, not jest.fn(), so
 // an explicit mock with jest.fn() is required for call assertions (same
