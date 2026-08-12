@@ -2,10 +2,19 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 
 import { continueSession, registerChatAssisted } from '../app/api/chatClient';
 import ChatSheet, { OPENER_MESSAGE } from '../app/components/chat/ChatSheet';
+import * as sessionStore from '../app/lib/sessionStore';
 
 jest.mock('../app/api/chatClient', () => ({
     continueSession: jest.fn(),
     registerChatAssisted: jest.fn(),
+}));
+
+jest.mock('../app/lib/sessionStore', () => ({
+    save: jest.fn(async () => undefined),
+    load: jest.fn(async () => null),
+    clear: jest.fn(async () => undefined),
+    isExpired: jest.fn(() => false),
+    SESSION_TTL_MS: 30 * 60 * 1000,
 }));
 
 const FIRST_PROMPT = "I'd be happy to help! What's your name?";
@@ -215,6 +224,112 @@ describe('failure handling', () => {
     });
 });
 
+describe('typing indicator (LOAD-01 → LOAD-03)', () => {
+    it('shows the typing indicator while a turn is pending', () => {
+        // A never-resolving promise keeps pending true.
+        continueSession.mockReturnValue(new Promise(() => {}));
+
+        renderSheet();
+
+        expect(screen.getByTestId('typing-indicator')).toBeTruthy();
+    });
+
+    it('removes the typing indicator once the turn completes', async () => {
+        continueSession.mockResolvedValue(openerTurn());
+
+        renderSheet();
+
+        await screen.findByText(FIRST_PROMPT);
+
+        expect(screen.queryByTestId('typing-indicator')).toBeNull();
+    });
+});
+
+describe('session restore (RESTORE-01 → RESTORE-05)', () => {
+    beforeEach(() => {
+        sessionStore.load.mockResolvedValue(null);
+        sessionStore.save.mockClear();
+        sessionStore.clear.mockClear();
+    });
+
+    it('opens fresh when no persisted session exists (RESTORE-02)', async () => {
+        continueSession.mockResolvedValue(openerTurn());
+
+        renderSheet();
+
+        expect(await screen.findByText(FIRST_PROMPT)).toBeTruthy();
+        expect(continueSession).toHaveBeenCalledWith(expect.objectContaining({ message: OPENER_MESSAGE }));
+    });
+
+    it('resumes at the persisted step with the persisted transcript when within TTL (RESTORE-02)', async () => {
+        const persisted = {
+            currentStep: 'email_collection',
+            transcript: [
+                { role: 'assistant', message: FIRST_PROMPT },
+                { role: 'user', message: 'Alex Johnson' },
+                { role: 'assistant', message: 'Great! What is your email address?' },
+            ],
+            collected: { name: 'Alex Johnson' },
+            credentialTurnIndex: null,
+            lastActivity: '2026-08-08T00:00:00.000Z',
+            chatSessionId: 'session-1',
+        };
+        sessionStore.load.mockResolvedValue(persisted);
+
+        renderSheet();
+
+        // The opener is NOT called — the session resumes.
+        await screen.findByText('Great! What is your email address?');
+        expect(continueSession).not.toHaveBeenCalled();
+        expect(screen.getByText('Alex Johnson')).toBeTruthy();
+    });
+
+    it('only resumes if the persisted chatSessionId matches (no cross-session bleed)', async () => {
+        const persisted = {
+            currentStep: 'email_collection',
+            transcript: [{ role: 'assistant', message: 'stale' }],
+            collected: {},
+            chatSessionId: 'different-session',
+            lastActivity: '2026-08-08T00:00:00.000Z',
+        };
+        sessionStore.load.mockResolvedValue(persisted);
+        continueSession.mockResolvedValue(openerTurn());
+
+        renderSheet();
+
+        // No match → fresh open.
+        expect(await screen.findByText(FIRST_PROMPT)).toBeTruthy();
+        expect(screen.queryByText('stale')).toBeNull();
+    });
+
+    it('re-prompts for password when restored at the password step (RESTORE-04)', async () => {
+        const persisted = {
+            currentStep: 'password_collection',
+            transcript: [{ role: 'assistant', message: 'Almost done! Please choose a password.' }],
+            collected: { name: 'Alex', email: 'alex@example.com' },
+            credentialTurnIndex: null,
+            chatSessionId: 'session-1',
+            lastActivity: '2026-08-08T00:00:00.000Z',
+        };
+        sessionStore.load.mockResolvedValue(persisted);
+
+        renderSheet();
+
+        expect(await screen.findByTestId('password-reprompt')).toBeTruthy();
+        // The password field is not in the collected state.
+        expect(screen.getByTestId('password-reprompt').props.children).toContain('re-enter your password');
+    });
+
+    it('clears the persisted session after successful registration (RESTORE-05)', async () => {
+        registerChatAssisted.mockResolvedValue({ ok: true, user: { id: 'u1', email: 'alex@example.com' } });
+
+        await walkToCompletion();
+
+        await waitFor(() => expect(registerChatAssisted).toHaveBeenCalled());
+        expect(sessionStore.clear).toHaveBeenCalled();
+    });
+});
+
 describe('reopening (SHEET-07)', () => {
     it('starts a fresh conversation when a new session id arrives', async () => {
         continueSession.mockResolvedValue(openerTurn());
@@ -307,6 +422,10 @@ describe('completing registration (INPUT-11, INPUT-15)', () => {
         registerChatAssisted.mockResolvedValue({ ok: true, user: { id: 'u1', email: 'alex@example.com' } });
 
         const { onRegistered } = await walkToCompletion();
+
+        // T10: onRegistered now fires when the user dismisses the feedback modal.
+        await screen.findByTestId('feedback-modal');
+        fireEvent.press(screen.getByTestId('feedback-dismiss'));
 
         await waitFor(() => expect(onRegistered).toHaveBeenCalledWith({ id: 'u1', email: 'alex@example.com' }));
     });
@@ -414,5 +533,30 @@ describe('invalid registration payload (INPUT-14)', () => {
         await walkToCompletion();
 
         expect(await screen.findByText('userData.phone: phone must be a valid phone number')).toBeTruthy();
+    });
+});
+
+describe('post-chat feedback (FEEDBACK-01 → FEEDBACK-04)', () => {
+    it('shows the feedback modal after registration completes', async () => {
+        registerChatAssisted.mockResolvedValue({ ok: true, user: { id: 'u1', email: 'alex@example.com' } });
+
+        await walkToCompletion();
+
+        expect(await screen.findByTestId('feedback-modal')).toBeTruthy();
+        expect(screen.getByText('Was this onboarding helpful?')).toBeTruthy();
+    });
+
+    it('does not call onRegistered until the user dismisses the feedback', async () => {
+        registerChatAssisted.mockResolvedValue({ ok: true, user: { id: 'u1', email: 'alex@example.com' } });
+        const onRegistered = jest.fn();
+
+        await walkToCompletion({ onRegistered });
+
+        await screen.findByTestId('feedback-modal');
+        expect(onRegistered).not.toHaveBeenCalled();
+
+        fireEvent.press(screen.getByTestId('feedback-dismiss'));
+
+        await waitFor(() => expect(onRegistered).toHaveBeenCalledWith({ id: 'u1', email: 'alex@example.com' }));
     });
 });
