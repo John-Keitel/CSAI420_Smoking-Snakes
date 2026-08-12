@@ -1,13 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const {
-    sendMock,
-    loggerMock,
-    putEventsCommandCtorMock,
-    routeToDlqMock,
-    recordDurationMock,
-    recordOutcomeMock,
-} = vi.hoisted(() => ({
+const { sendMock, loggerMock, putEventsCommandCtorMock, routeToDlqMock, recordDurationMock, recordOutcomeMock } = vi.hoisted(() => ({
     sendMock: vi.fn(),
     loggerMock: { error: vi.fn(), info: vi.fn(), debug: vi.fn(), warn: vi.fn() },
     putEventsCommandCtorMock: vi.fn(),
