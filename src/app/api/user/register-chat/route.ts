@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { signUserToken } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { publishUserRegisteredEvent } from '@/lib/events/publisher';
 import { HttpException } from '@/lib/http';
 import { getAppLogger } from '@/lib/logger';
 import { sanitizeObjectStrings, sanitizeUserRegistrationInput } from '@/lib/sanitization';
@@ -24,6 +25,7 @@ function splitName(name: string): { firstName: string; lastName: string } {
 
 export async function POST(request: NextRequest) {
     const requestId = randomUUID();
+    const startedAt = Date.now();
 
     try {
         logger.info('register-chat request started requestId=%s', requestId);
@@ -79,6 +81,14 @@ export async function POST(request: NextRequest) {
         });
 
         const token = await signUserToken({ userId: createdUser.id, email: createdUser.email });
+
+        void publishUserRegisteredEvent({
+            userId: createdUser.id,
+            email: createdUser.email,
+            method: 'chat',
+            timestamp: new Date().toISOString(),
+            durationSeconds: (Date.now() - startedAt) / 1000,
+        });
 
         logger.info('register-chat request succeeded requestId=%s statusCode=201 userId=%s', requestId, createdUser.id);
 
