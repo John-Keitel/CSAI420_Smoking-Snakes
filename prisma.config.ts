@@ -1,6 +1,8 @@
-import 'dotenv/config';
-
+import { loadEnvConfig } from '@next/env';
 import { defineConfig, env } from 'prisma/config';
+
+// Keep Prisma CLI in sync with Next.js env file resolution (.env.local, .env.development.local, etc.).
+loadEnvConfig(process.cwd());
 
 type Env = {
     DATABASE_URL: string;
